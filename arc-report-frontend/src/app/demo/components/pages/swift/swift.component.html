@@ -1,0 +1,640 @@
+<div class="grid">
+    <div class="col-12">
+        <p-toast></p-toast>
+        <p-toolbar styleClass="mb-4 gap-2">
+            <ng-template pTemplate="left">
+                <button
+                    pButton
+                    pRipple
+                    icon="pi pi-plus"
+                    class="p-button-success mr-2"
+                    (click)="openNew()"
+                ></button>
+                <button
+                    pButton
+                    pRipple
+                    icon="pi pi-trash"
+                    class="p-button-danger"
+                    [disabled]="!selectedProducts || !selectedProducts.length"
+                ></button>
+                <button
+                    pButton
+                    pRipple
+                    label="Export"
+                    icon="pi pi-upload"
+                    class="p-button-help ml-8"
+                    (click)="openExport()"
+                ></button>
+                <p-fileUpload
+                    mode="basic"
+                    accept="image/*"
+                    [maxFileSize]="1000000"
+                    label="Import"
+                    chooseLabel="Import"
+                    class="ml-4 inline-block"
+                ></p-fileUpload>
+            </ng-template>
+        </p-toolbar>
+        <div class="card">
+            <h5>Swift ARC Report</h5>
+            <p-table
+                #dt1
+                [columns]="components1"
+                [value]="components1"
+                [lazy]="true"
+                (onLazyLoad)="onLazyLoad($event)"
+                [loading]="loading"
+                [paginator]="!findSearch"
+                [rows]="10"
+                [totalRecords]="totalRecords"
+                dataKey="id"
+                [rowHover]="true"
+                styleClass="p-datatable-gridlines"
+                responsiveLayout="scroll"
+            >
+                <ng-template pTemplate="caption">
+                    <div
+                        class="flex justify-content-between flex-column sm:flex-row"
+                    >
+                        <button
+                            pButton
+                            label="Clear"
+                            class="p-button-outlined mb-2"
+                            icon="pi pi-filter-slash"
+                            (click)="clear(dt1)"
+                        ></button>
+                        <span class="p-input-icon-left mb-2">
+                            <span class="p-input-icon-left mr-4">
+                                <i class="pi pi-search"></i>
+                                <input
+                                    label="inputSearch"
+                                    type="text"
+                                    pInputText
+                                    [(ngModel)]="findSearch"
+                                    (keydown.enter)="findData(findSearch)"
+                                />
+                            </span>
+                        </span>
+                    </div>
+                </ng-template>
+                <ng-template pTemplate="header">
+                    <tr>
+                        <th style="min-width: 5rem">
+                            <div
+                                class="flex justify-content-between align-items-center"
+                                pSortableColumn="equipment"
+                            >
+                                Equipment
+                                <p-sortIcon field="equipment"></p-sortIcon>
+                            </div>
+                        </th>
+                        <th style="min-width: 8rem">
+                            <div
+                                class="flex justify-content-between align-items-center"
+                            >
+                                Material
+                                <p-sortIcon
+                                    field="material_number"
+                                ></p-sortIcon>
+                            </div>
+                        </th>
+                        <th style="min-width: 8rem">
+                            <div
+                                class="flex justify-content-between align-items-center"
+                            >
+                                Serial Number
+                                <p-sortIcon field="serial_number"></p-sortIcon>
+                            </div>
+                        </th>
+                        <th style="min-width: 12rem">
+                            <div
+                                class="flex justify-content-between align-items-center"
+                            >
+                                Description
+                                <p-sortIcon
+                                    field="material_description"
+                                ></p-sortIcon>
+                            </div>
+                        </th>
+                        <th style="min-width: 5rem">
+                            <div
+                                class="flex justify-content-between align-items-center"
+                            >
+                                Ext. Matl Group
+                                <p-sortIcon field="material_group"></p-sortIcon>
+                            </div>
+                        </th>
+
+                        <th style="min-width: 5rem">
+                            <div
+                                class="flex justify-content-between align-items-center"
+                            >
+                                A/C Reg
+                                <p-sortIcon field="aircraft_reg"></p-sortIcon>
+                            </div>
+                        </th>
+                        <th style="min-width: 8rem">
+                            <div
+                                class="flex justify-content-between align-items-center"
+                            >
+                                Func. Location
+                                <p-sortIcon field="doc_no"></p-sortIcon>
+                            </div>
+                        </th>
+                        <th style="min-width: 8rem">
+                            <div
+                                class="flex justify-content-between align-items-center"
+                            >
+                                Notif W3
+                                <p-sortIcon field="doc_locations"></p-sortIcon>
+                            </div>
+                        </th>
+                        <th style="min-width: 8rem">
+                            <div
+                                class="flex justify-content-between align-items-center"
+                            >
+                                Order Notif W3
+                                <p-sortIcon field="doc_locations"></p-sortIcon>
+                            </div>
+                        </th>
+
+                        <th style="min-width: 8rem">
+                            <div
+                                class="flex justify-content-between align-items-center"
+                            >
+                                Notif W4
+                                <p-sortIcon field="status"></p-sortIcon>
+                            </div>
+                        </th>
+                        <th style="min-width: 8rem">
+                            <div
+                                class="flex justify-content-between align-items-center"
+                            >
+                                Batch Notif W4
+                                <p-sortIcon field="status"></p-sortIcon>
+                            </div>
+                        </th>
+                        <th style="min-width: 8rem">
+                            <div
+                                class="flex justify-content-between align-items-center"
+                            >
+                                Title
+                                <p-sortIcon field="status"></p-sortIcon>
+                            </div>
+                        </th>
+                        <th style="min-width: 8rem">
+                            <div
+                                class="flex justify-content-between align-items-center"
+                            >
+                                PO Number
+                                <p-sortIcon field="status"></p-sortIcon>
+                            </div>
+                        </th>
+                        <th style="min-width: 8rem">
+                            <div
+                                class="flex justify-content-between align-items-center"
+                            >
+                                Timestamp
+                                <p-sortIcon field="status"></p-sortIcon>
+                            </div>
+                        </th>
+                        <th class="text-center" style="min-width: 10rem">
+                            Actions
+                        </th>
+                    </tr>
+                </ng-template>
+                <ng-template pTemplate="body" let-customer>
+                    <tr>
+                        <td class="text-center">
+                            {{ customer?.equipment }}
+                        </td>
+                        <td class="text-center">
+                            {{ customer?.material_number }}
+                        </td>
+                        <td class="text-center">
+                            {{ customer?.serial_number }}
+                        </td>
+                        <td class="text-center">
+                            {{ customer?.material_description }}
+                        </td>
+                        <td class="text-center">
+                            {{ customer?.material_group }}
+                        </td>
+                        <td class="text-center">
+                            {{ customer?.aircraft_reg }}
+                        </td>
+                        <td class="text-center">
+                            {{ customer?.functional_location }}
+                        </td>
+                        <td class="text-center">
+                            {{ customer?.notif_w3 }}
+                        </td>
+                        <td class="text-center">
+                            {{ customer?.order_notif_w3 }}
+                        </td>
+                        <td class="text-center">
+                            {{ customer?.notif_w4 }}
+                        </td>
+                        <td class="text-center">
+                            {{ customer?.batch_notif_w4 }}
+                        </td>
+                        <td class="text-center">
+                            {{ customer?.title }}
+                        </td>
+                        <td class="text-center">
+                            {{ customer?.po_number }}
+                        </td>
+                        <td class="text-center">
+                            {{ customer?.timestamp_pi }}
+                        </td>
+
+                        <td class="text-center">
+                            <button
+                                pButton
+                                pRipple
+                                icon="pi pi-pencil"
+                                class="p-button-rounded p-button-success mr-2"
+                                (click)="editProduct(customer)"
+                            ></button>
+                            <button
+                                pButton
+                                pRipple
+                                icon="pi pi-trash"
+                                class="p-button-rounded p-button-warning"
+                                (click)="deleteProduct(customer)"
+                            ></button>
+                        </td>
+                    </tr>
+                </ng-template>
+                <ng-template pTemplate="emptymessage">
+                    <tr>
+                        <td colspan="8">No component found.</td>
+                    </tr>
+                </ng-template>
+                <ng-template pTemplate="loadingbody">
+                    <tr>
+                        <td colspan="8">
+                            Loading components data. Please wait.
+                        </td>
+                    </tr>
+                </ng-template>
+            </p-table>
+        </div>
+        <p-toast></p-toast>
+    </div>
+</div>
+
+<p-dialog
+    [(visible)]="recordDialog"
+    [style]="{ width: '850px' }"
+    header="New Records"
+    [modal]="true"
+    styleClass="p-fluid"
+    class="grid grid-cols-2 gap-4"
+>
+    <h5>ARC Swift</h5>
+    <div class="p-fluid p-formgrid grid">
+        <div class="field col-12 md:col-6">
+            <label htmlFor="equipment" class="text-xl">Equipment</label>
+            <input
+                pInputText
+                id="equipment"
+                type="text"
+                [(ngModel)]="data.arc_swift.equipment"
+            />
+        </div>
+        <div class="field col-12 md:col-6">
+            <label htmlFor="material_number" class="text-xl"
+                >Material Number</label
+            >
+            <input
+                pInputText
+                id="material_number"
+                type="text"
+                [(ngModel)]="data.arc_swift.material_number"
+            />
+        </div>
+        <div class="field col-12 md:col-6">
+            <label htmlFor="serial_number" class="text-xl">Serial Number</label>
+            <input
+                pInputText
+                id="serial_number"
+                type="text"
+                [(ngModel)]="data.arc_swift.serial_number"
+            />
+        </div>
+        <div class="field col-12 md:col-6">
+            <label htmlFor="material_group" class="text-xl"
+                >Material Group</label
+            >
+            <input
+                pInputText
+                id="material_group"
+                type="text"
+                [(ngModel)]="data.arc_swift.material_group"
+            />
+        </div>
+        <div class="field col-12">
+            <label htmlFor="material_description" class="text-xl"
+                >Material Description</label
+            >
+            <input
+                pInputTextarea
+                id="material_description"
+                rows="4"
+                [(ngModel)]="data.arc_swift.material_description"
+            />
+        </div>
+        <div class="field col-12 md:col-6">
+            <label htmlFor="functional_location" class="text-xl"
+                >Functional Location</label
+            >
+            <input
+                pInputText
+                id="functional_location"
+                type="text"
+                [(ngModel)]="data.arc_swift.functional_location"
+            />
+        </div>
+        <div class="field col-12 md:col-6">
+            <label htmlFor="aircraft_reg" class="text-xl">A/C Reg</label>
+            <input
+                pInputText
+                id="aircraft_reg"
+                type="text"
+                [(ngModel)]="data.arc_swift.aircraft_reg"
+            />
+        </div>
+        <div class="field col-12 md:col-6">
+            <label htmlFor="notif_w3" class="text-xl">Notification W3</label>
+            <input
+                pInputText
+                id="notif_w3"
+                type="text"
+                [(ngModel)]="data.arc_swift.notif_w3"
+            />
+        </div>
+        <div class="field col-12 md:col-6">
+            <label htmlFor="order_notif_w3" class="text-xl"
+                >Order Notification W3</label
+            >
+            <input
+                pInputText
+                id="order_notif_w3"
+                type="text"
+                [(ngModel)]="data.arc_swift.order_notif_w3"
+            />
+        </div>
+        <div class="field col-12 md:col-6">
+            <label htmlFor="notif_w4" class="text-xl">Notification W4</label>
+            <input
+                pInputText
+                id="notif_w4"
+                type="text"
+                [(ngModel)]="data.arc_swift.notif_w4"
+            />
+        </div>
+        <div class="field col-12 md:col-6">
+            <label htmlFor="batch_notif_w4" class="text-xl"
+                >Batch Notification W4</label
+            >
+            <input
+                pInputText
+                id="batch_notif_w4"
+                type="text"
+                [(ngModel)]="data.arc_swift.batch_notif_w4"
+            />
+        </div>
+        <div class="field col-12 md:col-6">
+            <label htmlFor="title" class="text-xl">Title</label>
+            <input
+                pInputText
+                id="title"
+                type="text"
+                [(ngModel)]="data.arc_swift.title"
+            />
+        </div>
+        <div class="field col-12 md:col-6">
+            <label htmlFor="po_number" class="text-xl">PO Number</label>
+            <input
+                pInputText
+                id="po_number"
+                type="text"
+                [(ngModel)]="data.arc_swift.po_number"
+            />
+        </div>
+    </div>
+
+    <div class="p-dialog-footer">
+        <button
+            type="button"
+            pButton
+            label="Save"
+            (click)="addData(data, 'false')"
+            class="p-button-success mr-4 text-xl"
+        ></button>
+        <button
+            type="button"
+            pButton
+            label="Cancel"
+            (click)="cancelDialog()"
+            class="p-button-danger text-xl"
+        ></button>
+    </div>
+</p-dialog>
+
+<p-dialog
+    [(visible)]="editRecordDialog"
+    [style]="{ width: '850px' }"
+    header="Edit Records"
+    [modal]="true"
+    styleClass="p-fluid"
+>
+    <h5>ARC Swift</h5>
+    <div class="p-fluid p-formgrid grid">
+        <div class="field col-12 md:col-6">
+            <label htmlFor="equipment" class="text-xl">Equipment</label>
+            <input
+                pInputText
+                id="equipment"
+                type="text"
+                disabled="true"
+                [(ngModel)]="editData.equipment"
+            />
+        </div>
+        <div class="field col-12 md:col-6">
+            <label htmlFor="material_number" class="text-xl"
+                >Material Number</label
+            >
+            <input
+                pInputText
+                id="material_number"
+                type="text"
+                [(ngModel)]="editData.material_number"
+            />
+        </div>
+        <div class="field col-12 md:col-6">
+            <label htmlFor="serial_number" class="text-xl">Serial Number</label>
+            <input
+                pInputText
+                id="serial_number"
+                type="text"
+                [(ngModel)]="editData.serial_number"
+            />
+        </div>
+        <div class="field col-12 md:col-6">
+            <label htmlFor="material_group" class="text-xl"
+                >Material Group</label
+            >
+            <input
+                pInputText
+                id="material_group"
+                type="text"
+                [(ngModel)]="editData.material_group"
+            />
+        </div>
+        <div class="field col-12">
+            <label htmlFor="material_description" class="text-xl"
+                >Material Description</label
+            >
+            <input
+                pInputTextarea
+                id="material_description"
+                rows="4"
+                [(ngModel)]="editData.material_description"
+            />
+        </div>
+        <div class="field col-12 md:col-6">
+            <label htmlFor="functional_location" class="text-xl"
+                >Functional Location</label
+            >
+            <input
+                pInputText
+                id="functional_location"
+                type="text"
+                [(ngModel)]="editData.functional_location"
+            />
+        </div>
+        <div class="field col-12 md:col-6">
+            <label htmlFor="aircraft_reg" class="text-xl">A/C Reg</label>
+            <input
+                pInputText
+                id="aircraft_reg"
+                type="text"
+                [(ngModel)]="editData.aircraft_reg"
+            />
+        </div>
+        <div class="field col-12 md:col-6">
+            <label htmlFor="notif_w3" class="text-xl">Notification W3</label>
+            <input
+                pInputText
+                id="notif_w3"
+                type="text"
+                [(ngModel)]="editData.notif_w3"
+            />
+        </div>
+        <div class="field col-12 md:col-6">
+            <label htmlFor="order_notif_w3" class="text-xl"
+                >Order Notification W3</label
+            >
+            <input
+                pInputText
+                id="order_notif_w3"
+                type="text"
+                [(ngModel)]="editData.order_notif_w3"
+            />
+        </div>
+        <div class="field col-12 md:col-6">
+            <label htmlFor="notif_w4" class="text-xl">Notification W4</label>
+            <input
+                pInputText
+                id="notif_w4"
+                type="text"
+                [(ngModel)]="editData.notif_w4"
+            />
+        </div>
+        <div class="field col-12 md:col-6">
+            <label htmlFor="batch_notif_w4" class="text-xl"
+                >Batch Notification W4</label
+            >
+            <input
+                pInputText
+                id="batch_notif_w4"
+                type="text"
+                [(ngModel)]="editData.batch_notif_w4"
+            />
+        </div>
+        <div class="field col-12 md:col-6">
+            <label htmlFor="title" class="text-xl">Title</label>
+            <input pInputText id="title" type="text" [value]="editData.title" />
+        </div>
+        <div class="field col-12 md:col-6">
+            <label htmlFor="po_number" class="text-xl">PO Number</label>
+            <input
+                pInputText
+                id="po_number"
+                type="text"
+                [(ngModel)]="editData.po_number"
+            />
+        </div>
+    </div>
+
+    <div class="p-dialog-footer">
+        <button
+            type="button"
+            pButton
+            label="Save"
+            (click)="addData(data, 'true')"
+            class="p-button-success mr-4 text-xl"
+        ></button>
+        <button
+            type="button"
+            pButton
+            label="Cancel"
+            (click)="cancelDialog()"
+            class="p-button-danger text-xl"
+        ></button>
+    </div>
+</p-dialog>
+
+<p-dialog
+    [(visible)]="exportDialog"
+    [style]="{ width: '400px', height: '250px' }"
+    header="Pilihan Export File"
+    [modal]="true"
+    styleClass="p-fluid"
+>
+    <div class="p-field">
+        <label for="exportFormat" class="mb-2">Pilih Format Export:</label>
+        <div class="mt-2">
+            <p-dropdown
+                id="exportFormat"
+                [(ngModel)]="selectedExportFormat"
+                [options]="exportFormats"
+                class="mt-2"
+            ></p-dropdown>
+        </div>
+    </div>
+    <div class="p-dialog-footer mt-4">
+        <button
+            pButton
+            type="button"
+            label="Export"
+            (click)="exportData()"
+            class="p-button-success mr-2 text-align-center"
+        ></button>
+        <button
+            pButton
+            type="button"
+            label="Cancel"
+            (click)="cancelDialog()"
+            class="ml-2 p-button-danger text-align-center"
+        ></button>
+    </div>
+</p-dialog>
+
+<p-confirmDialog
+    [style]="{ width: '450px' }"
+    rejectButtonStyleClass="p-button-danger"
+    acceptButtonStyleClass="p-button-success"
+></p-confirmDialog>

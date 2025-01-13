@@ -1,0 +1,15 @@
+-- AlterTable
+ALTER TABLE "neraca_bank" ALTER COLUMN "id_pelapor" DROP NOT NULL,
+ALTER COLUMN "periode_laporan" DROP NOT NULL,
+ALTER COLUMN "periode_data" DROP NOT NULL,
+ALTER COLUMN "id" DROP NOT NULL,
+ALTER COLUMN "deskripsi_pos_laporan_keuangan" DROP NOT NULL,
+ALTER COLUMN "cakupan_data" DROP NOT NULL,
+ALTER COLUMN "deskripsi_cakupan_data" DROP NOT NULL,
+ALTER COLUMN "nominal_rupiah" DROP NOT NULL,
+ALTER COLUMN "nominal_valas" DROP NOT NULL,
+ALTER COLUMN "nominal_total" DROP NOT NULL,
+ALTER COLUMN "buk" DROP NOT NULL,
+ALTER COLUMN "bus" DROP NOT NULL,
+ALTER COLUMN "uus" DROP NOT NULL,
+ALTER COLUMN "kategori" DROP NOT NULL;

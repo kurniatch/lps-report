@@ -1,0 +1,172 @@
+<div class="grid">
+    <div class="col-12 md:col-6">
+        <div class="card">
+            <h5>Dashboard</h5>
+            <p-accordion [multiple]="true" [activeIndex]="[0]">
+                <p-accordionTab
+                    header="Report General"
+                    [selected]="true"
+                    class="line-height-3 m-0"
+                >
+                    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed
+                    do eiusmod tempor incididunt ut labore et dolore magna
+                    aliqua. Ut enim ad minim veniam, quis nostrud exercitation
+                    ullamco laboris nisi ut aliquip ex ea commodo consequat.
+                    Duis aute irure dolor in reprehenderit in voluptate velit
+                    esse cillum dolore eu fugiat nulla pariatur. Excepteur sint
+                    occaecat cupidatat non proident, sunt in culpa qui officia
+                    deserunt mollit anim id est laborum.
+                </p-accordionTab>
+                <p-accordionTab
+                    header="Report Overview"
+                    class="line-height-3 m-0"
+                >
+                    Sed ut perspiciatis unde omnis iste natus error sit
+                    voluptatem accusantium doloremque laudantium, totam rem
+                    aperiam, eaque ipsa quae ab illo inventore veritatis et
+                    quasi architecto beatae vitae dicta sunt explicabo. Nemo
+                    enim ipsam voluptatem quia voluptas sit aspernatur aut odit
+                    aut fugit, sed quia consequuntur magni dolores eos qui
+                    ratione voluptatem sequi nesciunt. Consectetur, adipisci
+                    velit, sed quia non numquam eius modi.
+                </p-accordionTab>
+                <p-accordionTab header="ARC Report" class="line-height-3 m-0">
+                    At vero eos et accusamus et iusto odio dignissimos ducimus
+                    qui blanditiis praesentium voluptatum deleniti atque
+                    corrupti quos dolores et quas molestias excepturi sint
+                    occaecati cupiditate non provident, similique sunt in culpa
+                    qui officia deserunt mollitia animi, id est laborum et
+                    dolorum fuga. Et harum quidem rerum facilis est et expedita
+                    distinctio. Nam libero tempore, cum soluta nobis est
+                    eligendi optio cumque nihil impedit quo minus.
+                </p-accordionTab>
+            </p-accordion>
+        </div>
+        <div class="card">
+            <h5>Actions</h5>
+            <p-accordion [multiple]="true" [activeIndex]="[0]">
+                <p-accordionTab
+                    header="Full Report"
+                    [selected]="true"
+                    class="line-height-3 m-0"
+                >
+                    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed
+                    do eiusmod tempor incididunt ut labore et dolore magna
+                    aliqua. Ut enim ad minim veniam, quis nostrud exercitation
+                    ullamco laboris nisi ut aliquip ex ea commodo consequat.
+                    Duis aute irure dolor in reprehenderit in voluptate velit
+                    esse cillum dolore eu fugiat nulla pariatur. Excepteur sint
+                    occaecat cupidatat non proident, sunt in culpa qui officia
+                    deserunt mollit anim id est laborum.
+                </p-accordionTab>
+            </p-accordion>
+        </div>
+        <div class="card">
+            <h5>Docfile RMS</h5>
+            <p-accordion [multiple]="true" [activeIndex]="[0]">
+                <p-accordionTab
+                    header="General"
+                    [selected]="true"
+                    class="line-height-3 m-0"
+                >
+                    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed
+                    do eiusmod tempor incididunt ut labore et dolore magna
+                    aliqua. Ut enim ad minim veniam, quis nostrud exercitation
+                    ullamco laboris nisi ut aliquip ex ea commodo consequat.
+                    Duis aute irure dolor in reprehenderit in voluptate velit
+                    esse cillum dolore eu fugiat nulla pariatur. Excepteur sint
+                    occaecat cupidatat non proident, sunt in culpa qui officia
+                    deserunt mollit anim id est laborum.
+                </p-accordionTab>
+            </p-accordion>
+        </div>
+    </div>
+
+    <div class="col-12 md:col-6">
+        <!-- <div class="card">
+            <p-editor
+                [(ngModel)]="text"
+                [style]="{ height: '320px' }"
+            ></p-editor>
+        </div> -->
+        <div class="card">
+            <div class="flex align-items-center justify-content-between mb-0">
+                <h5>Catatan</h5>
+                <p-menu #menu [popup]="true" [model]="cardMenu"></p-menu>
+                <button
+                    pButton
+                    type="button"
+                    icon="pi pi-plus"
+                    class="p-button-text"
+                    (click)="menu.toggle($event)"
+                ></button>
+            </div>
+            <p>
+                Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
+                eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut
+                enim ad minim veniam, quis nostrud exercitation ullamco laboris
+                nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor
+                in reprehenderit in voluptate velit esse cillum dolore eu fugiat
+                nulla pariatur. Excepteur sint occaecat cupidatat non proident,
+                sunt in culpa qui officia deserunt mollit anim id est laborum.
+            </p>
+        </div>
+        <div class="card">
+            <h5>Analytics</h5>
+            <p-accordion [multiple]="true" [activeIndex]="[0]">
+                <p-accordionTab
+                    header="General"
+                    [selected]="true"
+                    class="line-height-3 m-0"
+                >
+                    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed
+                    do eiusmod tempor incididunt ut labore et dolore magna
+                    aliqua. Ut enim ad minim veniam, quis nostrud exercitation
+                    ullamco laboris nisi ut aliquip ex ea commodo consequat.
+                    Duis aute irure dolor in reprehenderit in voluptate velit
+                    esse cillum dolore eu fugiat nulla pariatur. Excepteur sint
+                    occaecat cupidatat non proident, sunt in culpa qui officia
+                    deserunt mollit anim id est laborum.
+                </p-accordionTab>
+            </p-accordion>
+        </div>
+        <div class="card">
+            <h5>ARC Swift</h5>
+            <p-accordion [multiple]="true" [activeIndex]="[0]">
+                <p-accordionTab
+                    header="General"
+                    [selected]="true"
+                    class="line-height-3 m-0"
+                >
+                    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed
+                    do eiusmod tempor incididunt ut labore et dolore magna
+                    aliqua. Ut enim ad minim veniam, quis nostrud exercitation
+                    ullamco laboris nisi ut aliquip ex ea commodo consequat.
+                    Duis aute irure dolor in reprehenderit in voluptate velit
+                    esse cillum dolore eu fugiat nulla pariatur. Excepteur sint
+                    occaecat cupidatat non proident, sunt in culpa qui officia
+                    deserunt mollit anim id est laborum.
+                </p-accordionTab>
+            </p-accordion>
+        </div>
+        <div class="card">
+            <h5>Location RMS</h5>
+            <p-accordion [multiple]="true" [activeIndex]="[0]">
+                <p-accordionTab
+                    header="General"
+                    [selected]="true"
+                    class="line-height-3 m-0"
+                >
+                    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed
+                    do eiusmod tempor incididunt ut labore et dolore magna
+                    aliqua. Ut enim ad minim veniam, quis nostrud exercitation
+                    ullamco laboris nisi ut aliquip ex ea commodo consequat.
+                    Duis aute irure dolor in reprehenderit in voluptate velit
+                    esse cillum dolore eu fugiat nulla pariatur. Excepteur sint
+                    occaecat cupidatat non proident, sunt in culpa qui officia
+                    deserunt mollit anim id est laborum.
+                </p-accordionTab>
+            </p-accordion>
+        </div>
+    </div>
+</div>
