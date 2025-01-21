@@ -16,35 +16,35 @@ import { AuthGuard } from '../auth/auth.guard';
 export class LocationController {
   constructor(private readonly locationService: LocationService) {}
 
-  @Get('/all')
-  findAllData(
-    @Query('page', ParseIntPipe) page = 1,
-    @Query('perPage', ParseIntPipe) perPage = 10,
-  ) {
-    return this.locationService.locationAll(page, perPage);
-  }
+  // @Get('/all')
+  // findAllData(
+  //   @Query('page', ParseIntPipe) page = 1,
+  //   @Query('perPage', ParseIntPipe) perPage = 10,
+  // ) {
+  //   return this.locationService.locationAll(page, perPage);
+  // }
 
-  @Get('/all/count')
-  findAllDataCount() {
-    return this.locationService.locationAllCount();
-  }
+  // @Get('/all/count')
+  // findAllDataCount() {
+  //   return this.locationService.locationAllCount();
+  // }
 
-  @Post('/search')
-  async findKeywordGeneral(@Body('keyword') keyword: string) {
-    return await this.locationService.findKeywordGeneral(keyword);
-  }
+  // @Post('/search')
+  // async findKeywordGeneral(@Body('keyword') keyword: string) {
+  //   return await this.locationService.findKeywordGeneral(keyword);
+  // }
 
-  @Post('/new')
-  async createData(@Body() data: any): Promise<any> {
-    return await this.locationService.createData(data);
-  }
+  // @Post('/new')
+  // async createData(@Body() data: any): Promise<any> {
+  //   return await this.locationService.createData(data);
+  // }
 
-  @Post('/update')
-  async updateData(@Body() data: any): Promise<any> {
-    return await this.locationService.updateData(data);
-  }
-  @Delete('/remove')
-  async deleteData(@Body() data: any): Promise<any> {
-    return await this.locationService.deleteData(data);
-  }
+  // @Post('/update')
+  // async updateData(@Body() data: any): Promise<any> {
+  //   return await this.locationService.updateData(data);
+  // }
+  // @Delete('/remove')
+  // async deleteData(@Body() data: any): Promise<any> {
+  //   return await this.locationService.deleteData(data);
+  // }
 }

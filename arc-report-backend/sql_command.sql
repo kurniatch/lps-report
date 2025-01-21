@@ -30,6 +30,15 @@ SET
 WHERE 
     "id" = '153.0';
 
+UPDATE neraca_bank
+SET "kategori" = 'Asset'
+WHERE "id" IN ('39.0', '43.0', '49.0');
+
+
+SELECT kategori FROM neraca_bank
+WHERE "id" IN ('129.0', '133.0', '140.0', '143.0', '146.0', '149.0', '150.0', '153.0');
+
+
 --------------------
 UPDATE neraca_bank
 SET 
@@ -48,7 +57,7 @@ ORDER BY CAST("id" AS NUMERIC);
 
 
 -----------------------------------------------
-CREATE OR REPLACE FUNCTION fill_columns_based_on_pos()
+CREATE OR REPLACE FUNCTION fill_columns_based_on_id_laba()
 RETURNS TRIGGER AS $$
 DECLARE
     ref_buk VARCHAR(255);
@@ -57,43 +66,90 @@ DECLARE
     ref_kategori VARCHAR(50);
     ref_head VARCHAR(50);
 BEGIN
-    -- Mengambil nilai dari tabel referensi
-    SELECT buk, bus, uus, kategori, head
-    INTO ref_buk, ref_bus, ref_uus, ref_kategori, ref_head
-    FROM neraca_bank_ref
-    WHERE pos_laporan_keuangan = NEW.pos_laporan_keuangan;
+    -- Pastikan NEW.id tidak NULL sebelum mencoba mencocokkan
+    IF NEW.id IS NOT NULL THEN
+        -- Mengambil nilai dari tabel referensi berdasarkan id
+        SELECT buk, bus, uus, kategori, head
+        INTO ref_buk, ref_bus, ref_uus, ref_kategori, ref_head
+        FROM laba_rugi_ref
+        WHERE id = NEW.id::TEXT;
 
-    -- Mengisi kolom berdasarkan hasil query
-    IF ref_buk IS NOT NULL THEN
-        NEW.buk := ref_buk;
+        -- Mengisi kolom berdasarkan hasil query
+        IF ref_buk IS NOT NULL THEN
+            NEW.buk := ref_buk;
+        ELSE
+            NEW.buk := NULL;
+        END IF;
+
+        IF ref_bus IS NOT NULL THEN
+            NEW.bus := ref_bus;
+        ELSE
+            NEW.bus := NULL;
+        END IF;
+
+        IF ref_uus IS NOT NULL THEN
+            NEW.uus := ref_uus;
+        ELSE
+            NEW.uus := NULL;
+        END IF;
+
+        IF ref_kategori IS NOT NULL THEN
+            NEW.kategori := ref_kategori;
+        ELSE
+            NEW.kategori := NULL; -- Default kategori menjadi NULL
+        END IF;
+
+        IF ref_head IS NOT NULL THEN
+            NEW.head := ref_head;
+        ELSE
+            NEW.head := NULL;
+        END IF;
     ELSE
+        -- Jika NEW.id adalah NULL, set kolom ke NULL atau biarkan sesuai kebutuhan
         NEW.buk := NULL;
-    END IF;
-
-    IF ref_bus IS NOT NULL THEN
-        NEW.bus := ref_bus;
-    ELSE
         NEW.bus := NULL;
-    END IF;
-
-    IF ref_uus IS NOT NULL THEN
-        NEW.uus := ref_uus;
-    ELSE
         NEW.uus := NULL;
-    END IF;
-
-    IF ref_kategori IS NOT NULL THEN
-        NEW.kategori := ref_kategori;
-    ELSE
-        NEW.kategori := NULL; -- Mengubah default dari 'Asset' menjadi NULL
-    END IF;
-
-    IF ref_head IS NOT NULL THEN
-        NEW.head := ref_head;
-    ELSE
+        NEW.kategori := NULL;
         NEW.head := NULL;
     END IF;
 
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_fill_columns_laba
+BEFORE INSERT OR UPDATE ON laba_rugi
+FOR EACH ROW
+EXECUTE FUNCTION fill_columns_based_on_id_laba();
+
+
+UPDATE laba_rugi_ref
+SET buk = 'B, T'
+WHERE pos_laba_rugi = '05.12.00.00.00.00';
+
+UPDATE laba_rugi_ref
+SET head = 'Header'
+WHERE pos_laba_rugi IS NULL OR pos_laba_rugi = '';
+
+--------------------
+
+SELECT
+  TO_CHAR(TO_DATE(n.periode_data, 'YYYY-MM-DD'), 'YYYY-MM-DD') AS formatted_date,
+  COUNT(DISTINCT n.id) AS total_neraca,
+  COUNT(DISTINCT l.id) AS total_laba
+FROM
+  neraca_bank n
+FULL OUTER JOIN
+  laba_rugi l
+ON
+  n.id_pelapor = l.id_pelapor
+WHERE
+  (n.id_pelapor = '008001000' OR l.id_pelapor = '008001000')
+  AND (n.buk IS NOT NULL AND n.buk != '')
+  AND (l.buk IS NOT NULL AND l.buk != '')
+GROUP BY
+  TO_CHAR(TO_DATE(n.periode_data, 'YYYY-MM-DD'), 'YYYY-MM-DD')
+ORDER BY
+  formatted_date;
+
+
