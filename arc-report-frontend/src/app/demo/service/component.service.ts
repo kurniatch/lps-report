@@ -3,6 +3,12 @@ import { Injectable } from '@angular/core';
 import { Report, ReportStatus } from '../api/customer';
 import { environment } from 'src/environments/environment';
 
+export interface ServerStatus {
+    storageUsage: number;
+    cpuUsage: number;
+    memoryUsage: number;
+  }
+
 @Injectable()
 export class ComponentService {
     findSearch: any = [];
@@ -14,7 +20,6 @@ export class ComponentService {
     constructor(private http: HttpClient) {}
 
     getComponentsArcTotal() {
-        console.log('header : ', this.headers);
         const url = `${environment.backendUrl}/report/result-total`;
         return this.http
             .get<Report[]>(url, { headers: this.headers })
@@ -43,8 +48,23 @@ export class ComponentService {
             });
     }
 
-    getComponentsArcStatus() {
-        const url = `${environment.backendUrl}/report/total-status`;
+    getComponentsData(body: { keyword: string } | undefined) {
+        const url = `${environment.backendUrl}/report/result-individual`;
+        return this.http
+            .post<ReportStatus>(url, body, { headers: this.headers })
+            .toPromise()
+            .then((data) => {
+                if (data) {
+                    this.findSearch = data;
+                    return this.findSearch;
+                } else {
+                    throw new Error('Failed to fetch components data.');
+                }
+            });
+    }
+
+    getNeracaBank() {
+        const url = `${environment.backendUrl}/report/result-total`;
         return this.http
             .get<ReportStatus[]>(url, { headers: this.headers })
             .toPromise()
@@ -73,13 +93,47 @@ export class ComponentService {
         return this.http.get(url, { headers: this.headers }).toPromise();
     }
 
-    getComponentsArcStatusGeneral() {
-        const url = `${environment.backendUrl}/report/total-status-general`;
-        return this.http.get(url, { headers: this.headers }).toPromise();
+    getLabaRugiTotal() {
+        const url = `${environment.backendUrl}/report/result-total-laba`;
+        return this.http
+            .get<ReportStatus[]>(url, { headers: this.headers })
+            .toPromise()
+            .then((data) => {
+                if (data) {
+                    return data;
+                } else {
+                    throw new Error('Failed to fetch status data.');
+                }
+            });
+    }
+
+    getMissingData() {
+        const url = `${environment.backendUrl}/report/total-missing`;
+        return this.http
+            .get<ReportStatus[]>(url, { headers: this.headers })
+            .toPromise()
+            .then((data) => {
+                if (data) {
+                    return data;
+                } else {
+                    throw new Error('Failed to fetch status data.');
+                }
+            });
     }
 
     getOperatorData() {
         const url = `${environment.backendUrl}/report/operator`;
         return this.http.get(url, { headers: this.headers }).toPromise();
     }
+
+    getBankData() {
+        const url = `${environment.backendUrl}/report/bank`;
+        return this.http.get(url, { headers: this.headers }).toPromise();
+    }
+
+    getServerStatus() {
+        const url = `${environment.backendUrl}/report/server-status`;
+        return this.http.get<ServerStatus>(url, { headers: this.headers });
+    }
+
 }

@@ -26,35 +26,42 @@ export class AppMenuComponent implements OnInit {
                     {
                         label: 'Financial Modelling',
                         icon: 'pi pi-fw pi-chart-bar',
-                        routerLink: ['/pages/charts'],
+                        routerLink: ['/pages/financial'],
                     },
-                    {
-                        label: 'Analyst LCT',
-                        icon: 'pi pi-fw pi-money-bill',
-                        routerLink: ['/pages/crud'],
-                    },
+                    // {
+                    //     label: 'Analyst LCT',
+                    //     icon: 'pi pi-fw pi-money-bill',
+                    //     routerLink: ['/pages/crud'],
+                    // },
                 ],
             },
+                    {
+                        label: 'Analyst LCT',
+                        items: [
+                            {
+                                label: 'Least Cost Test',
+                                icon: 'pi pi-fw pi-money-bill',
+                                routerLink: ['/pages/lct'],
+                            },
+                            {
+                                label: 'Laporan Neraca',
+                                icon: 'pi pi-fw pi-book',
+                                routerLink: ['/pages/neraca'],
+                            },
+                            {
+                                label: 'Laporan Laba Rugi',
+                                icon: 'pi pi-fw pi-bookmark',
+                                routerLink: ['/pages/laba-rugi'],
+                            },
+                        ]
+                        
+                    },
+            
             ...(isAdmin
                 ? [
                       {
                           label: 'Database',
                           items: [
-                              {
-                                  label: 'Database LCT',
-                                  icon: 'pi pi-fw pi-book',
-                                  routerLink: ['/pages/old-component'],
-                              },
-                              {
-                                  label: 'Database X',
-                                  icon: 'pi pi-fw pi-bookmark',
-                                  routerLink: ['/pages/arc-swift'],
-                              },
-                              {
-                                  label: 'Database XX',
-                                  icon: 'pi pi-fw pi-database',
-                                  routerLink: ['/pages/docfile-rms'],
-                              },
                               {
                                   label: 'Database XXX',
                                   icon: 'pi pi-fw pi-flag',

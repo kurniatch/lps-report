@@ -1,8 +1,8 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { SwiftRoutingModule } from './swift-routing.module';
-import { SwiftComponent } from './swift.component';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { LabaRoutingModule } from './laba-routing.module';
+import { LabaComponent } from './laba.component';
 import { TableModule } from 'primeng/table';
 import { FileUploadModule } from 'primeng/fileupload';
 import { ButtonModule } from 'primeng/button';
@@ -27,11 +27,16 @@ import { SliderModule } from 'primeng/slider';
 import { ToggleButtonModule } from 'primeng/togglebutton';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { ProgressBarModule } from 'primeng/progressbar';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
+import { registerLocaleData } from '@angular/common';
+import localeId from '@angular/common/locales/id';
+
+registerLocaleData(localeId);
 
 @NgModule({
     imports: [
         CommonModule,
-        SwiftRoutingModule,
+        LabaRoutingModule,
         TableModule,
         FileUploadModule,
         FormsModule,
@@ -66,7 +71,9 @@ import { ProgressBarModule } from 'primeng/progressbar';
         DropdownModule,
         ProgressBarModule,
         ToastModule,
+        ProgressSpinnerModule,
+        ReactiveFormsModule,
     ],
-    declarations: [SwiftComponent],
+    declarations: [LabaComponent],
 })
-export class SwiftModule {}
+export class LabaModule {}

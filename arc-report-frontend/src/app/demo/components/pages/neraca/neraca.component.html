@@ -1,0 +1,418 @@
+<div class="grid">
+    <div class="col-12">
+        <p-toast></p-toast>
+        <div class="card">
+            <div class="flex items-center justify-between mb-4">
+                <h5>Laporan Keuangan Bank
+                    <p-dropdown [options]="dataBank" optionLabel="label" optionValue="value" class="w-60 ml-4"
+                        [filter]="true" [(ngModel)]="selectedSearch"
+                        (onChange)="onGlobalChange($event); selectedData(selectedSearch)"
+                        (keydown.enter)="findData(findSearch)" placeholder="Select Bank" [showClear]="true"
+                        (onClear)="clear2(dt1)">
+                    </p-dropdown>
+
+                    <p-dropdown [options]="dataBankPeriode" optionLabel="periode" optionValue="periode"
+                        class="w-60 ml-4" [filter]="true" [(ngModel)]="selectedPeriode" placeholder="Select Periode"
+                        [showClear]="true" (onChange)="dt1.filter($event.value, 'periode_data', 'equals') "
+                        (onClear)="clear(dt1)">
+                    </p-dropdown>
+                </h5>
+                <div class="flex items-center space-x-4">
+
+                    <button pButton pRipple icon="pi pi-plus" class="p-button-success" [disabled]="!isAdmin"
+                        (click)="openNew()" aria-label="Tambah">
+                    </button>
+
+                    <button pButton pRipple label="Import" icon="pi pi-upload" class="p-button-warning"
+                        (click)="showImportDialog()">
+                    </button>
+
+                    <button pButton pRipple label="Export" icon="pi pi-download" class="p-button-help"
+                        (click)="openExport()">
+                    </button>
+                </div>
+            </div>
+            <p-table #dt1 [columns]="components1" [value]="components1" [lazy]="true" (onLazyLoad)="onLazyLoad($event)"
+                [loading]="loading" [paginator]="!(findSearch || selectedSearch)" [rows]="30"
+                [totalRecords]="totalRecords" dataKey="id" [rowHover]="true"
+                styleClass="p-datatable-gridlines p-datatable-sm no-padding-table" responsiveLayout="scroll"
+                rowGroupMode="subheader" groupRowsBy="kategori" [scrollable]="true"
+                [tableStyle]="{'min-width': '60rem'}" scrollHeight="700px">
+                <ng-template pTemplate=" caption">
+
+                    <div class="flex justify-content-between flex-column sm:flex-row">
+                        <button pButton label="Clear" class="p-button-outlined mb-2" icon="pi pi-filter-slash"
+                            (click)="clear(dt1)"></button>
+                        <span class="p-input-icon-left mb-2">
+                        </span>
+                    </div>
+                </ng-template>
+                <ng-template pTemplate="header" style="padding: 0;">
+                    <tr class="p-0">
+                        <th *ngIf="!selectedBank">
+                            <div class="flex justify-content-between align-items-center">
+                                Kode Bank
+                                <p-sortIcon field="serial_number"></p-sortIcon>
+                            </div>
+                        </th>
+                        <th style="min-width: 8rem">
+                            <div class="flex justify-content-between align-items-center">
+                                Pos - Pos
+                                <p-sortIcon field="serial_number"></p-sortIcon>
+                            </div>
+                        </th>
+                        <th style="min-width: 12rem">
+                            <div class="flex justify-content-between align-items-center">
+                                Nominal Rupiah
+                                <p-sortIcon field="material_description"></p-sortIcon>
+                            </div>
+                        </th>
+                        <th style="min-width: 12rem">
+                            <div class="flex justify-content-between align-items-center">
+                                Nominal Valas
+                                <p-sortIcon field="material_description"></p-sortIcon>
+                            </div>
+                        </th>
+                        <th style="min-width: 12rem">
+                            <div class="flex justify-content-between align-items-center">
+                                Nominal Total
+                                <p-sortIcon field="material_description"></p-sortIcon>
+                            </div>
+                        </th>
+                        <th style="min-width: 12rem">
+                            <div class="flex justify-content-between align-items-center">
+                                Actions
+                            </div>
+                        </th>
+                    </tr>
+                </ng-template>
+                <ng-template pTemplate="groupheader" let-component>
+                    <ng-container *ngIf="component?.kategori">
+                        <tr pRowGroupHeader>
+                            <td colspan="14">
+                                <span class="font-bold ml-2">{{ component.kategori }}</span>
+                            </td>
+                        </tr>
+                    </ng-container>
+                </ng-template>
+                <ng-template pTemplate="body" let-component>
+                    <tr [ngStyle]="{height: '10px'}">
+                        <td *ngIf="!selectedBank">
+                            {{component?.id_pelapor_prefix}}
+                        </td>
+                        <td [ngClass]="{
+                          'pl-4': component?.deskripsi_pos_laporan_keuangan?.startsWith('a.', 'b.', 'c.') || component?.deskripsi_pos_laporan_keuangan?.startsWith('b.') || component?.deskripsi_pos_laporan_keuangan?.startsWith('c.') || component?.deskripsi_pos_laporan_keuangan?.startsWith('d.') || component?.deskripsi_pos_laporan_keuangan?.startsWith('e.') || component?.deskripsi_pos_laporan_keuangan?.startsWith('f.') || component?.deskripsi_pos_laporan_keuangan?.startsWith('g.'),
+                          'pl-6': component?.deskripsi_pos_laporan_keuangan?.startsWith('i.') || component?.deskripsi_pos_laporan_keuangan?.startsWith('ii.') || component?.deskripsi_pos_laporan_keuangan?.startsWith('iii.') || component?.deskripsi_pos_laporan_keuangan?.startsWith('iv.'),         'font-bold': component?.deskripsi_pos_laporan_keuangan?.toLowerCase().includes('total')
+                        }">
+                            {{ component?.deskripsi_pos_laporan_keuangan }}
+                        </td>
+                        <td class="text-right">
+                            {{component?.total_nominal_rupiah | number:'1.0-0':'id'}}
+                        </td>
+                        <td class="text-right">
+                            {{component?.total_nominal_valas | number:'1.0-0':'id'}}
+                        </td>
+                        <td class="text-right">
+                            {{ component?.total_nominal_total | number:'1.0-0':'id' }}
+                        </td>
+
+                        <td class="text-center">
+                            <button pButton pRipple icon="pi pi-pencil" class="p-button-rounded p-button-success mr-2"
+                                style="font-size: 12px; width: 24px; height: 24px;" (click)="onEditProduct(component)">
+                            </button>
+                            <button pButton pRipple icon="pi pi-trash" class="p-button-rounded p-button-warning"
+                                style="font-size: 12px; width: 24px; height: 24px;"
+                                (click)="onDeleteProduct(component)">
+                            </button>
+                        </td>
+
+                    </tr>
+                </ng-template>
+                <ng-template pTemplate="emptymessage">
+                    <tr>
+                        <td colspan="8">No components found.</td>
+                    </tr>
+                </ng-template>
+                <ng-template pTemplate="loadingbody">
+                    <tr>
+                        <td colspan="8">
+                            Loading components data. Please wait.
+                        </td>
+                    </tr>
+                </ng-template>
+            </p-table>
+        </div>
+        <p-toast></p-toast>
+    </div>
+
+
+
+    <p-toast></p-toast>
+</div>
+
+
+<p-dialog [(visible)]="recordDialog" [style]="{ width: '850px' }" header="New Records" [modal]="true"
+    styleClass="p-fluid" class="grid grid-cols-2 gap-4">
+    <h5>Laporan Neraca Pos</h5>
+    <div class="p-fluid p-formgrid grid">
+        <div class="field col-12 md:col-6">
+            <label htmlFor="id_pelapor" class="text-xl">ID Pelapor</label>
+            <input pInputText id="id_pelapor" type="text" [(ngModel)]="data.neraca_bank.id_pelapor" />
+        </div>
+        <div class="field col-12 md:col-6">
+            <label htmlFor="periode_laporan" class="text-xl">Periode Laporan</label>
+            <input pInputText id="periode_laporan" type="text" [(ngModel)]="data.neraca_bank.periode_laporan" />
+        </div>
+        <div class="field col-12 md:col-6">
+            <label htmlFor="periode_data" class="text-xl">Periode Data</label>
+            <input pInputText id="periode_data" type="text" [(ngModel)]="data.neraca_bank.periode_data" />
+        </div>
+        <div class="field col-12 md:col-6">
+            <label htmlFor="id" class="text-xl">ID</label>
+            <input pInputText id="id" type="text" [(ngModel)]="data.neraca_bank.id" />
+        </div>
+        <div class="field col-12">
+            <label htmlFor="pos_laporan" class="text-xl">Pos Laporan Posisi Keuangan</label>
+            <input pInputText id="pos_laporan" type="text" [(ngModel)]="data.neraca_bank.pos_laporan_keuangan" />
+        </div>
+        <div class="field col-12">
+            <label htmlFor="deskripsi_pos" class="text-xl">Deskripsi Pos Laporan Posisi Keuangan</label>
+            <input pInputTextarea id="deskripsi_pos" rows="4"
+                [(ngModel)]="data.neraca_bank.deskripsi_pos_laporan_keuangan" />
+        </div>
+        <div class="field col-12 md:col-6">
+            <label htmlFor="cakupan_data" class="text-xl">Cakupan Data</label>
+            <input pInputText id="cakupan_data" type="text" [(ngModel)]="data.neraca_bank.cakupan_data" />
+        </div>
+        <div class="field col-12 md:col-6">
+            <label htmlFor="deskripsi_cakupan" class="text-xl">Deskripsi Cakupan Data</label>
+            <input pInputText id="deskripsi_cakupan" type="text"
+                [(ngModel)]="data.neraca_bank.deskripsi_cakupan_data" />
+        </div>
+        <div class="field col-12 md:col-6">
+            <label htmlFor="nominal_rupiah" class="text-xl">Nominal Rupiah</label>
+            <input pInputText id="nominal_rupiah" type="number" [(ngModel)]="data.neraca_bank.nominal_rupiah" />
+        </div>
+        <div class="field col-12 md:col-6">
+            <label htmlFor="nominal_valas" class="text-xl">Nominal Valas</label>
+            <input pInputText id="nominal_valas" type="number" [(ngModel)]="data.neraca_bank.nominal_valas" />
+        </div>
+        <div class="field col-12 md:col-6">
+            <label htmlFor="nominal_valas_usd" class="text-xl">Nominal Valas USD</label>
+            <input pInputText id="nominal_valas_usd" type="number" [(ngModel)]="data.neraca_bank.nominal_valas_usd" />
+        </div>
+        <div class="field col-12 md:col-6">
+            <label htmlFor="nominal_valas_non_usd" class="text-xl">Nominal Valas Non USD</label>
+            <input pInputText id="nominal_valas_non_usd" type="number"
+                [(ngModel)]="data.neraca_bank.nominal_valas_non_usd" />
+        </div>
+        <div class="field col-12">
+            <label htmlFor="nominal_total" class="text-xl">Nominal Total</label>
+            <input pInputText id="nominal_total" type="number" [(ngModel)]="data.neraca_bank.nominal_total" />
+        </div>
+        <div class="field col-12 md:col-6">
+            <label htmlFor="nominal_perusahaan_induk_rupiah" class="text-xl">Nominal Perusahaan Induk Rupiah</label>
+            <input pInputText id="nominal_perusahaan_induk_rupiah" type="number"
+                [(ngModel)]="data.neraca_bank.nominal_perusahaan_induk_rupiah" />
+        </div>
+        <div class="field col-12 md:col-6">
+            <label htmlFor="nominal_perusahaan_induk_valas" class="text-xl">Nominal Perusahaan Induk Valas</label>
+            <input pInputText id="nominal_perusahaan_induk_valas" type="number"
+                [(ngModel)]="data.neraca_bank.nominal_perusahaan_induk_valas" />
+        </div>
+        <div class="field col-12">
+            <label htmlFor="nominal_perusahaan_induk_total" class="text-xl">Nominal Perusahaan Induk Total</label>
+            <input pInputText id="nominal_perusahaan_induk_total" type="number"
+                [(ngModel)]="data.neraca_bank.nominal_perusahaan_induk_total" />
+        </div>
+        <div class="field col-12">
+            <label htmlFor="nominal_konsolidasi_total" class="text-xl">Nominal Konsolidasi Total</label>
+            <input pInputText id="nominal_konsolidasi_total" type="number"
+                [(ngModel)]="data.neraca_bank.nominal_konsolidasi_total" />
+        </div>
+        <div class="field col-12">
+            <label htmlFor="kategori" class="text-xl">Kategori</label>
+            <input pInputText id="kategori" type="text" [(ngModel)]="data.neraca_bank.kategori" />
+        </div>
+        <div class="field col-12">
+            <label htmlFor="buk" class="text-xl">BUK</label>
+            <input pInputText id="buk" type="text" [(ngModel)]="data.neraca_bank.buk" />
+        </div>
+    </div>
+
+    <div class="p-dialog-footer">
+        <button type="button" pButton label="Save" (click)="addData(data, 'false')"
+            class="p-button-success mr-4 text-xl"></button>
+        <button type="button" pButton label="Cancel" (click)="cancelDialog()" class="p-button-danger text-xl"></button>
+    </div>
+</p-dialog>
+
+<p-dialog [(visible)]="editRecordDialog" [style]="{ width: '850px' }" header="Edit Records" [modal]="true"
+    styleClass="p-fluid">
+    <h5>Laporan Neraca Pos</h5>
+    <div class="p-fluid p-formgrid grid">
+        <div class="field col-12 md:col-6">
+            <label htmlFor="id_pelapor" class="text-xl">ID Pelapor</label>
+            <input pInputText id="id_pelapor" type="text" [(ngModel)]="editData.id_pelapor" />
+        </div>
+        <div class="field col-12 md:col-6">
+            <label htmlFor="periode_laporan" class="text-xl">Periode Laporan</label>
+            <input pInputText id="periode_laporan" type="text" [(ngModel)]="editData.periode_laporan" />
+        </div>
+        <div class="field col-12 md:col-6">
+            <label htmlFor="periode_data" class="text-xl">Periode Data</label>
+            <input pInputText id="periode_data" type="text" [(ngModel)]="editData.periode_data" />
+        </div>
+        <div class="field col-12 md:col-6">
+            <label htmlFor="id" class="text-xl">ID</label>
+            <input pInputText id="id" type="text" [(ngModel)]="editData.id" />
+        </div>
+        <div class="field col-12">
+            <label htmlFor="pos_laporan" class="text-xl">Pos Laporan Posisi Keuangan</label>
+            <input pInputText id="pos_laporan" type="text" [(ngModel)]="editData.pos_laporan_keuangan" />
+        </div>
+        <div class="field col-12">
+            <label htmlFor="deskripsi_pos" class="text-xl">Deskripsi Pos Laporan Posisi Keuangan</label>
+            <input pInputTextarea id="deskripsi_pos" rows="4" [(ngModel)]="editData.deskripsi_pos_laporan_keuangan" />
+        </div>
+        <div class="field col-12 md:col-6">
+            <label htmlFor="cakupan_data" class="text-xl">Cakupan Data</label>
+            <input pInputText id="cakupan_data" type="text" [(ngModel)]="editData.cakupan_data" />
+        </div>
+        <div class="field col-12 md:col-6">
+            <label htmlFor="deskripsi_cakupan" class="text-xl">Deskripsi Cakupan Data</label>
+            <input pInputText id="deskripsi_cakupan" type="text" [(ngModel)]="editData.deskripsi_cakupan_data" />
+        </div>
+        <div class="field col-12 md:col-6">
+            <label htmlFor="nominal_rupiah" class="text-xl">Nominal Rupiah</label>
+            <input pInputText id="nominal_rupiah" type="number" [(ngModel)]="editData.nominal_rupiah" />
+        </div>
+        <div class="field col-12 md:col-6">
+            <label htmlFor="nominal_valas" class="text-xl">Nominal Valas</label>
+            <input pInputText id="nominal_valas" type="number" [(ngModel)]="editData.nominal_valas" />
+        </div>
+        <div class="field col-12 md:col-6">
+            <label htmlFor="nominal_valas_usd" class="text-xl">Nominal Valas USD</label>
+            <input pInputText id="nominal_valas_usd" type="number" [(ngModel)]="editData.nominal_valas_usd" />
+        </div>
+        <div class="field col-12 md:col-6">
+            <label htmlFor="nominal_valas_non_usd" class="text-xl">Nominal Valas Non USD</label>
+            <input pInputText id="nominal_valas_non_usd" type="number" [(ngModel)]="editData.nominal_valas_non_usd" />
+        </div>
+        <div class="field col-12">
+            <label htmlFor="nominal_total" class="text-xl">Nominal Total</label>
+            <input pInputText id="nominal_total" type="number" [(ngModel)]="editData.nominal_total" />
+        </div>
+        <div class="field col-12 md:col-6">
+            <label htmlFor="nominal_perusahaan_induk_rupiah" class="text-xl">Nominal Perusahaan Induk Rupiah</label>
+            <input pInputText id="nominal_perusahaan_induk_rupiah" type="number"
+                [(ngModel)]="editData.nominal_perusahaan_induk_rupiah" />
+        </div>
+        <div class="field col-12 md:col-6">
+            <label htmlFor="nominal_perusahaan_induk_valas" class="text-xl">Nominal Perusahaan Induk Valas</label>
+            <input pInputText id="nominal_perusahaan_induk_valas" type="number"
+                [(ngModel)]="editData.nominal_perusahaan_induk_valas" />
+        </div>
+        <div class="field col-12">
+            <label htmlFor="nominal_perusahaan_induk_total" class="text-xl">Nominal Perusahaan Induk Total</label>
+            <input pInputText id="nominal_perusahaan_induk_total" type="number"
+                [(ngModel)]="editData.nominal_perusahaan_induk_total" />
+        </div>
+        <div class="field col-12">
+            <label htmlFor="nominal_konsolidasi_total" class="text-xl">Nominal Konsolidasi Total</label>
+            <input pInputText id="nominal_konsolidasi_total" type="number"
+                [(ngModel)]="editData.nominal_konsolidasi_total" />
+        </div>
+        <div class="field col-12">
+            <label htmlFor="kategori" class="text-xl">Kategori</label>
+            <input pInputText id="kategori" type="text" [(ngModel)]="editData.kategori" />
+        </div>
+        <div class="field col-12">
+            <label htmlFor="buk" class="text-xl">BUK</label>
+            <input pInputText id="buk" type="text" [(ngModel)]="editData.buk" />
+        </div>
+    </div>
+
+    <div class="p-dialog-footer">
+        <button type="button" pButton label="Save" (click)="addData(data, 'true')"
+            class="p-button-success mr-4 text-xl"></button>
+        <button type="button" pButton label="Cancel" (click)="cancelDialog()" class="p-button-danger text-xl"></button>
+    </div>
+</p-dialog>
+
+<p-dialog [(visible)]="exportDialog" [style]="{ width: '400px', height: '250px' }" header="Pilihan Export File"
+    [modal]="true" styleClass="p-fluid">
+    <div class="p-field">
+        <label for="exportFormat" class="mb-2">Pilih Format Export:</label>
+        <div class="mt-2">
+            <p-dropdown id="exportFormat" [(ngModel)]="selectedExportFormat" [options]="exportFormats"
+                class="mt-2"></p-dropdown>
+        </div>
+    </div>
+    <div class="p-dialog-footer mt-4">
+        <button pButton type="button" label="Export" (click)="exportData('neraca')"
+            class="p-button-success mr-2 text-align-center"></button>
+        <button pButton type="button" label="Cancel" (click)="cancelDialog()"
+            class="ml-2 p-button-danger text-align-center"></button>
+    </div>
+</p-dialog>
+
+<p-dialog [(visible)]="exportDialog2" [style]="{ width: '400px', height: '250px' }" header="Pilihan Export File"
+    [modal]="true" styleClass="p-fluid">
+    <div class="p-field">
+        <label for="exportFormat" class="mb-2">Pilih Format Export:</label>
+        <div class="mt-2">
+            <p-dropdown id="exportFormat" [(ngModel)]="selectedExportFormat" [options]="exportFormats"
+                class="mt-2"></p-dropdown>
+        </div>
+    </div>
+    <div class="p-dialog-footer mt-4">
+        <button pButton type="button" label="Export" (click)="exportData('laba')"
+            class="p-button-success mr-2 text-align-center"></button>
+        <button pButton type="button" label="Cancel" (click)="cancelDialog()"
+            class="ml-2 p-button-danger text-align-center"></button>
+    </div>
+</p-dialog>
+
+<p-dialog header="Import Data Neraca Bank" [(visible)]="importDialog" [modal]="true" [closable]="true"
+    [responsive]="true" [style]="{width: '800px', marginBottom: '8px'}">
+    <p-fileUpload name="file" accept=".csv" [maxFileSize]="50000000" (onSelect)="onFileSelect($event)"
+        (onClear)="onClearFile()" [showUploadButton]="false" cancelStyleClass="bg-red-500"
+        removeStyleClass="bg-red-500">
+    </p-fileUpload>
+
+    <div *ngIf="csvData && csvData.length" class="mt-4">
+        <h3>Preview CSV</h3>
+        <p-table [value]="csvData | slice:0:5">
+            <ng-template pTemplate="header">
+                <tr>
+                    <th *ngFor="let header of csvHeaders">{{ header }}</th>
+                </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-row>
+                <tr>
+                    <td *ngFor="let header of csvHeaders">{{ row[header] }}</td>
+                </tr>
+            </ng-template>
+        </p-table>
+    </div>
+
+    <div class="flex justify-end mt-4">
+        <button pButton label="Cancel" icon="pi pi-times" class="p-button-secondary mr-2" (click)="cancelUpload()">
+        </button>
+        <button pButton label="Upload" icon="pi pi-upload" class="p-button-primary" [disabled]="!selectedFile"
+            (click)="uploadFile()">
+        </button>
+    </div>
+</p-dialog>
+<p-confirmDialog [style]="{ width: '450px' }" rejectButtonStyleClass="p-button-danger"
+    acceptButtonStyleClass="p-button-success"></p-confirmDialog>
+
+<style>
+    ::ng-deep .no-padding-table .p-datatable-thead>tr>th,
+    ::ng-deep .no-padding-table .p-datatable-tbody>tr>td {
+        padding-top: 0 !important;
+        padding-bottom: 0 !important;
+        /* Hilangkan padding */
+    }
+</style>

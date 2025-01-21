@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { environment } from 'src/environments/environment';
 
 @Injectable()
-export class SwiftService {
+export class LabaService {
     findSearch: any = [];
     headers = new HttpHeaders({
         'Content-Type': 'application/json',

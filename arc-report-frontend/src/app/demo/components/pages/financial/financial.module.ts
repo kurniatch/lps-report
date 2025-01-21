@@ -1,8 +1,8 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { DocfileRoutingModule } from './docfile-routing.module';
-import { DocfileComponent } from './docfile.component';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { FinancialRoutingModule} from './financial-routing.module';
+import { FinancialComponent } from './financial.component';
 import { TableModule } from 'primeng/table';
 import { FileUploadModule } from 'primeng/fileupload';
 import { ButtonModule } from 'primeng/button';
@@ -27,11 +27,16 @@ import { SliderModule } from 'primeng/slider';
 import { ToggleButtonModule } from 'primeng/togglebutton';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { ProgressBarModule } from 'primeng/progressbar';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
+import { registerLocaleData } from '@angular/common';
+import localeId from '@angular/common/locales/id';
+
+registerLocaleData(localeId);
 
 @NgModule({
     imports: [
         CommonModule,
-        DocfileRoutingModule,
+        FinancialRoutingModule,
         TableModule,
         FileUploadModule,
         FormsModule,
@@ -66,7 +71,9 @@ import { ProgressBarModule } from 'primeng/progressbar';
         DropdownModule,
         ProgressBarModule,
         ToastModule,
+        ProgressSpinnerModule,
+        ReactiveFormsModule,
     ],
-    declarations: [DocfileComponent],
+    declarations: [FinancialComponent],
 })
-export class DocfileModule {}
+export class FinancialModule {}

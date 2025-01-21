@@ -20,10 +20,11 @@ export interface Customer {
 }
 
 export interface ReportStatus {
+    total: number;
     formatted_month?: string;
-    total_available?: string;
-    total_unavailable?: string;
-    total_documents?: string;
+    total_neraca?: string;
+    total_laba?: string;
+    total_laporan?: string;
 }
 
 export interface Report {
@@ -73,6 +74,10 @@ export interface Data {
     uus?: string;
     kategori?: string;
     uuid?: string;
+    id_pelapor_prefix?: string;
+    total_nominal_rupiah?: number;
+    total_nominal_valas?: number;
+    total_nominal_total?: number;
 }
 
 export interface docfile_data {

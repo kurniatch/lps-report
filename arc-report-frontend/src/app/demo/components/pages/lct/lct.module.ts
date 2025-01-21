@@ -1,8 +1,8 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { CrudRoutingModule } from './crud-routing.module';
-import { CrudComponent } from './crud.component';
+import { FormsModule } from '@angular/forms';
+import { LctRoutingModule } from './lct-routing.module';
+import { LctComponent } from './lct.component';
 import { TableModule } from 'primeng/table';
 import { FileUploadModule } from 'primeng/fileupload';
 import { ButtonModule } from 'primeng/button';
@@ -27,16 +27,11 @@ import { SliderModule } from 'primeng/slider';
 import { ToggleButtonModule } from 'primeng/togglebutton';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { ProgressBarModule } from 'primeng/progressbar';
-import { ProgressSpinnerModule } from 'primeng/progressspinner';
-import { registerLocaleData } from '@angular/common';
-import localeId from '@angular/common/locales/id';
-
-registerLocaleData(localeId);
 
 @NgModule({
     imports: [
         CommonModule,
-        CrudRoutingModule,
+        LctRoutingModule,
         TableModule,
         FileUploadModule,
         FormsModule,
@@ -71,9 +66,7 @@ registerLocaleData(localeId);
         DropdownModule,
         ProgressBarModule,
         ToastModule,
-        ProgressSpinnerModule,
-        ReactiveFormsModule,
     ],
-    declarations: [CrudComponent],
+    declarations: [LctComponent],
 })
-export class CrudModule {}
+export class LctModule {}

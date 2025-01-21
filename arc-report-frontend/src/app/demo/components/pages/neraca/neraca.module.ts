@@ -1,8 +1,8 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { OlderRoutingModule } from './older-routing.module';
-import { OlderComponent } from './older.component';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { NeracaRoutingModule } from './neraca-routing.module';
+import { NeracaComponent } from './neraca.component';
 import { TableModule } from 'primeng/table';
 import { FileUploadModule } from 'primeng/fileupload';
 import { ButtonModule } from 'primeng/button';
@@ -28,12 +28,15 @@ import { ToggleButtonModule } from 'primeng/togglebutton';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { ProgressBarModule } from 'primeng/progressbar';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
-import { PanelModule } from 'primeng/panel';
+import { registerLocaleData } from '@angular/common';
+import localeId from '@angular/common/locales/id';
+
+registerLocaleData(localeId);
 
 @NgModule({
     imports: [
         CommonModule,
-        OlderRoutingModule,
+        NeracaRoutingModule,
         TableModule,
         FileUploadModule,
         FormsModule,
@@ -69,8 +72,8 @@ import { PanelModule } from 'primeng/panel';
         ProgressBarModule,
         ToastModule,
         ProgressSpinnerModule,
-        PanelModule,
+        ReactiveFormsModule,
     ],
-    declarations: [OlderComponent],
+    declarations: [NeracaComponent],
 })
-export class OlderModule {}
+export class NeracaModule {}

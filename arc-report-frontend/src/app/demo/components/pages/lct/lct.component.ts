@@ -6,52 +6,93 @@ import { LayoutService } from 'src/app/layout/service/app.layout.service';
 import { ViewChild, ElementRef } from '@angular/core';
 import { Representative, Data } from 'src/app/demo/api/customer';
 import { LocationService } from 'src/app/demo/service/location.service';
+import { CrudService } from 'src/app/demo/service/crud.service';
 import { Table } from 'primeng/table';
 import { MessageService, ConfirmationService } from 'primeng/api';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
-import { formatDate } from '@angular/common';
 
 interface expandedRows {
     [key: string]: boolean;
 }
+type ReportDataType = {
+    id_pelapor_prefix: string;
+    deskripsi: string;
+    id: string;
+    nominal_rupiah: number;
+    nominal_valas: number;
+    nominal_total: number;
+    total_nominal_rupiah: number;
+    total_nominal_valas: number;
+    total_nominal_total: number;
+  };
+
+  type DropdownOption = {
+    label: string; // Teks yang akan ditampilkan di dropdown
+    value: string; // Nilai yang akan dipilih dari dropdown
+  };
 
 @Component({
-    templateUrl: './location.component.html',
+    templateUrl: './lct.component.html',
     providers: [MessageService, ConfirmationService],
 })
-export class LocationComponent implements OnInit, OnDestroy {
+export class LctComponent implements OnInit, OnDestroy {
     editData: any = [];
 
-    data = {
-        location: {
-            doc_box: '',
-            doc_locations: '',
-        },
-    };
+    reportDataLct: DropdownOption[] = []; // Perubahan tipe data untuk dropdown
+    
+    [key: string]: any;
+
+    dataReportLct: any ;
+      
+
+    dataTable = [
+        { id: 1, deskripsi_pos: 'P1001', nominal_rupiah: 1000000, nominal_valas: 500000, hasil: 'Setuju' },
+        { id: 2, deskripsi_pos: 'P1002', nominal_rupiah: 2000000, nominal_valas: 1000000, hasil: 'Tinjau Ulang' },
+        { id: 3, deskripsi_pos: 'P1003', nominal_rupiah: 1500000, nominal_valas: 750000, hasil: 'Setuju' },
+        { id: 4, deskripsi_pos: 'P1004', nominal_rupiah: 500000, nominal_valas: 250000, hasil: 'Tolak' },
+        { id: 5, deskripsi_pos: 'P1005', nominal_rupiah: 2500000, nominal_valas: 1250000, hasil: 'Setuju' }
+      ];
+      
+    variabel1: number = 1; // Nilai default untuk Variabel 1
+    variabel2: number = 1; // Nilai default untuk Variabel 2
+    variabel3: number = 1; // Nilai default untuk Variabel 3
+    variabel4: number = 1; // Nilai default untuk Variabel 4
+
     totalRecords: number = 100;
 
     findSearch: string = '';
 
+    selectedSearch: string = '';
+
+    selectedTable: string = '';
+
+    selectedBase: string = '';
+
+    selectedPos: string = '';
+
+    database = [
+        { label: 'Neraca Bank', value: 'neraca_bank' },
+        { label: 'Laba Rugi', value: 'laba_rugi' },
+      ];
+
     loading: boolean = true;
 
-    currentPage: number = 1;
-
-    perPage: number = 10;
-
-    totalData: number = 100;
-
-    pages: number = 0;
-
     items!: MenuItem[];
+
+    modifiedDataTable: any[] = [];
+
+    dataBank: any = [];
 
     recordDialog: boolean = false;
 
     editRecordDialog: boolean = false;
 
     exportDialog: boolean = false;
+
+    selectedDataPop: ReportDataType | null = null;
 
     products!: Product[];
 
@@ -63,43 +104,44 @@ export class LocationComponent implements OnInit, OnDestroy {
 
     components1: any[] = [];
 
-    representatives: Representative[] = [];
-
-    statuses: any[] = [];
-
     expandedRows: expandedRows = {};
 
     activityValues: number[] = [0, 100];
 
     isExpanded: boolean = false;
 
-    idFrozen: boolean = false;
-
     submitted: boolean = false;
 
     selectedProducts!: Product[] | null;
+
+    dataPopLct: ReportDataType[] = [];
 
     @ViewChild('filter') filter!: ElementRef;
 
     constructor(
         public layoutService: LayoutService,
         private locationService: LocationService,
+        private crudService: CrudService,
         private confirmationService: ConfirmationService,
-        private messageService: MessageService
+        private messageService: MessageService,
     ) {
-        this.currentPage = 1;
     }
 
     ngOnInit() {
-        this.loadDataTotal();
 
-        this.loadData(1, 20);
+        this.updateTableValues();
+
+        this.getBankData();
 
         this.items = [
             { label: 'Add New', icon: 'pi pi-fw pi-plus' },
             { label: 'Remove', icon: 'pi pi-fw pi-minus' },
         ];
     }
+
+    onEdit(event: any) {
+        console.log('Edit event:', event);
+      }
 
     async loadDataTotal() {
         this.loading = true;
@@ -116,6 +158,75 @@ export class LocationComponent implements OnInit, OnDestroy {
         }
     }
 
+    async getBankData() {
+        try {
+            this.dataBank = await this.crudService.getBankData();
+            this.dataBank = this.dataBank
+            .filter((item: any) => item.id_pelapor_prefix !== null) // Filter out items with `id_pelapor` as null
+            .map((item: any) => ({
+                label: item.id_pelapor_prefix,  // Use `id_pelapor` as the label
+                value: item.id_pelapor_prefix   // Set `id_pelapor` as the value
+            }));
+                        console.log('dataBank', this.dataBank);
+        } catch (error) {
+            console.error('Failed to fetch data.', error);
+        }
+    }
+
+    buttonLct(event: any) {
+        const keyword = event.value.value;
+        this.getReportLct(this.selectedSearch, keyword);
+    }
+
+    findDataById(id: string): void {
+        if (this.dataPopLct && Array.isArray(this.dataPopLct)) {
+          this.selectedDataPop = this.dataPopLct.find((item) => item.id === id) || null;
+        } else {
+          console.warn('Data not found or dataPopLct is not an array.');
+          this.selectedDataPop = null;
+        }
+      }
+    
+      onPosChange(): void {
+        if (this.selectedPos) {
+          this.findDataById(this.selectedPos);
+          console.log('Selected Data:', this.selectedDataPop);
+        } else {
+          this.selectedDataPop = null;
+        }
+      }
+
+    async getReportLct(tableName: string, keyword: string): Promise<void> {
+        console.log('Table Name:', tableName);
+        console.log('Keyword:', keyword);
+      
+        try {
+          if (!tableName || !keyword) {
+            throw new Error('Table name and keyword must be provided');
+          }
+      
+          // Pastikan result selalu berupa array
+          const result = (await this.crudService.getDataLct(tableName, keyword)) as ReportDataType[] | undefined;
+      
+          if (Array.isArray(result)) {
+            this.dataPopLct = result;
+            this.reportDataLct = result.map((item) => ({
+              label: item.deskripsi,
+              value: item.id,
+            }));
+            console.log('Report Data LCT:', this.dataPopLct);
+          } else {
+            console.warn('Result is not an array or is undefined:', result);
+            this.dataPopLct = []; // Atur default data asli ke array kosong jika tidak valid
+            this.reportDataLct = []; // Atur default data dropdown ke array kosong
+          }
+        } catch (error) {
+          console.error('Failed to fetch report data:', error);
+        }
+      }
+      
+      
+      
     async loadData(currentPage: number, perPage: number = 10) {
         this.loading = true;
         const params = {
@@ -134,6 +245,43 @@ export class LocationComponent implements OnInit, OnDestroy {
             console.error('Failed to fetch components data:', error);
         }
     }
+
+    updateTableValues(): void {
+        this.modifiedDataTable = this.modifiedDataTable.map(row => {
+            const originalNominalRupiah = row.original_nominal_rupiah ?? row.nominal_rupiah;
+            const originalNominalValas = row.original_nominal_valas ?? row.nominal_valas;
+    
+            const nominalRupiah = originalNominalRupiah * this.variabel1;
+            const nominalValas = originalNominalValas * this.variabel2;
+            const hasil = this.calculateHasil(nominalRupiah, nominalValas);
+    
+            return {
+                ...row, 
+                original_nominal_rupiah: originalNominalRupiah, 
+                original_nominal_valas: originalNominalValas, 
+                nominal_rupiah: nominalRupiah, 
+                nominal_valas: nominalValas, 
+                hasil: hasil
+            };
+        });
+    }
+    
+      
+      calculateHasil(nominalRupiah: number, nominalValas: number): string {
+        const total = nominalRupiah + nominalValas;
+        if (total > 5000000) {
+          return 'Setuju';
+        } else if (total > 3000000) {
+          return 'Tinjau Ulang';
+        } else {
+          return 'Tolak';
+        }
+      }
+    
+      // Trigger saat variabel diubah
+      onVariableChange(): void {
+        this.updateTableValues();
+      }
 
     async findData(keyword: string) {
         this.loading = true;
@@ -173,11 +321,8 @@ export class LocationComponent implements OnInit, OnDestroy {
 
     onLazyLoad(event: any) {
         console.log(event);
-        this.pages = event.first / 10;
-        this.currentPage = this.pages + 1;
-        console.log('currentPage', this.currentPage);
-        this.loadData(this.currentPage, event.rows);
     }
+
 
     expandAll() {
         if (!this.isExpanded) {
@@ -199,6 +344,7 @@ export class LocationComponent implements OnInit, OnDestroy {
         );
     }
 
+    
     openNew() {
         this.submitted = false;
         this.recordDialog = true;
@@ -213,37 +359,6 @@ export class LocationComponent implements OnInit, OnDestroy {
         this.editRecordDialog = false;
     }
 
-    editProduct(product: Data) {
-        console.log(product);
-        this.editData = { ...product };
-        this.editRecordDialog = true;
-        console.log('Edit data', this.editData?.doc_box);
-    }
-
-    deleteProduct(data: any) {
-        console.log(data);
-        this.confirmationService.confirm({
-            message: `
-            <div class="p-d-flex p-ai-center">
-            <h5>Are you sure you want to delete?</h5>
-            <p><strong>Doc Box:</strong> ${data.doc_box}</p>
-            <p><strong>Doc Location:</strong> ${data.doc_locations}</p>
-            </div>
-          `,
-            header: 'Confirmation Dialog',
-            icon: 'pi pi-exclamation-triangle ml-4 w-16',
-            accept: async () => {
-                try {
-                    const responseData =
-                        await this.locationService.removeLocation(data);
-                    console.log('Response from backend:', responseData);
-                    window.location.reload();
-                } catch (error) {
-                    console.error('Error sending data to backend:', error);
-                }
-            },
-        });
-    }
 
     selectedExportFormat: string = '';
 
@@ -376,6 +491,10 @@ export class LocationComponent implements OnInit, OnDestroy {
         this.exportDialog = false;
         this.recordDialog = false;
         this.editRecordDialog = false;
+        this.recordDialog = false; // Tutup dialog
+        this.selectedBase = ''; // Reset pilihan jenis laporan
+        this.selectedPos = ''; // Reset pilihan pos
+        this.selectedDataPop = null; // Clear data yang ditampilkan
     }
 
     hideDialog() {
@@ -396,36 +515,25 @@ export class LocationComponent implements OnInit, OnDestroy {
         }
     }
 
-    addData(data: any, edit: string) {
-        console.log('data1 1 1 1 ');
-        console.log('data', data);
-        console.log('data1 ', this.editData);
-        console.log('edit', edit);
-
-        if (edit === 'true') {
-            data.location.doc_box = this.editData?.doc_box;
-            data.location.doc_locations = this.editData?.doc_locations;
-
-            this.locationService
-                .updateLocation(data)
-                .then((responseData) => {
-                    console.log('Response from backend:', responseData);
-                    window.location.reload();
-                })
-                .catch((error) => {
-                    console.error('Error sending data to backend:', error);
-                });
+    // Fungsi untuk menambahkan data ke dalam tabel
+    addData(): void {
+        if (this.selectedBase && this.selectedPos && this.selectedDataPop) {
+        const newData = {
+            pos: this.selectedDataPop.deskripsi, // Pos yang dipilih
+            nominal_rupiah: this.selectedDataPop.total_nominal_rupiah || 0, // Nominal Rupiah
+            nominal_valas: this.selectedDataPop.total_nominal_valas || 0, // Nominal Valas
+            nominal_total: this.selectedDataPop.total_nominal_total || 0, // Nominal Total
+            hasil: 'Setuju', // Default hasil
+        };
+    
+        // Tambahkan data ke tabel
+        this.modifiedDataTable = [...this.modifiedDataTable, newData];
+    
+        // Reset popup data setelah menyimpan
+        this.cancelDialog();
         } else {
-            console.log('data2', data);
-            this.locationService
-                .createLocation(data)
-                .then((responseData) => {
-                    console.log('Response from backend:', responseData);
-                    window.location.reload();
-                })
-                .catch((error) => {
-                    console.error('Error sending data to backend:', error);
-                });
+        console.warn('Data is incomplete. Please fill in all fields before saving.');
         }
     }
+      
 }

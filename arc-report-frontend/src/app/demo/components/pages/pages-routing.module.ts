@@ -5,16 +5,9 @@ import { RouterModule } from '@angular/router';
     imports: [
         RouterModule.forChild([
             {
-                path: 'crud',
+                path: 'financial',
                 loadChildren: () =>
-                    import('./crud/crud.module').then((m) => m.CrudModule),
-            },
-            {
-                path: 'charts',
-                loadChildren: () =>
-                    import('./charts/chartsdemo.module').then(
-                        (m) => m.ChartsDemoModule
-                    ),
+                    import('./financial/financial.module').then((m) => m.FinancialModule),
             },
             {
                 path: 'administration',
@@ -24,28 +17,21 @@ import { RouterModule } from '@angular/router';
                     ),
             },
             {
-                path: 'arc-swift',
+                path: 'laba-rugi',
                 loadChildren: () =>
-                    import('./swift/swift.module').then((m) => m.SwiftModule),
+                    import('./laba/laba.module').then((m) => m.LabaModule),
             },
             {
-                path: 'docfile-rms',
+                path: 'lct',
                 loadChildren: () =>
-                    import('./docfile/docfile.module').then(
-                        (m) => m.DocfileModule
+                    import('./lct/lct.module').then(
+                        (m) => m.LctModule
                     ),
             },
             {
-                path: 'location-rms',
+                path: 'neraca',
                 loadChildren: () =>
-                    import('./location/location.module').then(
-                        (m) => m.LocationModule
-                    ),
-            },
-            {
-                path: 'old-component',
-                loadChildren: () =>
-                    import('./older/older.module').then((m) => m.OlderModule),
+                    import('./neraca/neraca.module').then((m) => m.NeracaModule),
             },
             { path: '**', redirectTo: '/notfound' },
         ]),

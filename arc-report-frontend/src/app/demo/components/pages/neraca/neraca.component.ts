@@ -6,27 +6,36 @@ import { LayoutService } from 'src/app/layout/service/app.layout.service';
 import { ViewChild, ElementRef } from '@angular/core';
 import { Customer, Data } from 'src/app/demo/api/customer';
 import { CrudService } from 'src/app/demo/service/crud.service';
+import { NeracaService } from 'src/app/demo/service/neraca.service';
 import { Table } from 'primeng/table';
 import { MessageService, ConfirmationService } from 'primeng/api';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
-import { FormsModule, NumberValueAccessor } from '@angular/forms';
-import { DropdownModule } from 'primeng/dropdown';
-import { report } from 'process';
+import { Papa } from 'ngx-papaparse'; // Untuk parsing CSV
 
 interface expandedRows {
     [key: string]: boolean;
 }
 @Injectable()
 @Component({
-    templateUrl: './crud.component.html',
+    templateUrl: './neraca.component.html',
     providers: [MessageService, ConfirmationService],})
-export class CrudComponent implements OnInit, OnDestroy {
+export class NeracaComponent implements OnInit, OnDestroy {
     components$: Customer[] = [];
 
     editData: any = [];
+
+    csvData: any[] = [];
+
+    csvHeaders: string[] = [];
+
+    private currentRequestId = 0;
+
+    importDialog: boolean = false; // Kontrol visibilitas dialog
+
+    selectedFile: File | null = null; // File yang dipilih untuk diunggah
 
     countries: any = [] ;
 
@@ -34,49 +43,17 @@ export class CrudComponent implements OnInit, OnDestroy {
 
     dataLabaRugi: any = [];
 
+    selectedBank: boolean = false;
+
+    dataBankPeriode: any = [];
+
+    dataPeriode: any = [];
+
     selectedCountry: string | undefined;
 
+    selectedPeriode: string | undefined;
+
     data = {
-        docfile: {
-            doc_no: '',
-            doc_posting_date: '',
-            doc_type: '',
-            doc_location: '',
-            doc_status: '',
-            doc_createddate: '',
-            doc_createdby: '',
-            doc_lastupdate: '',
-            doc_lastuser: '',
-            doc_category: '',
-            doc_aircrafte: '',
-            doc_work_packagee: '',
-            doc_reason: '',
-            doc_returndate: '',
-            doc_retention_schedule: '',
-            doc_last_received: '',
-            doc_last_rejected: '',
-            doc_filed: '',
-        },
-        arc_swift: {
-            equipment: '',
-            material_number: '',
-            serial_number: '',
-            material_description: '',
-            material_group: '',
-            functional_location: '',
-            aircraft_reg: '',
-            notif_w3: '',
-            order_notif_w3: '',
-            notif_w4: '',
-            batch_notif_w4: '',
-            title: '',
-            po_number: '',
-            timestamp_pi: '',
-        },
-        location: {
-            doc_box: '',
-            doc_locations: '',
-        },
         neraca_bank : {
             id_pelapor: '', // String
             periode_laporan: '', // String
@@ -108,6 +85,10 @@ export class CrudComponent implements OnInit, OnDestroy {
             uus: '', // String
             kategori: '', // String
             uuid: '', // String
+            id_pelapor_prefix: '', // String
+            total_nominal_rupiah: null,
+            total_nominal_valas: null,
+            total_nominal_total: null,
           }, 
           laba_rugi: {
             id_pelapor: '', // String
@@ -173,7 +154,7 @@ export class CrudComponent implements OnInit, OnDestroy {
 
     currentPage: number = 1;
 
-    perPage: number = 10;
+    perPage: number = 30;
 
     totalData: number = 100;
 
@@ -222,8 +203,10 @@ export class CrudComponent implements OnInit, OnDestroy {
     constructor(
         public layoutService: LayoutService,
         private crudService: CrudService,
+        private neracaService: NeracaService,
         private confirmationService: ConfirmationService,
-        private messageService: MessageService
+        private messageService: MessageService,
+        private papa: Papa
     ) {
         this.currentPage = 1;
     }
@@ -232,19 +215,10 @@ export class CrudComponent implements OnInit, OnDestroy {
         const key = localStorage.getItem('key');
         this.isAdmin = key === 'admin'; // Check if the key is 'admin'
 
-        console.log('isAdmin', this.isAdmin);
-
         this.loadDataTotal();
-
-        this.loadDataTotalLaba();
-
         this.loadData(1, 20);
-
-        this.loadDataLaba(1, 20);
-
         this.getBankData();
-
-        this.getLabaRugiData();
+        this.getBankDataPeriode();
 
         this.items = [
             { label: 'Add New', icon: 'pi pi-fw pi-plus' },
@@ -281,22 +255,7 @@ export class CrudComponent implements OnInit, OnDestroy {
         }
     }
 
-    async loadDataTotalLaba() {
-        this.loading2 = true;
-        try {
-            const totalRecord: any =
-                await this.crudService.getLabaRugiReportTotal();
-
-            this.totalLabaRugi = totalRecord[0].total;
-
-            this.loading2 = false;
-            console.log('totalRecord 1', this.totalLabaRugi);
-        } catch (error) {
-            console.error('Failed to fetch component data:', error);
-        }
-    }
-
-    async loadData(currentPage: number, perPage: number = 10) {
+    async loadData(currentPage: number, perPage: number = 30) {
         this.loading = true;
         const params = {
             page: currentPage.toString(),
@@ -315,30 +274,16 @@ export class CrudComponent implements OnInit, OnDestroy {
         }
     }
 
-    async loadDataLaba(currentPage: number, perPage: number = 10) {
-        this.loading2 = true;
-        const params = {
-            page: currentPage.toString(),
-            perPage: perPage.toString(),
-        };
-
-        try {
-            const components = await this.crudService.getLabaRugiReport(
-                params
-            );
-            this.components2 = components;
-
-            this.loading2 = false;
-        } catch (error) {
-            console.error('Failed to fetch component data:', error);
-        }
-    }
-
+    onTableFilter(event: any): void {
+        console.log('Filter applied:', event.filters);
+      }
+      
     async findData(keyword: string) {
         this.loading = true;
         keyword = keyword.trim();
+        this.components1 = [];
 
-        if (keyword.length >= 4) {
+        if (keyword.length >= 3) {
             this.loading = true;
 
             console.log('keyword', keyword);
@@ -351,7 +296,7 @@ export class CrudComponent implements OnInit, OnDestroy {
                     body
                 );
 
-                console.log('hasil search post', search);
+                console.log('hasil search post Neraca', search);
 
                 this.components1 = search;
 
@@ -365,72 +310,35 @@ export class CrudComponent implements OnInit, OnDestroy {
             this.messageService.add({
                 severity: 'warn',
                 summary: 'Keyword tidak cukup',
-                detail: 'Minimal 4 karakter keyword',
+                detail: 'Minimal 3 karakter keyword',
             });
         }
     }
 
-    async findDataLaba(keyword: string) {
-        this.loading2 = true;
-        keyword = keyword.trim();
-
-        console.log('keyword 1', keyword);
-
-        if (keyword.length >= 4) {
-            this.loading2 = true;
-
-            console.log('keyword', keyword);
-            const body = {
-                keyword: keyword.toUpperCase(),
-            };
-            console.log('body', body);
-            try {
-                const search = await this.crudService.getLabaRugiReportSearch(
-                    body
-                );
-
-                console.log('hasil search post', search);
-
-                this.components2 = search;
-
-                this.loading2 = false;
-                console.log('hasil search post', search);
-            } catch (error) {
-                console.error('Failed to fetch component data:', error);
-            }
-        } else {
-            this.loading2 = false;
-            this.messageService.add({
-                severity: 'warn',
-                summary: 'Keyword tidak cukup',
-                detail: 'Minimal 4 karakter keyword',
-            });
-        }
-    }
 
     async selectedData(keyword: string) {
         this.loading = true;
+        this.selectedBank = true;
         keyword = keyword.trim();
-
         console.log('keyword 1', keyword);
-
-        if (keyword.length >= 4) {
+    
+        if (keyword.length >= 3) {
             this.loading = true;
-
             console.log('keyword', keyword);
-            const body = {
-                keyword: keyword.toUpperCase(),
-            };
+    
+            const body = { keyword: keyword.toUpperCase() };
             console.log('body', body);
+    
+            const requestId = ++this.currentRequestId;
+    
             try {
-                const search = await this.crudService.getComponentsReportSearch(
-                    body
-                );
-
-                console.log('hasil search post', search);
-
-                this.components1 = search;
-
+                const search = await this.crudService.getComponentsReportSearch(body);
+                console.log('hasil search post Neraca', search);
+    
+                if (requestId === this.currentRequestId) {
+                    this.components1 = search;
+                }
+    
                 this.loading = false;
                 console.log('hasil search post', search);
             } catch (error) {
@@ -446,47 +354,10 @@ export class CrudComponent implements OnInit, OnDestroy {
         }
     }
 
-    async selectedDataLaba(keyword: string) {
-        this.loading2 = true;
-        keyword = keyword.trim();
-
-        console.log('keyword 1', keyword);
-
-        if (keyword.length >= 4) {
-            this.loading2 = true;
-
-            console.log('keyword', keyword);
-            const body = {
-                keyword: keyword.toUpperCase(),
-            };
-            console.log('body', body);
-            try {
-                const search = await this.crudService.getLabaRugiReportSearch(
-                    body
-                );
-
-                console.log('hasil search post', search);
-
-                this.components2 = search;
-
-                this.loading2 = false;
-                console.log('hasil search post', search);
-            } catch (error) {
-                console.error('Failed to fetch component data:', error);
-            }
-        } else {
-            this.loading2 = false;
-            this.messageService.add({
-                severity: 'warn',
-                summary: 'Keyword tidak cukup',
-                detail: 'Minimal 4 karakter keyword',
-            });
-        }
-    }
 
     onLazyLoad(event: any) {
         console.log(event);
-        this.pages = event.first / 10;
+        this.pages = event.first / 30;
         this.currentPage = this.pages + 1;
         console.log('currentPage', this.currentPage);
         this.loadData(this.currentPage, event.rows);
@@ -494,10 +365,10 @@ export class CrudComponent implements OnInit, OnDestroy {
 
     onLazyLoadLaba(event: any) {
         console.log(event);
-        this.pages = event.first / 10;
+        this.pages = event.first / 30;
         this.currentPage = this.pages + 1;
         console.log('currentPage', this.currentPage);
-        this.loadDataLaba(this.currentPage, event.rows);
+        // this.loadDataLaba(this.currentPage, event.rows);
     }
 
     onEditProduct(component: any) {
@@ -585,9 +456,6 @@ export class CrudComponent implements OnInit, OnDestroy {
             header: 'Confirmation Dialog',
             icon: 'pi pi-exclamation-triangle ml-4 w-16',
             accept: async () => {
-                this.data.arc_swift.equipment = data.equipment;
-                this.data.docfile.doc_no = data.doc_no;
-                this.data.location.doc_box = data.doc_box;
 
                 console.log('data', this.data);
                 try {
@@ -610,16 +478,16 @@ export class CrudComponent implements OnInit, OnDestroy {
         { label: 'XLSX', value: 'xlsx' },
     ];
 
-    formatCurrency(amount: number) {
+    formatCurrency(amount: number): string {
         return amount.toLocaleString('id-ID', {
-            style: 'currency',
-            currency: 'IDR',
+            style: 'decimal', 
+            minimumFractionDigits: 0, 
+            maximumFractionDigits: 0 
         });
     }
 
     exportAsPDF(type: string): void {
-        if (type == 'neraca'){
-        const idPelapor = this.components1.length > 0 ? this.components1[0].id_pelapor ?? 'N/A' : 'N/A';
+        const idPelapor = this.components1.length > 0 ? this.components1[0].id_pelapor_prefix ?? 'N/A' : 'N/A';
         const doc = new jsPDF('landscape', 'px', 'a4');
         const imgWidth = 130;
         const imgHeight = 40;
@@ -633,9 +501,9 @@ export class CrudComponent implements OnInit, OnDestroy {
         // Sample data for the table
         const tableData = this.components1.map((report, index) => [
             report?.deskripsi_pos_laporan_keuangan ?? '',  // Default to empty string if undefined
-            this.formatCurrency(report?.nominal_rupiah ?? 0),  // Format nilai nominal_rupiah
-            this.formatCurrency(report?.nominal_valas ?? 0),   // Format nilai nominal_valas
-            this.formatCurrency(report?.nominal_total ?? 0),   // Format nilai nominal_total
+            this.formatCurrency(report?.total_nominal_rupiah ?? 0),  // Format nilai nominal_rupiah
+            this.formatCurrency(report?.total_nominal_valas ?? 0),   // Format nilai nominal_valas
+            this.formatCurrency(report?.total_nominal_total ?? 0),   // Format nilai nominal_total
         ]);
         
 
@@ -680,9 +548,9 @@ export class CrudComponent implements OnInit, OnDestroy {
             },
             columnStyles: {
                 0: { halign: 'left' },
-                1: { cellWidth: 100 },
-                2: { cellWidth: 100 },
-                3: { cellWidth: 100 },
+                1: { cellWidth: 100, halign: 'right' },
+                2: { cellWidth: 100, halign: 'right' },
+                3: { cellWidth: 100, halign: 'right' },
             },
             didDrawPage: function (data: any) {
                 const headerStr = 'Laporan Neraca Bank: ' + idPelapor ;
@@ -705,6 +573,14 @@ export class CrudComponent implements OnInit, OnDestroy {
 
                 pageCount++;
             },
+            didParseCell: (data: any) => {
+                if (data.section === 'body' && data.column.index === 0) { // Kolom Deskripsi
+                  const cellText: string = data.cell.raw;
+                  if (cellText.toLowerCase().includes('total')) {
+                    data.cell.styles.fontStyle = 'bold'; // Membuat teks menjadi bold
+                  }
+                }
+            },
             margin: { top: 60 },
             tableWidth: 'auto',
             showHead: 'everyPage',
@@ -713,104 +589,20 @@ export class CrudComponent implements OnInit, OnDestroy {
         });
 
         doc.save('neraca_bank_app.pdf');
+    
     }
-    else{
-        const idPelapor = this.components2.length > 0 ? this.components2[0].id_pelapor ?? 'N/A' : 'N/A';
-        const doc = new jsPDF('landscape', 'px', 'a4');
-        const imgWidth = 130;
-        const imgHeight = 40;
-        let pageCount = 1; // Initialize page count
 
-        // Adding the header image
-        const headerImgData = '/assets/layout/images/logo-white.png'; // Replace with the path to your header image
-        doc.addImage(headerImgData, 'PNG', 50, 10, imgWidth, imgHeight);
-
-
-        // Sample data for the table
-        const tableData = this.components2.map((report, index) => [
-            report?.deskripsi_pos_laba_rugi ?? '',  // Default to empty string if undefined
-            this.formatCurrency(report?.nominal_rupiah ?? 0),  // Format nilai nominal_rupiah
-            this.formatCurrency(report?.nominal_valas ?? 0),   // Format nilai nominal_valas
-            this.formatCurrency(report?.nominal_total ?? 0),   // Format nilai nominal_total
-        ]);
-        
-
-        // Adding the table
-        (doc as any).autoTable({
-            head: [
-                [
-                    {
-                        content: 'Pos - Pos',
-                        styles: { fillColor: [79, 129, 189], textColor: 255 },
-                    },
-                    {
-                        content: 'Nominal Rupiah',
-                        styles: { fillColor: [79, 129, 189], textColor: 255 },
-                    },
-                    {
-                        content: 'Nominal Valas',
-                        styles: { fillColor: [79, 129, 189], textColor: 255 },
-                    },
-                    {
-                        content: 'Nominal Total',
-                        styles: { fillColor: [79, 129, 189], textColor: 255 },
-                    },
-                ],
-            ],
-            body: tableData,
-            theme: 'grid',
-            startY: imgHeight + 20,
-            styles: {
-                fontSize: 10,
-                cellPadding: 4,
-                overflow: 'linebreak',
-                valign: 'middle',
-                halign: 'center',
-            },
-            headStyles: {
-                fillColor: [79, 129, 189],
-                textColor: 255,
-                halign: 'center',
-                lineWidth: 0.1,
-                lineColor: [255, 255, 255],
-            },
-            columnStyles: {
-                0: { halign: 'left' },
-                1: { cellWidth: 100 },
-                2: { cellWidth: 100 },
-                3: { cellWidth: 100 },
-            },
-            didDrawPage: function (data: any) {
-                const headerStr = 'Laba Rugi Bank: ' + idPelapor ;
-                const timestampStr = 'Date: ' + new Date().toLocaleString();
-                doc.setFontSize(14);
-                doc.text(headerStr, 250, 35);
-                doc.setFontSize(10);
-                doc.text(timestampStr, 250, 50);
-                doc.addImage(headerImgData, 'PNG', 50, 10, imgWidth, imgHeight);
-
-                const footerStr = 'Laba Rugi';
-                const pageNr = 'Page ' + pageCount;
-                const pageNrWidth =
-                    doc.getStringUnitWidth(pageNr) * doc.internal.scaleFactor;
-                const footerX = data.settings.margin.left;
-                const footerY = doc.internal.pageSize.height - 10;
-                doc.setFontSize(8);
-                doc.text(footerStr, footerX + 20, footerY - 10);
-                doc.text(pageNr, footerX + 530, footerY - 10);
-
-                pageCount++;
-            },
-            margin: { top: 60 },
-            tableWidth: 'auto',
-            showHead: 'everyPage',
-            tableLineColor: [189, 195, 199],
-            tableLineWidth: 0.1,
-        });
-
-        doc.save('laba_rugi_bank_app.pdf');
-    }
-    }
+    showImportDialog() {
+        if (this.isAdmin) {
+            this.importDialog = true;
+        } else {
+            this.messageService.add({
+                severity: 'warn',
+                summary: 'Akses Ditolak',
+                detail: 'Harap hubungi administrator jika ingin menambahkan data.'
+            });
+        }
+      }
 
     exportData(type: string) {
         if (this.selectedExportFormat === 'pdf') {
@@ -822,10 +614,9 @@ export class CrudComponent implements OnInit, OnDestroy {
     }
 
     exportAsXLSX(type: string): void {
-        if (type == 'neraca'){
         const workbook = XLSX.utils.book_new();
         const timestamp = new Date().toLocaleString();
-        const idPelapor = this.components1.length > 0 ? this.components1[0].id_pelapor ?? 'N/A' : 'N/A';
+        const idPelapor = this.components1.length > 0 ? this.components1[0].id_pelapor_prefix ?? 'N/A' : 'N/A';
     
         // Data awal
         const worksheetData: (string | number)[][] = [
@@ -849,13 +640,13 @@ export class CrudComponent implements OnInit, OnDestroy {
         Object.keys(groupedData).forEach((category) => {
             worksheetData.push(['', category, '', '', '']);
             
-            groupedData[category].forEach((report: { deskripsi_pos_laporan_keuangan: any; nominal_rupiah: any; nominal_valas: any; nominal_total: any; }) => {
+            groupedData[category].forEach((report: { deskripsi_pos_laporan_keuangan: any; total_nominal_rupiah: any; total_nominal_valas: any; total_nominal_total: any; }) => {
                 const rowData: (string | number)[] = [
                     '',
                     report?.deskripsi_pos_laporan_keuangan ?? '',  // Deskripsi Pos
-                    report?.nominal_rupiah ?? 0,                   // Nominal Rupiah
-                    report?.nominal_valas ?? 0,                    // Nominal Valas
-                    report?.nominal_total ?? 0,                    // Nominal Total
+                    report?.total_nominal_rupiah ?? 0,                   // Nominal Rupiah
+                    report?.total_nominal_valas ?? 0,                    // Nominal Valas
+                    report?.total_nominal_total ?? 0,                    // Nominal Total
                 ];
                 worksheetData.push(rowData);
             });
@@ -871,57 +662,6 @@ export class CrudComponent implements OnInit, OnDestroy {
             new Blob([wbout], { type: 'application/octet-stream' }),
             'neraca_bank_app.xlsx'
         );
-    }
-    else{
-        const workbook = XLSX.utils.book_new();
-        const timestamp = new Date().toLocaleString();
-        const idPelapor = this.components2.length > 0 ? this.components2[0].id_pelapor ?? 'N/A' : 'N/A';
-    
-        // Data awal
-        const worksheetData: (string | number)[][] = [
-            ['', 'LPS'],
-            ['', 'Dokumen ini di-download pada waktu:'],
-            ['', timestamp],
-            [],
-            ['', 'Laporan Laba Rugi Bank: ' + idPelapor],
-            [],
-            [
-                '',
-                'Pos-Pos',
-                'Nominal Rupiah',
-                'Nominal Valas',
-                'Nominal Total',
-            ],
-        ];
-    
-        const groupedData = this.groupByCategory(this.components2);
-    
-        Object.keys(groupedData).forEach((category) => {
-            worksheetData.push(['', category, '', '', '']);
-            
-            groupedData[category].forEach((report: { deskripsi_pos_laba_rugi : any; nominal_rupiah: any; nominal_valas: any; nominal_total: any; }) => {
-                const rowData: (string | number)[] = [
-                    '',
-                    report?.deskripsi_pos_laba_rugi  ?? '',  // Deskripsi Pos
-                    report?.nominal_rupiah ?? 0,                   // Nominal Rupiah
-                    report?.nominal_valas ?? 0,                    // Nominal Valas
-                    report?.nominal_total ?? 0,                    // Nominal Total
-                ];
-                worksheetData.push(rowData);
-            });
-            
-            worksheetData.push([]);
-        });
-    
-        const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
-        XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
-    
-        const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-        saveAs(
-            new Blob([wbout], { type: 'application/octet-stream' }),
-            'laba_rugi_bank_app.xlsx'
-        );
-    }
     }
     
     groupByCategory(data: any[]) {
@@ -952,13 +692,14 @@ export class CrudComponent implements OnInit, OnDestroy {
     }
 
     clear(table: Table) {
-        this.findSearch = '';
-        table.reset();
+        window.location.reload();
+
     }
 
     clear2(table: Table) {
-        this.findSearchLaba = '';
-        table.reset();
+        this.selectedBank = true
+        window.location.reload();
+
     }
 
 
@@ -974,39 +715,114 @@ export class CrudComponent implements OnInit, OnDestroy {
             : 'pi-times-circle    ';
     }
 
+
+
+  // Fungsi saat file dipilih
+  onFileSelect(event: any) {
+    if (event.files && event.files.length > 0) {
+      this.selectedFile = event.files[0];
+      const reader: FileReader = new FileReader();
+      reader.readAsText(event.files[0]);
+      reader.onload = () => {
+        const csv = reader.result as string;
+        this.papa.parse(csv, {
+          header: true,
+          skipEmptyLines: true,
+          preview: 5,
+          complete: (result: { meta: { fields: string[]; }; data: any[]; }) => {
+            this.csvHeaders = result.meta.fields ? result.meta.fields : [];
+            this.csvData = result.data;
+          },
+          error: (error: { message: any; }) => {
+            this.messageService.add({severity:'error', summary: 'Parsing Error', detail: error.message});
+          }
+        });
+      };
+    }
+  }
+
+  // Fungsi saat file dihapus dari uploader
+  onClearFile() {
+    this.selectedFile = null;
+    this.csvData = [];
+    this.csvHeaders = [];
+  }
+
+    cancelUpload() {
+        this.selectedFile = null;  // Menghapus file yang dipilih
+        this.importDialog = false;  // Menutup dialog
+        this.onClearFile();  // Menghapus file yang sudah dipilih
+    }
+
+    uploadFile() {
+        if (this.selectedFile) {
+        const fileExtension = this.selectedFile.name.split('.').pop()?.toLowerCase();
+        
+        if (fileExtension !== 'csv') {
+            this.messageService.add({severity:'error', summary: 'Error', detail: 'Format file tidak didukung. Silakan unggah file CSV.'});
+            return;
+        }
+    
+        if (this.selectedFile.size > 50000000) {
+            this.messageService.add({severity:'error', summary: 'Error', detail: 'Ukuran file melebihi batas maksimal (50MB)'}); 
+            return;
+        }
+    
+        this.sendFileToBackend(this.selectedFile);  
+        } else {
+        this.messageService.add({severity:'error', summary: 'Error', detail: 'Tidak ada file yang dipilih'});
+        }
+    }
+  
+    sendFileToBackend(file: File) {
+        const formData = new FormData();
+        formData.append('file', file, file.name); 
+
+        console.log("nama file", file.name);
+    
+        this.neracaService.importDataCsv(file)
+        .then(response => {
+            this.messageService.add({severity:'success', summary: 'Success', detail: 'Data berhasil diimpor'});
+            this.importDialog = false;
+            this.loadData(this.currentPage, this.perPage);
+        })
+        .catch(error => {
+            this.messageService.add({severity:'error', summary: 'Error', detail: 'Gagal mengimpor data'});
+        });
+    }
+
     async getBankData() {
         try {
             this.dataBank = await this.crudService.getBankData();
-            this.dataBank = this.dataBank.map((item: any) => ({
-                label: item.id_pelapor,  // Use `id_pelapor` as the label
-                value: item.id_pelapor   // Set `id_pelapor` as the value
-            }));
-                        console.log('dataBank', this.dataBank);
+            this.dataBank = this.dataBank
+                .filter((item: any) => item.id_pelapor_prefix !== null && item.id_pelapor_prefix !== undefined)
+                .map((item: any) => ({
+                    label: item.id_pelapor_prefix,  // Use `id_pelapor` as the label
+                    value: item.id_pelapor_prefix   // Set `id_pelapor` as the value
+                }))
+                
+            console.log('dataBank', this.dataBank);
         } catch (error) {
             console.error('Failed to fetch data.', error);
         }
     }
 
-    async getLabaRugiData() {
+
+    async getBankDataPeriode() {
         try {
-            this.dataLabaRugi = await this.crudService.getLabaRugiData();
-            this.dataLabaRugi = this.dataLabaRugi.map((item: any) => ({
-                label: item.id_pelapor,  // Use `id_pelapor` as the label
-                value: item.id_pelapor   // Set `id_pelapor` as the value
+            this.dataBankPeriode = await this.crudService.getBankData();
+            this.dataBankPeriode = this.dataBankPeriode
+            .filter((item: any) => item.periode_data !== null && item.periode_data !== '')
+            .map((item: any) => ({
+                periode: item.periode_data,
             }));
-                        console.log('dataLabaRugi', this.dataLabaRugi);
+                        console.log('dataBankPeriode', this.dataBankPeriode);
         } catch (error) {
             console.error('Failed to fetch data.', error);
         }
     }
 
     async onGlobalChange(event: any) {
-        console.log('event', event);
-        const key = event.value;
-        console.log('key', key);
-    }
-
-    async onGlobalChangeLaba(event: any) {
         console.log('event', event);
         const key = event.value;
         console.log('key', key);
