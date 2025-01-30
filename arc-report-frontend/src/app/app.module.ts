@@ -12,6 +12,7 @@ import { AuthService } from './demo/service/auth.service';
 import { NeracaService } from './demo/service/neraca.service';
 import { AnalyticsService } from './demo/service/analytics.service';
 import { CrudService } from './demo/service/crud.service';
+import { ScvService } from './demo/service/scv.service';
 import { RouterModule } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { CalendarModule } from 'primeng/calendar';
@@ -41,6 +42,7 @@ registerLocaleData(localeId);
         NeracaService,
         CrudService,
         AnalyticsService,
+        ScvService,
     ],
     bootstrap: [AppComponent],
 })

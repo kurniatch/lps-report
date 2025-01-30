@@ -1,4 +1,5 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
+import { DecimalPipe } from '@angular/common';
 import { MenuItem } from 'primeng/api';
 import { Product } from '../../../api/product';
 import { Subscription } from 'rxjs';
@@ -164,8 +165,9 @@ export class LctComponent implements OnInit, OnDestroy {
             this.dataBank = this.dataBank
             .filter((item: any) => item.id_pelapor_prefix !== null) // Filter out items with `id_pelapor` as null
             .map((item: any) => ({
-                label: item.id_pelapor_prefix,  // Use `id_pelapor` as the label
-                value: item.id_pelapor_prefix   // Set `id_pelapor` as the value
+                label: `${item.id_pelapor_prefix} - ${item.nama}`, // Concatenate prefix and name
+                value: item.id_pelapor_prefix, // Use prefix as the value
+                kategori: item.kategori,
             }));
                         console.log('dataBank', this.dataBank);
         } catch (error) {
@@ -173,7 +175,7 @@ export class LctComponent implements OnInit, OnDestroy {
         }
     }
 
-    buttonLct(event: any) {
+    buttonLct(event: any) { 
         const keyword = event.value.value;
         this.getReportLct(this.selectedSearch, keyword);
     }
@@ -378,35 +380,77 @@ export class LctComponent implements OnInit, OnDestroy {
     }
 
     exportAsPDF() {
-        const doc = new jsPDF('portrait', 'px', 'a4');
-        const imgWidth = 150;
+        const doc = new jsPDF('landscape', 'px', 'a4');
+        const imgWidth = 120;
         const imgHeight = 40;
         let pageCount = 1;
-
-        const headerImgData = '/assets/layout/images/kop-bi.png';
+    
+        const headerImgData = '/assets/layout/images/logo-white.png';
         doc.addImage(headerImgData, 'PNG', 50, 10, imgWidth, imgHeight);
-
-        const tableData = this.components1.map((report, index) => [
-            report?.doc_box,
-            report?.doc_locations,
+    
+        const formatNumber = (value: number) =>
+            new Intl.NumberFormat('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value);
+    
+        const variableRow = [
+            ['Variabel 1', this.variabel1],
+            ['Variabel 2', this.variabel2],
+        ];
+    
+        const tableData = this.modifiedDataTable.map((report, index) => [
+            report?.pos,
+            report?.nominal_rupiah != null ? formatNumber(report.nominal_rupiah) : null,
+            report?.nominal_valas != null ? formatNumber(report.nominal_valas) : null,
+            report?.nominal_total != null ? formatNumber(report.nominal_total) : null,
+            report?.hasil,
         ]);
-
+    
+        const tableHeader = [
+            [
+                {
+                    content: 'Deskripsi',
+                    styles: { fillColor: [79, 129, 189], textColor: 255 },
+                },
+                {
+                    content: 'Nominal Rupiah',
+                    styles: { fillColor: [79, 129, 189], textColor: 255 },
+                },
+                {
+                    content: 'Nominal Valas',
+                    styles: { fillColor: [79, 129, 189], textColor: 255 },
+                },
+                {
+                    content: 'Nominal Total',
+                    styles: { fillColor: [79, 129, 189], textColor: 255 },
+                },
+                {
+                    content: 'Hasil',
+                    styles: { fillColor: [79, 129, 189], textColor: 255 },
+                },
+            ],
+        ];
+    
         (doc as any).autoTable({
             head: [
-                [
-                    {
-                        content: 'Doc Box',
-                        styles: { fillColor: [79, 129, 189], textColor: 255 },
-                    },
-                    {
-                        content: 'Doc Location',
-                        styles: { fillColor: [79, 129, 189], textColor: 255 },
-                    },
-                ],
+                ['Variabel', 'Nilai'], 
             ],
+            body: variableRow,
+            theme: 'plain',
+            startY: imgHeight + 20, 
+            styles: {
+                fontSize: 10,
+                cellPadding: 4,
+                valign: 'middle',
+                halign: 'left',
+            },
+        });
+    
+        const tableStartY = (doc as any).lastAutoTable.finalY + 10;
+    
+        (doc as any).autoTable({
+            head: tableHeader,
             body: tableData,
             theme: 'grid',
-            startY: imgHeight + 20,
+            startY: tableStartY,
             styles: {
                 fontSize: 10,
                 cellPadding: 4,
@@ -422,57 +466,61 @@ export class LctComponent implements OnInit, OnDestroy {
                 lineColor: [255, 255, 255],
             },
             columnStyles: {
-                // Your column styles here
+                0: { cellWidth: 200 },
+                4: { cellWidth: 50 },
             },
             didDrawPage: function (data: any) {
-                const headerStr = 'Location RMS Reports';
+                const headerStr = 'Hasil Analisis LCT';
                 const timestampStr = 'Date: ' + new Date().toLocaleString();
                 doc.setFontSize(14);
                 doc.text(headerStr, 250, 35);
                 doc.setFontSize(10);
                 doc.text(timestampStr, 250, 50);
-
+    
                 doc.addImage(headerImgData, 'PNG', 50, 10, imgWidth, imgHeight);
-
-                const footerStr = 'Location RMS Report';
+    
+                const footerStr = 'Analisis LCT';
                 const pageNr = 'Page ' + pageCount;
-                const pageNrWidth =
-                    doc.getStringUnitWidth(pageNr) * doc.internal.scaleFactor;
                 const footerX = data.settings.margin.left;
                 const footerY = doc.internal.pageSize.height - 10;
                 doc.setFontSize(8);
                 doc.text(footerStr, footerX + 20, footerY - 10);
                 doc.text(pageNr, footerX + 350, footerY - 10);
-
+    
                 pageCount++;
             },
-            margin: { top: 60 },
+            margin: { top: 80 },
             tableWidth: 'auto',
             showHead: 'everyPage',
             tableLineColor: [189, 195, 199],
             tableLineWidth: 0.1,
         });
-
-        doc.save('location_rms_report.pdf');
+    
+        doc.save('lct_report.pdf');
     }
+    
 
     exportAsXLSX() {
         const workbook = XLSX.utils.book_new();
         const timestamp = new Date().toLocaleString();
         const worksheetData = [
-            ['LPS'],
-            ['Dokumen ini di-download pada waktu:'],
-            [timestamp],
+            ['','LPS'],
+            ['','Dokumen ini di-download pada waktu:'],
+            ['',timestamp],
             [],
-            ['Locations RMS Reports'],
+            ['','Hasil Analisis LCT'],
             [],
-            ['Doc Box', 'Doc Locations'],
+            ['','Deskripsi', 'Nominal Rupiah', 'Nominal Valas', 'Nominal Total', 'Hasil'],
         ];
 
-        this.components1.forEach((report, index) => {
+        this.modifiedDataTable.forEach((report, index) => {
             const rowData: string[] = [
-                report?.doc_box || '-',
-                report?.doc_location || '-',
+                '',
+                report?.pos|| '-',
+                report?.nominal_rupiah || '0',
+                report?.nominal_valas || '0',
+                report?.nominal_total || '0',
+                report?.hasil || '-',
             ];
             worksheetData.push(rowData);
         });
@@ -483,7 +531,7 @@ export class LctComponent implements OnInit, OnDestroy {
         const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
         saveAs(
             new Blob([wbout], { type: 'application/octet-stream' }),
-            'location_rms_report.xlsx'
+            'lct_report.xlsx'
         );
     }
 
@@ -515,7 +563,6 @@ export class LctComponent implements OnInit, OnDestroy {
         }
     }
 
-    // Fungsi untuk menambahkan data ke dalam tabel
     addData(): void {
         if (this.selectedBase && this.selectedPos && this.selectedDataPop) {
         const newData = {
@@ -526,10 +573,8 @@ export class LctComponent implements OnInit, OnDestroy {
             hasil: 'Setuju', // Default hasil
         };
     
-        // Tambahkan data ke tabel
         this.modifiedDataTable = [...this.modifiedDataTable, newData];
     
-        // Reset popup data setelah menyimpan
         this.cancelDialog();
         } else {
         console.warn('Data is incomplete. Please fill in all fields before saving.');

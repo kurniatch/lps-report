@@ -80,6 +80,22 @@ export interface Data {
     total_nominal_total?: number;
 }
 
+export interface Data2 {
+    tahun: number; // Tahun data
+    bulan: number; // Bulan data
+    kode_kepesertaan: string; // Kode kepesertaan bank
+    nama_bank: string; // Nama bank
+    deskripsi: string; // Deskripsi rincian
+    jumlah_nasabah_penyimpan: number; // Jumlah nasabah penyimpan
+    jumlah_rekening_simpanan: number; // Jumlah rekening simpanan
+    jumlah_saldo_simpanan: number; // Total saldo simpanan
+    jumlah_saldo_simpanan_dijamin: number; // Total saldo simpanan yang dijamin
+    uninsured?: number | null; // Saldo tidak dijamin (opsional)
+    insured?: number | null; // Saldo dijamin (opsional)
+    check?: boolean | null; // Check (opsional)
+  }
+  
+
 export interface docfile_data {
     doc_no?: string;
     doc_posting_date?: string;
@@ -128,3 +144,5 @@ export interface Document {
     docfile: docfile_data;
     location: location_data;
 }
+
+

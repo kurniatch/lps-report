@@ -53,6 +53,11 @@ export class AppMenuComponent implements OnInit {
                                 icon: 'pi pi-fw pi-bookmark',
                                 routerLink: ['/pages/laba-rugi'],
                             },
+                            {
+                                label: 'Laporan SCV',
+                                icon: 'pi pi-fw pi-credit-card',
+                                routerLink: ['/pages/scv'],
+                            },
                         ]
                         
                     },

@@ -124,8 +124,8 @@ EXECUTE FUNCTION fill_columns_based_on_id_laba();
 
 
 UPDATE laba_rugi_ref
-SET buk = 'B, T'
-WHERE pos_laba_rugi = '05.12.00.00.00.00';
+SET bus = 'B, T', uus = 'B'
+WHERE pos_laba_rugi = '03.05.02.02.00.00';
 
 UPDATE laba_rugi_ref
 SET head = 'Header'

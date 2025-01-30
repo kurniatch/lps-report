@@ -21,8 +21,6 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { Express } from 'express'; // Mengimpor Express untuk tipe file upload
 
 
-
-
 @Controller('report')
 @UseGuards(AuthGuard)
 export class ReportController {
@@ -46,10 +44,6 @@ export class ReportController {
     return this.reportService.findAllViewDataLaba(page, perPage);
   }
 
-  @Get('/result')
-  findAllReportData() {
-    return this.reportService.findAllReportData();
-  }
 
   @Get('/result-total')
   findAllReportTotal() {
@@ -61,15 +55,6 @@ export class ReportController {
     return this.reportService.findAllReportTotalLaba();
   }
 
-  // @Get('/reg-plane')
-  // getAircraftData() {
-  //   return this.reportService.getAircraftReg();
-  // }
-
-  // @Get('/operator')
-  // getOperatorData() {
-  //   return this.reportService.getOperator();
-  // }
 
   @Get('/bank')
   getBankData() {
@@ -79,6 +64,16 @@ export class ReportController {
   @Get('/laba-rugi')
   getLabaRugiData() {
     return this.reportService.getLabaRugi();
+  }
+
+  @Get('/bank-periode')
+  getBankPeriode() {
+    return this.reportService.getBankPeriode();
+  }
+
+  @Get('/laba-rugi-periode')
+  getLabaRugiPeriode() {
+    return this.reportService.getLabaRugiPeriode();
   }
 
   @Get('/total-missing')
@@ -91,40 +86,16 @@ export class ReportController {
     return this.reportService.findAllReportDataTotal();
   }
 
-  // @Get('/total-status')
-  // findDataStatus() {
-  //   return this.reportService.findDataStatus();
-  // }
-
-  // @Get('/total-status-null')
-  // findDataStatusNull() {
-  //   return this.reportService.findDataStatusNull();
-  // }
-
-  @Get('/total-status-general')
-  findDataStatusGeneral() {
-    return this.reportService.findDataStatusGeneral();
-  }
-
-  // @Post('/search-plane')
-  // async findDataPlane(@Body('keyword') keyword: string) {
-  //   return await this.reportService.findDataPlane(keyword);
-  // }
-
-  // @Post('/search-operator')
-  // async findDataOperator(@Body('keyword') keyword: string) {
-  //   console.log(keyword);
-  //   return await this.reportService.findDataOperator(keyword);
-  // }
-
   @Post('/search')
   async findKeywordGeneral(@Body('keyword') keyword: string) {
     return await this.reportService.findKeywordGeneral(keyword);
   }
 
   @Post('/search-bank')
-  async findKeywordGeneralBank(@Body('keyword') keyword: string) {
-    return await this.reportService.findKeywordGeneralBank(keyword);
+  async findKeywordGeneralBank(@Body('keyword') keyword: string, @Body('kategori') kategori: string) {
+    console.log('kategori : ', kategori);
+    console.log('keyword : ', keyword);
+    return await this.reportService.findKeywordGeneralBank(keyword, kategori);
   }
 
   @Post('/search-bank-periode')
@@ -136,8 +107,9 @@ export class ReportController {
   }
 
   @Post('/search-laba-rugi')
-  async findKeywordGeneralLaba(@Body('keyword') keyword: string) {
-    return await this.reportService.findKeywordGeneralLaba(keyword);
+  async findKeywordGeneralLaba(@Body('keyword') keyword: string, @Body('kategori') kategori: string) {
+    console.log('kategori : ', kategori);
+    return await this.reportService.findKeywordGeneralLaba(keyword, kategori);
   }
 
   @Post('/result-individual')
@@ -155,18 +127,11 @@ export class ReportController {
     return await this.reportService.updateData(data);
   }
 
-  // @Post('/add-old')
-  // async createOldData(@Body() keyword: any): Promise<any> {
-  //   console.log('controller', keyword);
-  //   return await this.reportService.createOldComponent(keyword);
-  // }
-
   @Post('/import-laba-rugi')
   @UseInterceptors(FileInterceptor('file', {
     storage: diskStorage({
-      destination: './uploads', // Pastikan direktori ini ada
+      destination: './uploads',
       filename: (req, file, cb) => {
-        // Generate nama file unik
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
         const ext = path.extname(file.originalname);
         cb(null, `${file.fieldname}-${uniqueSuffix}${ext}`);
@@ -204,9 +169,8 @@ export class ReportController {
   @Post('/import-neraca')
   @UseInterceptors(FileInterceptor('file', {
     storage: diskStorage({
-      destination: './uploads', // Pastikan direktori ini ada
+      destination: './uploads', 
       filename: (req, file, cb) => {
-        // Generate nama file unik
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
         const ext = path.extname(file.originalname);
         cb(null, `${file.fieldname}-${uniqueSuffix}${ext}`);

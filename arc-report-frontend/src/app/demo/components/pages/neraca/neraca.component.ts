@@ -49,6 +49,8 @@ export class NeracaComponent implements OnInit, OnDestroy {
 
     dataPeriode: any = [];
 
+    kategori: string = '';
+
     selectedCountry: string | undefined;
 
     selectedPeriode: string | undefined;
@@ -277,6 +279,25 @@ export class NeracaComponent implements OnInit, OnDestroy {
     onTableFilter(event: any): void {
         console.log('Filter applied:', event.filters);
       }
+
+      async applyPeriodeFilter(keyword: string, event: any) {
+        console.log('event', event);
+
+        await this.selectedData(keyword);
+        this.loading = true;
+        if (this.components1.length > 0) {
+                // const split = event.value.split('/');
+                // const tahun = Number(split[0]); // Convert to number
+                // const bulan = Number(split[1]); // Convert to number
+            this.components1 = this.components1.filter(
+                (item) => item.periode_data?.slice(0, 7) === event.value
+            );
+            this.loading = false;
+        }
+        // if (this.dt1) {
+        //   this.dt1.filter(event.value, 'periode_data', 'contains');  // Correct number of arguments
+        // }
+      }
       
     async findData(keyword: string) {
         this.loading = true;
@@ -286,9 +307,14 @@ export class NeracaComponent implements OnInit, OnDestroy {
         if (keyword.length >= 3) {
             this.loading = true;
 
+            this.kategori = this.dataBank.kategori;
+
+            console.log('kategori', this.kategori);
+
             console.log('keyword', keyword);
             const body = {
                 keyword: keyword.toUpperCase(),
+                kategori: this.kategori.toLowerCase(),
             };
             console.log('body', body);
             try {
@@ -324,9 +350,13 @@ export class NeracaComponent implements OnInit, OnDestroy {
     
         if (keyword.length >= 3) {
             this.loading = true;
+            this.kategori = this.dataBank.find(
+                (item: any) => item.value === keyword
+            )?.kategori;
             console.log('keyword', keyword);
+            console.log('kategori', this.kategori);
     
-            const body = { keyword: keyword.toUpperCase() };
+            const body = { keyword: keyword.toUpperCase(), kategori: this.kategori.toLowerCase() };
             console.log('body', body);
     
             const requestId = ++this.currentRequestId;
@@ -797,9 +827,10 @@ export class NeracaComponent implements OnInit, OnDestroy {
             this.dataBank = this.dataBank
                 .filter((item: any) => item.id_pelapor_prefix !== null && item.id_pelapor_prefix !== undefined)
                 .map((item: any) => ({
-                    label: item.id_pelapor_prefix,  // Use `id_pelapor` as the label
-                    value: item.id_pelapor_prefix   // Set `id_pelapor` as the value
-                }))
+                    label: `${item.id_pelapor_prefix} - ${item.nama}`, // Concatenate prefix and name
+                    value: item.id_pelapor_prefix, // Use prefix as the value
+                    kategori: item.kategori,
+                }));
                 
             console.log('dataBank', this.dataBank);
         } catch (error) {
@@ -810,11 +841,11 @@ export class NeracaComponent implements OnInit, OnDestroy {
 
     async getBankDataPeriode() {
         try {
-            this.dataBankPeriode = await this.crudService.getBankData();
+            this.dataBankPeriode = await this.crudService.getBankPeriode();
             this.dataBankPeriode = this.dataBankPeriode
             .filter((item: any) => item.periode_data !== null && item.periode_data !== '')
             .map((item: any) => ({
-                periode: item.periode_data,
+                periode: new Date(item.periode_data).toISOString().slice(0, 7), // "YYYY-MM"
             }));
                         console.log('dataBankPeriode', this.dataBankPeriode);
         } catch (error) {

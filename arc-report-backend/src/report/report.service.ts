@@ -166,18 +166,6 @@ export class ReportService {
     }
   }
 
-  async findAllReportData() {
-    try {
-      const result = await this.prisma.$queryRaw`
-      SELECT * FROM view_get_data_time_result;
-      `;
-      return result;
-    } catch (error) {
-      console.error('Error executing custom query:', error);
-      throw new Error('Error executing custom query');
-    }
-  }
-
   async findAllReportDataTotal() {
     try {
       const result = await this.prisma.$queryRaw`
@@ -190,46 +178,23 @@ export class ReportService {
     }
   }
 
-  async findDataStatus() {
-    try {
-      const result = await this.prisma.$queryRaw`
-      SELECT * FROM view_data_status;
-      `;
-      return result;
-    } catch (error) {
-      console.error('Error executing custom query:', error);
-      throw new Error('Error executing custom query');
-    }
-  }
 
-  async findDataStatusNull() {
-    try {
-      const result = await this.prisma.$queryRaw`
-      SELECT * FROM view_data_null_available;
-      `;
-      return result;
-    } catch (error) {
-      console.error('Error executing custom query:', error);
-      throw new Error('Error executing custom query');
-    }
-  }
-
-  async findDataStatusGeneral() {
-    try {
-      const result = await this.prisma.$queryRaw`
-      SELECT * FROM view_count_status_general;
-      `;
-      return result;
-    } catch (error) {
-      console.error('Error executing custom query:', error);
-      throw new Error('Error executing custom query');
-    }
-  }
-
-  async findKeywordGeneralBank(keyword: string) {
+  async findKeywordGeneralBank(keyword: string, kategori: string) {
     console.log(keyword);
-    try {
-      const result = await this.prisma.$queryRaw`
+    console.log(kategori);
+  
+    // Validasi nama kolom untuk mencegah SQL Injection
+    const validColumns = [
+      "buk",
+      "bus",
+      "uus"
+    ];
+  
+    if (!validColumns.includes(kategori)) {
+      throw new Error(`Invalid column name: ${kategori}`);
+    }
+  
+    const rawQuery = Prisma.sql`
       SELECT DISTINCT ON (CAST("id" AS NUMERIC)) 
           "id_pelapor",
           "periode_laporan",
@@ -273,15 +238,22 @@ export class ReportService {
               LEFT("id_pelapor", 3) ILIKE ${`%${keyword}%`}
           )
           AND 
-          ("head" = 'Header' OR ("buk" IS NOT NULL AND "buk" != ''))
+          ("head" = 'Header' OR ("${Prisma.raw(kategori)}" IS NOT NULL AND "${Prisma.raw(kategori)}" != ''))
       ORDER BY 
-          id_numeric, -- Urutkan berdasarkan id_numeric
-          "id_pelapor_prefix";`
+          id_numeric, 
+          "id_pelapor_prefix";
+    `;
+  
+    try {
+      const result = await this.prisma.$queryRaw(rawQuery);
       return result;
     } catch (error) {
-      console.error('Error executing custom query:', error);
+      console.error(error);
+      throw error;
     }
   }
+  
+  
 
   async findKeywordGeneralBankPeriode(keyword: string, periode: string) {
     console.log(keyword);
@@ -318,68 +290,82 @@ export class ReportService {
 }
 
 
-  async findKeywordGeneralLaba(keyword: string) {
+  async findKeywordGeneralLaba(keyword: string, kategori: string) {
+
+    // Validasi nama kolom untuk mencegah SQL Injection
+    const validColumns = [
+      "buk",
+      "bus",
+      "uus"
+    ];
+      
+    if (!validColumns.includes(kategori)) {
+      throw new Error(`Invalid column name: ${kategori}`);
+    }
+
     console.log(keyword);
+    const rawQuery = Prisma.sql`
+    SELECT DISTINCT ON (CAST("id" AS NUMERIC))
+        "id_pelapor",
+        "periode_laporan",
+        "periode_data",
+        CAST("id" AS NUMERIC) AS id_numeric, -- Ubah id menjadi numerik
+        "pos_laba_rugi",
+        "deskripsi_pos_laba_rugi",
+        "cakupan_data",
+        "deskripsi_cakupan_data",
+        "nominal_penduduk_rupiah",
+        "nominal_penduduk_valas",
+        "nominal_penduduk_total",
+        "nominal_bukan_penduduk_rupiah",
+        "nominal_bukan_penduduk_valas",
+        "nominal_bukan_penduduk_total",
+        "nominal_rupiah",
+        "nominal_valas",
+        "nominal_total",
+        "nominal_perusahaan_induk_penduduk_rupiah",
+        "nominal_perusahaan_induk_penduduk_valas",
+        "nominal_perusahaan_induk_bukan_penduduk_rupiah",
+        "nominal_perusahaan_induk_bukan_penduduk_valas",
+        "nominal_perusahaan_induk_total",
+        "nominal_perusahaan_anak_sln_asuransi_penduduk_rupiah",
+        "nominal_perusahaan_anak_sln_asuransi_penduduk_valas",
+        "nominal_perusahaan_anak_sln_asuransi_bukan_penduduk_rupiah",
+        "nominal_perusahaan_anak_sln_asuransi_bukan_penduduk_valas",
+        "nominal_perusahaan_anak_asuransi_penduduk_rupiah",
+        "nominal_perusahaan_anak_asuransi_penduduk_valas",
+        "nominal_perusahaan_anak_asuransi_bukan_penduduk_rupiah",
+        "nominal_perusahaan_anak_asuransi_bukan_penduduk_valas",
+        "nominal_perusahaan_anak_total",
+        "nominal_konsolidasi_penduduk_rupiah",
+        "nominal_konsolidasi_penduduk_valas",
+        "nominal_konsolidasi_bukan_penduduk_rupiah",
+        "nominal_konsolidasi_bukan_penduduk_valas",
+        "nominal_konsolidasi_total",
+        "buk",
+        "bus",
+        "uus",
+        "kategori",
+        "uuid",
+        "head",
+        LEFT("id_pelapor", 3) AS id_pelapor_prefix,
+        SUM(COALESCE("nominal_rupiah", 0)) OVER(PARTITION BY LEFT("id_pelapor", 3), CAST("id" AS NUMERIC)) AS total_nominal_rupiah,
+        SUM(COALESCE("nominal_valas", 0)) OVER(PARTITION BY LEFT("id_pelapor", 3), CAST("id" AS NUMERIC)) AS total_nominal_valas,
+        SUM(COALESCE("nominal_total", 0)) OVER(PARTITION BY LEFT("id_pelapor", 3), CAST("id" AS NUMERIC)) AS total_nominal_total
+    FROM 
+        laba_rugi
+    WHERE 
+        (
+            LEFT("id_pelapor", 3) ILIKE ${`%${keyword}%`}
+        )
+        AND 
+        ("head" = 'Header' OR ("${Prisma.raw(kategori)}" IS NOT NULL AND "${Prisma.raw(kategori)}" != ''))
+    ORDER BY 
+        id_numeric, 
+        "id_pelapor_prefix";`
+        
     try {
-      const result = await this.prisma.$queryRaw`
-      SELECT DISTINCT ON (CAST("id" AS NUMERIC))
-          "id_pelapor",
-          "periode_laporan",
-          "periode_data",
-          CAST("id" AS NUMERIC) AS id_numeric, -- Ubah id menjadi numerik
-          "pos_laba_rugi",
-          "deskripsi_pos_laba_rugi",
-          "cakupan_data",
-          "deskripsi_cakupan_data",
-          "nominal_penduduk_rupiah",
-          "nominal_penduduk_valas",
-          "nominal_penduduk_total",
-          "nominal_bukan_penduduk_rupiah",
-          "nominal_bukan_penduduk_valas",
-          "nominal_bukan_penduduk_total",
-          "nominal_rupiah",
-          "nominal_valas",
-          "nominal_total",
-          "nominal_perusahaan_induk_penduduk_rupiah",
-          "nominal_perusahaan_induk_penduduk_valas",
-          "nominal_perusahaan_induk_bukan_penduduk_rupiah",
-          "nominal_perusahaan_induk_bukan_penduduk_valas",
-          "nominal_perusahaan_induk_total",
-          "nominal_perusahaan_anak_sln_asuransi_penduduk_rupiah",
-          "nominal_perusahaan_anak_sln_asuransi_penduduk_valas",
-          "nominal_perusahaan_anak_sln_asuransi_bukan_penduduk_rupiah",
-          "nominal_perusahaan_anak_sln_asuransi_bukan_penduduk_valas",
-          "nominal_perusahaan_anak_asuransi_penduduk_rupiah",
-          "nominal_perusahaan_anak_asuransi_penduduk_valas",
-          "nominal_perusahaan_anak_asuransi_bukan_penduduk_rupiah",
-          "nominal_perusahaan_anak_asuransi_bukan_penduduk_valas",
-          "nominal_perusahaan_anak_total",
-          "nominal_konsolidasi_penduduk_rupiah",
-          "nominal_konsolidasi_penduduk_valas",
-          "nominal_konsolidasi_bukan_penduduk_rupiah",
-          "nominal_konsolidasi_bukan_penduduk_valas",
-          "nominal_konsolidasi_total",
-          "buk",
-          "bus",
-          "uus",
-          "kategori",
-          "uuid",
-          "head",
-          LEFT("id_pelapor", 3) AS id_pelapor_prefix,
-          SUM(COALESCE("nominal_rupiah", 0)) OVER(PARTITION BY LEFT("id_pelapor", 3), CAST("id" AS NUMERIC)) AS total_nominal_rupiah,
-          SUM(COALESCE("nominal_valas", 0)) OVER(PARTITION BY LEFT("id_pelapor", 3), CAST("id" AS NUMERIC)) AS total_nominal_valas,
-          SUM(COALESCE("nominal_total", 0)) OVER(PARTITION BY LEFT("id_pelapor", 3), CAST("id" AS NUMERIC)) AS total_nominal_total
-      FROM 
-          laba_rugi
-      WHERE 
-          (
-              LEFT("id_pelapor", 3) ILIKE ${`%${keyword}%`}
-          )
-          AND 
-          ("head" = 'Header' OR ("buk" IS NOT NULL AND "buk" != ''))
-      ORDER BY 
-          id_numeric, -- Urutkan berdasarkan id_numeric
-          "id_pelapor_prefix";`
+      const result = await this.prisma.$queryRaw(rawQuery);
       return result;
     } catch (error) {
       console.error('Error executing custom query:', error);
@@ -409,19 +395,6 @@ export class ReportService {
     }
   }
 
-  async findDataPlane(keyword: any) {
-    console.log(keyword);
-    try {
-      const result = await this.prisma.$queryRaw`
-      SELECT *
-      FROM view_get_data_time_result
-      WHERE aircraft_reg LIKE '%' || ${keyword.aircraft_reg} || '%'
-      `;
-      return result;
-    } catch (error) {
-      console.error('Error executing custom query:', error);
-    }
-  }
 
   async createData(data: any) {
     console.log(data);
@@ -444,6 +417,89 @@ export class ReportService {
       neraca_bank: createdNeracaBank,
     };
   }
+
+  async createDataLaba(data: any) {
+    console.log(data);
+  
+    let createdLabaRugi = null;
+  
+    if (data.laba_rugi.id_pelapor !== null && data.laba_rugi.id_pelapor !== '') {
+      try {
+        const query = `
+          INSERT INTO laba_rugi (
+            id_pelapor, periode_laporan, periode_data, id, pos_laba_rugi, deskripsi_pos_laba_rugi,
+            cakupan_data, deskripsi_cakupan_data, nominal_penduduk_rupiah, nominal_penduduk_valas, nominal_penduduk_total,
+            nominal_bukan_penduduk_rupiah, nominal_bukan_penduduk_valas, nominal_bukan_penduduk_total,
+            nominal_rupiah, nominal_valas, nominal_total,
+            nominal_perusahaan_induk_penduduk_rupiah, nominal_perusahaan_induk_penduduk_valas,
+            nominal_perusahaan_induk_bukan_penduduk_rupiah, nominal_perusahaan_induk_bukan_penduduk_valas,
+            nominal_perusahaan_induk_total, nominal_perusahaan_anak_sln_asuransi_penduduk_rupiah,
+            nominal_perusahaan_anak_sln_asuransi_penduduk_valas, nominal_perusahaan_anak_sln_asuransi_bukan_penduduk_rupiah,
+            nominal_perusahaan_anak_sln_asuransi_bukan_penduduk_valas, nominal_perusahaan_anak_asuransi_penduduk_rupiah,
+            nominal_perusahaan_anak_asuransi_penduduk_valas, nominal_perusahaan_anak_asuransi_bukan_penduduk_rupiah,
+            nominal_perusahaan_anak_asuransi_bukan_penduduk_valas, nominal_perusahaan_anak_total,
+            nominal_konsolidasi_penduduk_rupiah, nominal_konsolidasi_penduduk_valas,
+            nominal_konsolidasi_bukan_penduduk_rupiah, nominal_konsolidasi_bukan_penduduk_valas,
+            nominal_konsolidasi_total, buk, bus, uus, kategori, head
+          ) VALUES (
+            '${data.laba_rugi.id_pelapor ?? ''}',
+            '${data.laba_rugi.periode_laporan ?? ''}',
+            '${data.laba_rugi.periode_data ?? ''}',
+            '${data.laba_rugi.id ?? ''}',
+            '${data.laba_rugi.pos_laba_rugi ?? ''}',
+            '${data.laba_rugi.deskripsi_pos_laba_rugi ?? ''}',
+            '${data.laba_rugi.cakupan_data ?? ''}',
+            '${data.laba_rugi.deskripsi_cakupan_data ?? ''}',
+            ${data.laba_rugi.nominal_penduduk_rupiah ?? 'NULL'},
+            ${data.laba_rugi.nominal_penduduk_valas ?? 'NULL'},
+            ${data.laba_rugi.nominal_penduduk_total ?? 'NULL'},
+            ${data.laba_rugi.nominal_bukan_penduduk_rupiah ?? 'NULL'},
+            ${data.laba_rugi.nominal_bukan_penduduk_valas ?? 'NULL'},
+            ${data.laba_rugi.nominal_bukan_penduduk_total ?? 'NULL'},
+            ${data.laba_rugi.nominal_rupiah ?? 'NULL'},
+            ${data.laba_rugi.nominal_valas ?? 'NULL'},
+            ${data.laba_rugi.nominal_total ?? 'NULL'},
+            ${data.laba_rugi.nominal_perusahaan_induk_penduduk_rupiah ?? 'NULL'},
+            ${data.laba_rugi.nominal_perusahaan_induk_penduduk_valas ?? 'NULL'},
+            ${data.laba_rugi.nominal_perusahaan_induk_bukan_penduduk_rupiah ?? 'NULL'},
+            ${data.laba_rugi.nominal_perusahaan_induk_bukan_penduduk_valas ?? 'NULL'},
+            ${data.laba_rugi.nominal_perusahaan_induk_total ?? 'NULL'},
+            ${data.laba_rugi.nominal_perusahaan_anak_sln_asuransi_penduduk_rupiah ?? 'NULL'},
+            ${data.laba_rugi.nominal_perusahaan_anak_sln_asuransi_penduduk_valas ?? 'NULL'},
+            ${data.laba_rugi.nominal_perusahaan_anak_sln_asuransi_bukan_penduduk_rupiah ?? 'NULL'},
+            ${data.laba_rugi.nominal_perusahaan_anak_sln_asuransi_bukan_penduduk_valas ?? 'NULL'},
+            ${data.laba_rugi.nominal_perusahaan_anak_asuransi_penduduk_rupiah ?? 'NULL'},
+            ${data.laba_rugi.nominal_perusahaan_anak_asuransi_penduduk_valas ?? 'NULL'},
+            ${data.laba_rugi.nominal_perusahaan_anak_asuransi_bukan_penduduk_rupiah ?? 'NULL'},
+            ${data.laba_rugi.nominal_perusahaan_anak_asuransi_bukan_penduduk_valas ?? 'NULL'},
+            ${data.laba_rugi.nominal_perusahaan_anak_total ?? 'NULL'},
+            ${data.laba_rugi.nominal_konsolidasi_penduduk_rupiah ?? 'NULL'},
+            ${data.laba_rugi.nominal_konsolidasi_penduduk_valas ?? 'NULL'},
+            ${data.laba_rugi.nominal_konsolidasi_bukan_penduduk_rupiah ?? 'NULL'},
+            ${data.laba_rugi.nominal_konsolidasi_bukan_penduduk_valas ?? 'NULL'},
+            ${data.laba_rugi.nominal_konsolidasi_total ?? 'NULL'},
+            '${data.laba_rugi.buk ?? ''}',
+            '${data.laba_rugi.bus ?? ''}',
+            '${data.laba_rugi.uus ?? ''}',
+            '${data.laba_rugi.kategori ?? ''}',
+            '${data.laba_rugi.head ?? ''}'
+          )
+          RETURNING *;
+        `;
+  
+        // Execute the raw SQL query
+        createdLabaRugi = await this.prisma.$queryRawUnsafe(query);
+      } catch (error) {
+        console.error('Failed to create laba_rugi:', error.message);
+      }
+    }
+  
+    return {
+      message: 'Data created successfully',
+      neraca_bank: createdLabaRugi,
+    };
+  }
+  
 
   async updateData(data: any) {
     console.log(data);
@@ -503,11 +559,8 @@ export class ReportService {
   async getBank() {
     try {
       const result = await this.prisma.$queryRaw`
-      SELECT DISTINCT LEFT("id_pelapor", 3) AS id_pelapor_prefix, NULL AS periode_data
-      FROM neraca_bank
-      UNION
-      SELECT NULL AS id_pelapor_prefix, "periode_data"
-      FROM neraca_bank;     `;
+      SELECT DISTINCT kode AS id_pelapor_prefix, nama, kategori
+      FROM nama_bank;     `;
       return result;
     } catch (error) {
       throw new Error('Error executing custom query');
@@ -517,17 +570,43 @@ export class ReportService {
   async getLabaRugi() {
     try {
       const result = await this.prisma.$queryRaw`
-      SELECT DISTINCT LEFT("id_pelapor", 3) AS id_pelapor_prefix, NULL AS periode_data
-      FROM laba_rugi
-      UNION
-      SELECT NULL AS id_pelapor_prefix, "periode_data"
-      FROM laba_rugi;     
+      SELECT DISTINCT kode AS id_pelapor_prefix, nama, kategori
+      FROM nama_bank;     
       `;
       return result;
     } catch (error) {
       throw new Error('Error executing custom query');
     }
   }
+
+  async getBankPeriode() {
+    try {
+      const result = await this.prisma.$queryRaw`
+      SELECT DISTINCT LEFT("id_pelapor", 3) AS id_pelapor_prefix, NULL AS periode_data
+        FROM neraca_bank
+        UNION
+        SELECT NULL AS id_pelapor_prefix, "periode_data"
+        FROM neraca_bank   `;
+      return result;
+    } catch (error) {
+      throw new Error('Error executing custom query');
+    }
+  }
+
+  async getLabaRugiPeriode() {
+    try {
+      const result = await this.prisma.$queryRaw`
+      SELECT DISTINCT LEFT("id_pelapor", 3) AS id_pelapor_prefix, NULL AS periode_data
+        FROM laba_rugi
+        UNION
+        SELECT NULL AS id_pelapor_prefix, "periode_data"
+        FROM laba_rugi   `;
+      return result;
+    } catch (error) {
+      throw new Error('Error executing custom query');
+    }
+  }
+
 
   async createOldComponent(data) {
     try {
@@ -570,7 +649,6 @@ export class ReportService {
         throw new Error('File not found');
       }
       
-      // Bangun query COPY sebagai string lengkap
       const query = `
           COPY laba_rugi_edit  (
             id_pelapor,
@@ -615,8 +693,6 @@ export class ReportService {
           CSV HEADER;
       `;
       console.log('Executing Query:', query);
-
-      // Jalankan query menggunakan $executeRawUnsafe
       const result = await this.prisma.$executeRawUnsafe(query);
       
       return result;
@@ -635,7 +711,6 @@ export class ReportService {
         throw new Error('File not found');
       }
       
-      // Bangun query COPY sebagai string lengkap
       const query = `
           COPY neraca_bank_edit  (
             id_pelapor,
@@ -815,7 +890,6 @@ export class ReportService {
         throw new Error('Invalid table name');
       }
   
-      // Tentukan kolom deskripsi berdasarkan tabel
       const deskripsiColumn =
         tableName === 'neraca_bank'
           ? 'deskripsi_pos_laporan_keuangan'
@@ -843,34 +917,6 @@ export class ReportService {
     }
   }
   
-  
-
-  // async findIndividualData(keyword: string) {
-  //   console.log(keyword);
-  //   try {
-  //     const result = await this.prisma.$queryRaw`
-  //       SELECT
-  //         TO_CHAR(TO_DATE(n.periode_data, 'YYYY-MM-DD'), 'YYYY-MM-DD') AS formatted_month
-  //       FROM
-  //         neraca_bank n
-  //       FULL OUTER JOIN
-  //         laba_rugi l
-  //       ON
-  //         n.id_pelapor = l.id_pelapor
-  //       WHERE
-  //         (n.id_pelapor = ${keyword} OR l.id_pelapor = ${keyword})
-  //         AND (n.buk IS NOT NULL AND n.buk != '')
-  //         AND (l.buk IS NOT NULL AND l.buk != '')
-  //       GROUP BY
-  //         TO_CHAR(TO_DATE(n.periode_data, 'YYYY-MM-DD'), 'YYYY-MM-DD')
-  //       ORDER BY
-  //         formatted_month;
-  //     `
-  //     return result;
-  //   } catch (error) {
-  //     console.error('Error executing custom query:', error);
-  //   }
-  // }
-  
+    
 
 }

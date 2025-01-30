@@ -2,15 +2,14 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ReportModule } from './report/report.module';
-import { SwiftModule } from './swift/swift.module';
-import { DocfileModule } from './docfile/docfile.module';
 import { PrismaModule } from './prisma/prisma.module';
-import { LocationModule } from './location/location.module';
-import { OlderModule } from './older/older.module';
 import { AuthModule } from './auth/auth.module';
 import { MulterModule } from '@nestjs/platform-express';
+import { LabaModule } from './laba/laba.module';
+import { NeracaModule } from './neraca/neraca.module';
 import * as path from 'path';
 import * as multer from 'multer';
+import { ScvModule } from './scv/scv.module';
 
 
 @Module({
@@ -18,10 +17,9 @@ import * as multer from 'multer';
     PrismaModule,
     ReportModule,
     AuthModule,
-    SwiftModule,
-    DocfileModule,
-    LocationModule,
-    OlderModule,
+    LabaModule,
+    NeracaModule,
+    ScvModule,
     MulterModule.register({
       storage: multer.diskStorage({
         destination: function (req, file, cb) {

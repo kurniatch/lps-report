@@ -99,7 +99,7 @@ export class CrudService {
             });
     }
 
-    getComponentsReportSearch(body: { keyword: string } | undefined) {
+    getComponentsReportSearch(body: { keyword: string, kategori: string } | undefined) {
         const url = `${environment.backendUrl}/report/search-bank`;
         return this.http
             .post(url, body, { headers: this.headers })
@@ -136,8 +136,22 @@ export class CrudService {
             .toPromise();
     }
 
+    updateReportLaba(data: any) {
+        const url = `${environment.backendUrl}/report/update-laba-rugi`;
+        return this.http
+            .post(url, JSON.stringify(data), { headers: this.headers })
+            .toPromise();
+    }
+
     createReport(data: any) {
         const url = `${environment.backendUrl}/report/new-bank`;
+        return this.http
+            .post(url, JSON.stringify(data), { headers: this.headers })
+            .toPromise();
+    }
+
+    createReportLaba(data: any) {
+        const url = `${environment.backendUrl}/report/new-laba`;
         return this.http
             .post(url, JSON.stringify(data), { headers: this.headers })
             .toPromise();
@@ -156,6 +170,16 @@ export class CrudService {
 
     getLabaRugiData() {
         const url = `${environment.backendUrl}/report/laba-rugi`;
+        return this.http.get(url, { headers: this.headers }).toPromise();
+    }
+
+    getBankPeriode() {
+        const url = `${environment.backendUrl}/report/bank-periode`;
+        return this.http.get(url, { headers: this.headers }).toPromise();
+    }
+
+    getLabaRugiPeriode() {
+        const url = `${environment.backendUrl}/report/laba-rugi-periode`;
         return this.http.get(url, { headers: this.headers }).toPromise();
     }
 

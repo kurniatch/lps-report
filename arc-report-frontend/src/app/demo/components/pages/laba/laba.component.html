@@ -13,8 +13,8 @@
 
                     <p-dropdown [options]="dataLabaRugiPeriode" optionLabel="periode" optionValue="periode"
                         class="w-60 ml-4" [filter]="true" [(ngModel)]="selectedPeriode" placeholder="Select Periode"
-                        [showClear]="true" (onChange)="dt2.filter($event.value, 'periode_data', 'equals') "
-                        (onClear)="clear(dt2)">
+                        [showClear]="true" (onChange)="applyPeriodeFilter(selectedSearchLaba, $event) "
+                        (onClear)="selectedDataLaba(selectedSearchLaba)">
                     </p-dropdown>
                 </h5>
                 <div class="flex items-center space-x-4">
@@ -34,7 +34,7 @@
             </div>
 
             <p-table #dt2 [columns]="components2" [value]="components2" [lazy]="true"
-                (onLazyLoad)="onLazyLoadLaba($event)" [loading]="loading2"
+                (onLazyLoad)="onLazyLoadLaba($event)" [loading]="loading"
                 [paginator]="!(findSearchLaba || selectedSearchLaba)" [rows]="30" [totalRecords]="totalLabaRugi"
                 dataKey="id" [rowHover]="true" styleClass="p-datatable-gridlines p-datatable-sm no-padding-table"
                 responsiveLayout="scroll" rowGroupMode="subheader" groupRowsBy="kategori" [scrollable]="true"
@@ -53,6 +53,12 @@
                         <th *ngIf="!selectedBank">
                             <div class="flex justify-content-between align-items-center">
                                 Kode Bank
+                                <p-sortIcon field="serial_number"></p-sortIcon>
+                            </div>
+                        </th>
+                        <th *ngIf="!selectedPeriode">
+                            <div class="flex justify-content-between align-items-center">
+                                Periode
                                 <p-sortIcon field="serial_number"></p-sortIcon>
                             </div>
                         </th>
@@ -100,6 +106,9 @@
                     <tr [ngStyle]="{height: '10px'}">
                         <td *ngIf="!selectedBank">
                             {{component?.id_pelapor_prefix}}
+                        </td>
+                        <td *ngIf="!selectedPeriode">
+                            {{ component?.periode_data | date: 'yyyy-MM' }}
                         </td>
                         <td [ngClass]="{
                             'pl-4': component?.deskripsi_pos_laba_rugi?.trim().startsWith('a.') || 

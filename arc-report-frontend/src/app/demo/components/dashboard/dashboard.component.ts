@@ -461,8 +461,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
             this.dataOperator = this.dataOperator
             .filter((item: any) => item.id_pelapor_prefix !== '' && item.id_pelapor_prefix !== null)
             .map((item: any) => ({
-                label: item.id_pelapor_prefix,  // Use `id_pelapor` as the label
-                value: item.id_pelapor_prefix   // Set `id_pelapor` as the value
+                label: `${item.id_pelapor_prefix} - ${item.nama}`, // Concatenate prefix and name
+                value: item.id_pelapor_prefix, // Use prefix as the value
+                kategori: item.kategori,
             }));
             console.log('Data Operator:', this.dataOperator);
         } catch (error) {

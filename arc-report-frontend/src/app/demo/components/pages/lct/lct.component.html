@@ -26,6 +26,9 @@
                 <button pButton pRipple icon="pi pi-plus" class="p-button-success ml-8" (click)="openNew()"
                     aria-label="Tambah" [disabled]="!selectedSearch">
                 </button>
+                <button pButton pRipple label="Export" icon="pi pi-download" class="p-button-help ml-6"
+                    (click)="openExport()">
+                </button>
             </span>
         </h5>
         <p-table [value]="modifiedDataTable" dataKey="id" [tableStyle]="{ 'min-width': '50rem' }">

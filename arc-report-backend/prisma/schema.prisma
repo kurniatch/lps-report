@@ -158,11 +158,120 @@ model neraca_bank_ref {
 }
 
 model laba_rugi_ref {
-  id                   String  @id
-  pos_laba_rugi        String? @db.VarChar(20)
-  buk                  String? @db.VarChar(255)
-  bus                  String? @db.VarChar(255)
-  uus                  String? @db.VarChar(255)
-  kategori             String? @db.VarChar(50)
-  head                 String? @db.VarChar(50)
+  id            String  @id
+  pos_laba_rugi String? @db.VarChar(20)
+  buk           String? @db.VarChar(255)
+  bus           String? @db.VarChar(255)
+  uus           String? @db.VarChar(255)
+  kategori      String? @db.VarChar(50)
+  head          String? @db.VarChar(50)
+}
+
+model nama_bank {
+  kode     String @id @db.VarChar(10)
+  nama     String @db.VarChar(100)
+  kategori String @db.VarChar(50)
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
+model laba_rugi_edit {
+  id_pelapor                                                 String?
+  periode_laporan                                            String?
+  periode_data                                               String?
+  id                                                         String?
+  pos_laba_rugi                                              String?
+  deskripsi_pos_laba_rugi                                    String?
+  cakupan_data                                               String?
+  deskripsi_cakupan_data                                     String?
+  nominal_penduduk_rupiah                                    Float?
+  nominal_penduduk_valas                                     Float?
+  nominal_penduduk_total                                     Float?
+  nominal_bukan_penduduk_rupiah                              Float?
+  nominal_bukan_penduduk_valas                               Float?
+  nominal_bukan_penduduk_total                               Float?
+  nominal_rupiah                                             Float?
+  nominal_valas                                              Float?
+  nominal_total                                              Float?
+  nominal_perusahaan_induk_penduduk_rupiah                   Float?
+  nominal_perusahaan_induk_penduduk_valas                    Float?
+  nominal_perusahaan_induk_bukan_penduduk_rupiah             Float?
+  nominal_perusahaan_induk_bukan_penduduk_valas              Float?
+  nominal_perusahaan_induk_total                             Float?
+  nominal_perusahaan_anak_sln_asuransi_penduduk_rupiah       Float?
+  nominal_perusahaan_anak_sln_asuransi_penduduk_valas        Float?
+  nominal_perusahaan_anak_sln_asuransi_bukan_penduduk_rupiah Float?
+  nominal_perusahaan_anak_sln_asuransi_bukan_penduduk_valas  Float?
+  nominal_perusahaan_anak_asuransi_penduduk_rupiah           Float?
+  nominal_perusahaan_anak_asuransi_penduduk_valas            Float?
+  nominal_perusahaan_anak_asuransi_bukan_penduduk_rupiah     Float?
+  nominal_perusahaan_anak_asuransi_bukan_penduduk_valas      Float?
+  nominal_perusahaan_anak_total                              Float?
+  nominal_konsolidasi_penduduk_rupiah                        Float?
+  nominal_konsolidasi_penduduk_valas                         Float?
+  nominal_konsolidasi_bukan_penduduk_rupiah                  Float?
+  nominal_konsolidasi_bukan_penduduk_valas                   Float?
+  nominal_konsolidasi_total                                  Float?
+  buk                                                        String?
+  bus                                                        String?
+  uus                                                        String?
+  kategori                                                   String?
+  uuid                                                       String?
+  head                                                       String?
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
+model neraca_bank_edit {
+  id_pelapor                                     String?
+  periode_laporan                                String?
+  periode_data                                   String?
+  id                                             String?
+  pos_laporan_keuangan                           String?
+  deskripsi_pos_laporan_keuangan                 String?
+  cakupan_data                                   String?
+  deskripsi_cakupan_data                         String?
+  nominal_rupiah                                 Float?
+  nominal_valas                                  Float?
+  nominal_valas_usd                              Float?
+  nominal_valas_non_usd                          Float?
+  nominal_total                                  Float?
+  nominal_perusahaan_induk_rupiah                Float?
+  nominal_perusahaan_induk_valas                 Float?
+  nominal_perusahaan_induk_total                 Float?
+  nominal_perusahaan_anak_selain_asuransi_rupiah Float?
+  nominal_perusahaan_anak_selain_asuransi_valas  Float?
+  nominal_perusahaan_anak_selain_asuransi_total  Float?
+  nominal_perusahaan_anak_asuransi_rupiah        Float?
+  nominal_perusahaan_anak_asuransi_valas         Float?
+  nominal_perusahaan_anak_asuransi_total         Float?
+  nominal_konsolidasi_rupiah                     Float?
+  nominal_konsolidasi_valas                      Float?
+  nominal_konsolidasi_total                      Float?
+  buk                                            String?
+  bus                                            String?
+  uus                                            String?
+  kategori                                       String?
+  uuid                                           String?
+  head                                           String?
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
+model data_scv {
+  tahun                         Int?
+  bulan                         Int?
+  kode_kepesertaan              String?  @db.VarChar(50)
+  nama_bank                     String?  @db.VarChar(100)
+  deskripsi                     String?
+  jumlah_nasabah_penyimpan      Int?
+  jumlah_rekening_simpanan      Int?
+  jumlah_saldo_simpanan         Decimal? @db.Decimal(18, 2)
+  jumlah_saldo_simpanan_dijamin Decimal? @db.Decimal(18, 2)
+  uninsured                     Decimal? @db.Decimal(18, 2)
+  insured                       Decimal? @db.Decimal(18, 2)
+  Check                         Boolean?
+
+  @@ignore
 }

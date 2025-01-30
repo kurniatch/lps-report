@@ -13,8 +13,8 @@
 
                     <p-dropdown [options]="dataBankPeriode" optionLabel="periode" optionValue="periode"
                         class="w-60 ml-4" [filter]="true" [(ngModel)]="selectedPeriode" placeholder="Select Periode"
-                        [showClear]="true" (onChange)="dt1.filter($event.value, 'periode_data', 'equals') "
-                        (onClear)="clear(dt1)">
+                        [showClear]="true" (onChange)="applyPeriodeFilter(selectedSearch, $event) "
+                        (onClear)="selectedData(selectedSearch)">
                     </p-dropdown>
                 </h5>
                 <div class="flex items-center space-x-4">
@@ -52,6 +52,12 @@
                         <th *ngIf="!selectedBank">
                             <div class="flex justify-content-between align-items-center">
                                 Kode Bank
+                                <p-sortIcon field="serial_number"></p-sortIcon>
+                            </div>
+                        </th>
+                        <th *ngIf="!selectedPeriode">
+                            <div class="flex justify-content-between align-items-center">
+                                Periode
                                 <p-sortIcon field="serial_number"></p-sortIcon>
                             </div>
                         </th>
@@ -99,6 +105,9 @@
                     <tr [ngStyle]="{height: '10px'}">
                         <td *ngIf="!selectedBank">
                             {{component?.id_pelapor_prefix}}
+                        </td>
+                        <td *ngIf="!selectedPeriode">
+                            {{ component?.periode_data | date: 'yyyy-MM' }}
                         </td>
                         <td [ngClass]="{
                           'pl-4': component?.deskripsi_pos_laporan_keuangan?.startsWith('a.', 'b.', 'c.') || component?.deskripsi_pos_laporan_keuangan?.startsWith('b.') || component?.deskripsi_pos_laporan_keuangan?.startsWith('c.') || component?.deskripsi_pos_laporan_keuangan?.startsWith('d.') || component?.deskripsi_pos_laporan_keuangan?.startsWith('e.') || component?.deskripsi_pos_laporan_keuangan?.startsWith('f.') || component?.deskripsi_pos_laporan_keuangan?.startsWith('g.'),

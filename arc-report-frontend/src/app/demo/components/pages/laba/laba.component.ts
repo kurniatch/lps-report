@@ -43,13 +43,15 @@ export class LabaComponent implements OnInit, OnDestroy {
 
     countries: any = [] ;
 
-    dataBank: any = [];
-
     dataLabaRugi: any = [];
+
+    dataBank: any = [];
 
     dataLabaRugiPeriode: any = [];
 
     dataPeriode: any = [];
+
+    kategori: string = '';
 
     selectedCountry: string | undefined;
 
@@ -192,8 +194,6 @@ export class LabaComponent implements OnInit, OnDestroy {
 
     loading: boolean = true;
 
-    loading2: boolean = true;
-
     currentPage: number = 1;
 
     perPage: number = 30;
@@ -256,7 +256,6 @@ export class LabaComponent implements OnInit, OnDestroy {
         const key = localStorage.getItem('key');
         this.isAdmin = key === 'admin'; // Check if the key is 'admin'
 
-        this.loading2 = true;
         this.loadDataTotalLaba();
         this.loadDataLaba(1, 20);
         this.getLabaRugiData();
@@ -266,18 +265,15 @@ export class LabaComponent implements OnInit, OnDestroy {
             { label: 'Add New', icon: 'pi pi-fw pi-plus' },
             { label: 'Remove', icon: 'pi pi-fw pi-minus' },
         ];
-        this.loading2 = false;
     }
 
     async loadDataTotalLaba() {
-        this.loading2 = true;
         try {
             const totalRecord: any =
                 await this.crudService.getLabaRugiReportTotal();
 
             this.totalLabaRugi = totalRecord[0].total;
 
-            this.loading2 = false;
             console.log('totalRecord 1', this.totalLabaRugi);
         } catch (error) {
             console.error('Failed to fetch component data:', error);
@@ -285,7 +281,7 @@ export class LabaComponent implements OnInit, OnDestroy {
     }
 
     async loadDataLaba(currentPage: number, perPage: number = 30) {
-        this.loading2 = true;
+        this.loading = true;
         const params = {
             page: currentPage.toString(),
             perPage: perPage.toString(),
@@ -296,19 +292,25 @@ export class LabaComponent implements OnInit, OnDestroy {
                 params
             );
             this.components2 = components;
-            this.loading2 = false;
+            this.loading = false;
         } catch (error) {
             console.error('Failed to fetch component data:', error);
         }
     }
 
     async findDataLaba(keyword: string) {
-        this.loading2 = true;
+        this.loading = true;
         keyword = keyword.trim();
         if (keyword.length >= 3) {
-            this.loading2 = true;
+            this.loading = true;
+            this.kategori = this.dataLabaRugi.find(
+                (item: any) => item.value === keyword
+            )?.kategori;
+
+            console.log('keyword', keyword);
             const body = {
                 keyword: keyword.toUpperCase(),
+                kategori: this.kategori.toLowerCase(),
             };
             console.log('body', body);
             try {
@@ -317,13 +319,13 @@ export class LabaComponent implements OnInit, OnDestroy {
                 );
 
                 this.components2 = search;
-                this.loading2 = false;
+                this.loading = false;
                 console.log('hasil search post', search);
             } catch (error) {
                 console.error('Failed to fetch component data:', error);
             }
         } else {
-            this.loading2 = false;
+            this.loading = false;
             this.messageService.add({
                 severity: 'warn',
                 summary: 'Keyword tidak cukup',
@@ -333,18 +335,23 @@ export class LabaComponent implements OnInit, OnDestroy {
     }
 
     async selectedDataLaba(keyword: string) {
-        this.loading2 = true;
+        this.loading = true;
         this.selectedBank = true;
         keyword = keyword.trim();
 
         console.log('keyword 1', keyword);
 
         if (keyword.length >= 3) {
-            this.loading2 = true;
+            this.loading = true;
+
+            this.kategori = this.dataLabaRugi.find(
+                (item: any) => item.value === keyword
+            )?.kategori;
 
             console.log('keyword', keyword);
             const body = {
                 keyword: keyword.toUpperCase(),
+                kategori: this.kategori.toLowerCase(),
             };
             console.log('body', body);
             try {
@@ -356,13 +363,13 @@ export class LabaComponent implements OnInit, OnDestroy {
 
                 this.components2 = search;
 
-                this.loading2 = false;
+                this.loading = false;
                 console.log('hasil search post', search);
             } catch (error) {
                 console.error('Failed to fetch component data:', error);
             }
         } else {
-            this.loading2 = false;
+            this.loading = false;
             this.messageService.add({
                 severity: 'warn',
                 summary: 'Keyword tidak cukup',
@@ -378,11 +385,11 @@ export class LabaComponent implements OnInit, OnDestroy {
     }
 
     onLazyLoadLaba(event: any) {
-        this.loading2 = true;
+        this.loading = true;
         this.pages = event.first / 30;
         this.currentPage = this.pages + 1;
         this.loadDataLaba(this.currentPage, event.rows);
-        this.loading2 = false;
+        this.loading = false;
     }
 
     onEditProduct(component: any) {
@@ -790,14 +797,14 @@ export class LabaComponent implements OnInit, OnDestroy {
     }
 
     async getLabaRugiData() {
-        this.loading2 = true;
         try {
             this.dataLabaRugi = await this.crudService.getLabaRugiData();
             this.dataLabaRugi = this.dataLabaRugi            
             .filter((item: any) => item.id_pelapor_prefix !== null && item.id_pelapor_prefix !== undefined)
             .map((item: any) => ({
-                label: item.id_pelapor_prefix,  
-                value: item.id_pelapor_prefix,  
+                label: `${item.id_pelapor_prefix} - ${item.nama}`, // Concatenate prefix and name
+                value: item.id_pelapor_prefix, // Use prefix as the value
+                kategori: item.kategori,
             }));
             console.log('dataLabaRugi', this.dataLabaRugi);
         } catch (error) {
@@ -807,11 +814,11 @@ export class LabaComponent implements OnInit, OnDestroy {
 
     async getLabaRugiDataPeriode() {
         try {
-            this.dataLabaRugiPeriode = await this.crudService.getLabaRugiData();
+            this.dataLabaRugiPeriode = await this.crudService.getLabaRugiPeriode();
             this.dataLabaRugiPeriode = this.dataLabaRugiPeriode
             .filter((item: any) => item.periode_data !== null && item.periode_data !== '')
             .map((item: any) => ({
-                periode: item.periode_data,
+                periode: new Date(item.periode_data).toISOString().slice(0, 7), // "YYYY-MM"
             }));
                         console.log('dataLabaRugiPeriode', this.dataLabaRugiPeriode);
         } catch (error) {
@@ -830,6 +837,26 @@ export class LabaComponent implements OnInit, OnDestroy {
         const key = event.value;
         console.log('key', key);
     }
+
+    async applyPeriodeFilter(keyword: string, event: any) {
+        console.log('event', event);
+
+        await this.selectedDataLaba(keyword);
+        this.loading = true;
+        if (this.components2.length > 0) {
+                // const split = event.value.split('/');
+                // const tahun = Number(split[0]); // Convert to number
+                // const bulan = Number(split[1]); // Convert to number
+            this.components2 = this.components2.filter(
+                (item) => item.periode_data?.slice(0, 7) === event.value
+            );
+            this.loading = false;
+        }
+        // if (this.dt1) {
+        //   this.dt1.filter(event.value, 'periode_data', 'contains');  // Correct number of arguments
+        // }
+      }
+      
 
 
     addData(data: any, edit: string) {
@@ -874,7 +901,7 @@ export class LabaComponent implements OnInit, OnDestroy {
             data.laba_rugi.kategori = this.editData.kategori;
 
             this.crudService
-                .updateReport(data)
+                .updateReportLaba(data)
                 .then((responseData) => {
                     console.log('Response from backend:', responseData);
                     window.location.reload();
@@ -885,7 +912,7 @@ export class LabaComponent implements OnInit, OnDestroy {
         } else {
             console.log('data2', data);
             this.crudService
-                .createReport(data)
+                .createReportLaba(data)
                 .then((responseData) => {
                     console.log('Response from backend:', responseData);
                     window.location.reload();

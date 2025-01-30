@@ -341,9 +341,12 @@ export class FinancialComponent implements OnInit, OnDestroy {
         if (keyword.length >= 4) {
             this.loading = true;
 
+            const kategori = this.dataBank.kategori;
+
             console.log('keyword', keyword);
             const body = {
                 keyword: keyword.toUpperCase(),
+                kategori: kategori.toLowerCase(),
             };
             console.log('body', body);
             try {
@@ -417,9 +420,13 @@ export class FinancialComponent implements OnInit, OnDestroy {
         if (keyword.length >= 4) {
             this.loading = true;
 
+            const kategori = this.dataBank.kategori;
+
+
             console.log('keyword', keyword);
             const body = {
                 keyword: keyword.toUpperCase(),
+                kategori: kategori.toLowerCase(),
             };
             console.log('body', body);
             try {

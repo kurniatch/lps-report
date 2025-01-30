@@ -1,5 +1,6 @@
 import { NgModule } from '@angular/core';
 import { RouterModule } from '@angular/router';
+import { AdminAuthGuard } from 'src/app/admin.auth.guard';
 
 @NgModule({
     imports: [
@@ -11,6 +12,7 @@ import { RouterModule } from '@angular/router';
             },
             {
                 path: 'administration',
+                canActivate: [AdminAuthGuard], // Gunakan AuthGuard di sini
                 loadChildren: () =>
                     import('./administration/administration.module').then(
                         (m) => m.AdministrationModule
@@ -32,6 +34,10 @@ import { RouterModule } from '@angular/router';
                 path: 'neraca',
                 loadChildren: () =>
                     import('./neraca/neraca.module').then((m) => m.NeracaModule),
+            },            {
+                path: 'scv',
+                loadChildren: () =>
+                    import('./scv/scv.module').then((m) => m.ScvModule),
             },
             { path: '**', redirectTo: '/notfound' },
         ]),
