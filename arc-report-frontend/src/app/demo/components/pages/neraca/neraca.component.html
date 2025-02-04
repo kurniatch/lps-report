@@ -61,6 +61,18 @@
                                 <p-sortIcon field="serial_number"></p-sortIcon>
                             </div>
                         </th>
+                        <th>
+                            <div class="flex justify-content-between align-items-center">
+                                Pos Laporan
+                                <p-sortIcon field="serial_number"></p-sortIcon>
+                            </div>
+                        </th>
+                        <th>
+                            <div class="flex justify-content-between align-items-center">
+                                ID
+                                <p-sortIcon field="serial_number"></p-sortIcon>
+                            </div>
+                        </th>
                         <th style="min-width: 8rem">
                             <div class="flex justify-content-between align-items-center">
                                 Pos - Pos
@@ -108,6 +120,12 @@
                         </td>
                         <td *ngIf="!selectedPeriode">
                             {{ component?.periode_data | date: 'yyyy-MM' }}
+                        </td>
+                        <td>
+                            {{ component?.pos_laporan_keuangan }}
+                        </td>
+                        <td>
+                            {{ component?.id_numeric }}
                         </td>
                         <td [ngClass]="{
                           'pl-4': component?.deskripsi_pos_laporan_keuangan?.startsWith('a.', 'b.', 'c.') || component?.deskripsi_pos_laporan_keuangan?.startsWith('b.') || component?.deskripsi_pos_laporan_keuangan?.startsWith('c.') || component?.deskripsi_pos_laporan_keuangan?.startsWith('d.') || component?.deskripsi_pos_laporan_keuangan?.startsWith('e.') || component?.deskripsi_pos_laporan_keuangan?.startsWith('f.') || component?.deskripsi_pos_laporan_keuangan?.startsWith('g.'),

@@ -1,0 +1,29 @@
+version: '3.8'
+services:
+  postgres:
+    image: postgres:15
+    container_name: nestjs_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+      POSTGRES_DB: mydatabase
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build: .
+    container_name: nestjs_backend
+    restart: always
+    depends_on:
+      - postgres
+    ports:
+      - '3012:3012'
+    environment:
+      DATABASE_URL: 'postgresql://myuser:mypassword@postgres:5432/mydatabase?schema=public'
+
+volumes:
+  postgres_data:
+    driver: local

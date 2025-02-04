@@ -27,6 +27,8 @@ import { SliderModule } from 'primeng/slider';
 import { ToggleButtonModule } from 'primeng/togglebutton';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { ProgressBarModule } from 'primeng/progressbar';
+import { TabViewModule } from 'primeng/tabview';
+
 
 @NgModule({
     imports: [
@@ -66,6 +68,7 @@ import { ProgressBarModule } from 'primeng/progressbar';
         DropdownModule,
         ProgressBarModule,
         ToastModule,
+        TabViewModule,
     ],
     declarations: [LctComponent],
 })

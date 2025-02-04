@@ -477,7 +477,7 @@ export class ReportService {
       }
       
       const query = `
-          COPY neraca_bank_edit  (
+          COPY neraca_bank  (
             id_pelapor,
             periode_laporan,
             periode_data,

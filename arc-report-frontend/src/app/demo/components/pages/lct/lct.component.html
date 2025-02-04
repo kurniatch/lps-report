@@ -1,130 +1,850 @@
-<div class="grid mb-4">
-    <div class="col-12 lg:col-6 xl:col-3" *ngFor="let variable of [1, 2, 3, 4]; let i = index">
-        <div class="card mb-0">
-            <div class="flex justify-content-between mb-3">
-                <div>
-                    <span class="block text-500 font-medium mb-3 text-xl">
-                        Variabel {{ variable }}
-                        <i class="text-900 pi pi-pencil" style="cursor: pointer; margin-left: 5px;"></i>
-                    </span>
-                    <div class="text-900 font-medium text-xl">
-                        <input pInputText type="number" [(ngModel)]="this['variabel' + variable]"
-                            (ngModelChange)="onVariableChange()" />
+<p-tabView styleClass="mb-4 border border-gray-300 rounded-lg shadow-md">
+    <p-tabPanel header="Variabel" leftIcon="pi pi-sliders-h">
+        <div class="grid mb-4">
+            <div class="col-12 lg:col-6 xl:col-3" *ngFor="let variable of [1, 2, 3, 4]; let i = index">
+                <div class="card mb-0">
+                    <div class="flex justify-content-between mb-3">
+                        <div>
+                            <span class="block text-500 font-medium mb-3 text-xl">
+                                Variabel {{ variable }}
+                                <i class="text-900 pi pi-pencil" style="cursor: pointer; margin-left: 5px;"></i>
+                            </span>
+                            <div class="text-900 font-medium text-xl">
+                                <input pInputText type="number" [(ngModel)]="this['variabel' + variable]"
+                                    (ngModelChange)="onVariableChange()" />
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
+    </p-tabPanel>
+
+    <p-tabPanel header="Tabel" leftIcon="pi pi-table">
+        <div class="card col-12">
+            <h5 class="font-medium mb-3 ml-4 text-xl">Select Bank
+                <span class="ml-4">
+                    <p-dropdown [options]="dataBank" [(ngModel)]="selectedSearch" optionLabel="label"
+                        optionValue="value" class="text-2xl" [filter]="true" placeholder="Select Bank"
+                        [showClear]="true" (onChange)="getTableData(selectedSearch)">
+                    </p-dropdown>
+                    <button pButton pRipple icon="pi pi-plus" class="p-button-success ml-8" (click)="openNew()"
+                        aria-label="Tambah" [disabled]="!selectedSearch">
+                    </button>
+                    <button pButton pRipple label="Export" icon="pi pi-download" class="p-button-help ml-6"
+                        (click)="openExport()">
+                    </button>
+                </span>
+            </h5>
+            <p-table [value]="modifiedDataTable" dataKey="id" [tableStyle]="{ 'min-width': '50rem' }">
+                <ng-template pTemplate="header">
+                    <tr>
+                        <th pSortableColumn="pos" style="width:25%">
+                            Pos - Pos <p-sortIcon field="pos" />
+                        </th>
+                        <th pSortableColumn="nominal_rupiah" style="width:20%">
+                            Nominal Rupiah <p-sortIcon field="nominal_rupiah" />
+                            <i class="ml-4 pi pi-pencil" style="cursor:pointer; margin-left:5px;"></i>
+                        </th>
+                        <th pSortableColumn="nominal_valas" style="width:20%">
+                            Nominal Valas <p-sortIcon field="nominal_valas" />
+                            <i class="ml-4 pi pi-pencil" style="cursor:pointer; margin-left:5px;"></i>
+                        </th>
+                        <th pSortableColumn="nominal_total" style="width:20%">
+                            Nominal Total <p-sortIcon field="nominal_total" />
+                            <i class="ml-4 pi pi-pencil" style="cursor:pointer; margin-left:5px;"></i>
+                        </th>
+                        <th pSortableColumn="hasil" style="width:20%">
+                            Hasil <p-sortIcon field="hasil" />
+                        </th>
+                    </tr>
+                </ng-template>
+                <ng-template pTemplate="body" let-product>
+                    <tr>
+                        <td>{{ product.pos }}</td>
+                        <td>{{ product.nominal_rupiah | number:'1.0-0':'id' }}</td>
+                        <td>{{ product.nominal_valas | number:'1.0-0':'id' }}</td>
+                        <td>{{ product.nominal_total | number:'1.0-0':'id' }}</td>
+                        <td>
+                            <i *ngIf="product.hasil === 'Setuju'" class="pi pi-check-circle text-green-500 mr-2"></i>
+                            <i *ngIf="product.hasil === 'Tinjau Ulang'"
+                                class="pi pi-exclamation-circle text-yellow-500 mr-2"></i>
+                            <i *ngIf="product.hasil === 'Tolak'" class="pi pi-times-circle text-red-500 mr-2"></i>
+                            {{ product.hasil }}
+                        </td>
+                    </tr>
+                </ng-template>
+            </p-table>
+        </div>
+    </p-tabPanel>
+
+    <p-tabPanel header="Neraca Fix" leftIcon="pi pi-chart-bar">
+
+        <div class="card p-4">
+            <div class="mt-4 flex gap-4 justify-between overflow-x-auto">
+                <div class="w-1/2 min-w-[300px]">
+                    <p-table [value]="assets" [resizableColumns]="true"
+                        styleClass="p-datatable-gridlines p-datatable-sm no-padding-table"
+                        [tableStyle]="{'width': '100%'}">
+
+                        <ng-template pTemplate="header">
+                            <tr>
+                                <th colspan="2" class="text-center font-bold text-xl">ASET</th>
+                            </tr>
+                        </ng-template>
+                        <ng-template pTemplate="body" let-item>
+                            <tr [class.font-bold]="item.isTotal">
+                                <td *ngIf="!item.isSubheader" [style.padding-left.px]="item.indent ? 30 : 10"
+                                    [ngClass]="{'bg-yellow-500 text-white': item.isSubheader}">{{item.label}}</td>
+                                <td *ngIf="!item.isSubheader" class="text-right"
+                                    [ngClass]="{'text-red-500': item.value < 0 || item.label.includes('(-)')}">
+                                    {{ (item.label.includes('(-)') ? '-' : '') + (item.value === 0 ? '-' : (item.value |
+                                    number:'1.0-0')) }}
+                                </td>
+                                <td *ngIf="item.isSubheader" colspan="2"
+                                    class="bg-yellow-500 text-white text-center font-bold">
+                                    {{ item.label }}
+                                </td>
+                            </tr>
+                        </ng-template>
+                    </p-table>
+                </div>
+
+                <div class="w-1/2 min-w-[300px]">
+                    <p-table [value]="liabilitiesEquity" [resizableColumns]="true"
+                        styleClass="p-datatable-gridlines p-datatable-sm no-padding-table"
+                        [tableStyle]="{'width': '100%'}">
+                        <ng-template pTemplate="header">
+                            <tr>
+                                <th colspan="2" class="text-center font-bold text-xl">LIABILITAS & EKUITAS</th>
+                            </tr>
+                        </ng-template>
+                        <ng-template pTemplate="body" let-item>
+                            <tr [class.font-bold]="item.isTotal || item.isSubheader">
+                                <td *ngIf="!item.isSubheader" [style.padding-left.px]="item.indent ? 30 : 10"
+                                    [ngClass]="{'bg-yellow-500 text-white': item.isSubheader}">{{item.label}}</td>
+                                <td *ngIf="!item.isSubheader" class="text-right"
+                                    [ngClass]="{'text-red-500': item.value < 0 || item.label.includes('(-)')}">
+                                    <span *ngIf="item.value !== null">
+                                        {{ (item.label.includes('(-)') ? '-' : '') + (item.value === 0 ? '-' :
+                                        (item.value |
+                                        number:'1.0-0')) }}
+                                    </span>
+                                </td>
+                                <td *ngIf="item.isSubheader" colspan="2"
+                                    class="bg-yellow-500 text-white text-center font-bold">
+                                    {{ item.label }}
+                                </td>
+                            </tr>
+                        </ng-template>
+                    </p-table>
+                </div>
+            </div>
+        </div>
+    </p-tabPanel>
+    <p-tabPanel header="Summary Kredit" leftIcon="pi pi-wallet">
+        <div class="card col-12">
+            <h5>
+                Data Bank
+            </h5>
+            <p-table styleClass="mb-8" [value]="modifiedDataTable1" dataKey="id" [tableStyle]="{ 'min-width': '50rem' }"
+                responsiveLayout="scroll">
+                <ng-template pTemplate="header">
+                    <tr>
+                        <th pSortableColumn="pos" style="width:12%">
+                            Kredit
+                            <p-sortIcon field="pos" />
+                        </th>
+                        <th pSortableColumn="nominal_rupiah" style="width:12%">
+                            CKPN Aset Baik <p-sortIcon field="nominal_rupiah" />
+                            <i class="ml-4 pi pi-pencil" style="cursor:pointer; margin-left:5px;"></i>
+                        </th>
+                        <th pSortableColumn="nominal_valas" style="width:12%">
+                            CKPN Aset Kurang Baik <p-sortIcon field="nominal_valas" />
+                            <i class="ml-4 pi pi-pencil" style="cursor:pointer; margin-left:5px;"></i>
+                        </th>
+                        <th pSortableColumn="nominal_total" style="width:12%">
+                            CKPN Aset Tidak Baik <p-sortIcon field="nominal_total" />
+                            <i class="ml-4 pi pi-pencil" style="cursor:pointer; margin-left:5px;"></i>
+                        </th>
+                        <th pSortableColumn="hasil" style="width:12%">
+                            CKPN <p-sortIcon field="hasil" />
+                        </th>
+                        <th pSortableColumn="hasil" style="width:12%">
+                            Jumlah Rekening <p-sortIcon field="hasil" />
+                        </th>
+                        <th pSortableColumn="hasil" style="width:12%">
+                            Baki Debet <p-sortIcon field="hasil" />
+                        </th>
+                        <th pSortableColumn="hasil" style="width:12%">
+                            Baki Debet Pemeriksa <p-sortIcon field="hasil" />
+                        </th>
+                    </tr>
+                </ng-template>
+                <ng-template pTemplate="body" let-product>
+                    <!-- <tr>
+                            <td>{{ product.pos }}</td>
+                            <td>{{ product.nominal_rupiah | number:'1.0-0':'id' }}</td>
+                            <td>{{ product.nominal_valas | number:'1.0-0':'id' }}</td>
+                            <td>{{ product.nominal_total | number:'1.0-0':'id' }}</td>
+                            <td>
+                                <i *ngIf="product.hasil === 'Setuju'" class="pi pi-check-circle text-green-500 mr-2"></i>
+                                <i *ngIf="product.hasil === 'Tinjau Ulang'"
+                                    class="pi pi-exclamation-circle text-yellow-500 mr-2"></i>
+                                <i *ngIf="product.hasil === 'Tolak'" class="pi pi-times-circle text-red-500 mr-2"></i>
+                                {{ product.hasil }}
+                            </td>
+                        </tr> -->
+                </ng-template>
+            </p-table>
+            <h5>
+                Skenario Pemburukan
+            </h5>
+            <p-table styleClass="mb-4" [value]="modifiedDataTable2" dataKey="id" [tableStyle]="{ 'min-width': '50rem' }"
+                responsiveLayout="scroll">
+                <ng-template pTemplate="header">
+                    <tr>
+                        <th pSortableColumn="pos" style="width:12%">
+                            Kualitas Kredit
+                            <p-sortIcon field="pos" />
+                        </th>
+                        <th pSortableColumn="nominal_rupiah" style="width:12%">
+                            Jumlah Rekening <p-sortIcon field="nominal_rupiah" />
+                            <i class="ml-4 pi pi-pencil" style="cursor:pointer; margin-left:5px;"></i>
+                        </th>
+                        <th pSortableColumn="nominal_valas" style="width:12%">
+                            Baki Debet <p-sortIcon field="nominal_valas" />
+                            <i class="ml-4 pi pi-pencil" style="cursor:pointer; margin-left:5px;"></i>
+                        </th>
+
+                    </tr>
+                </ng-template>
+                <ng-template pTemplate="body" let-product>
+                    <!-- <tr>
+                            <td>{{ product.pos }}</td>
+                            <td>{{ product.nominal_rupiah | number:'1.0-0':'id' }}</td>
+                            <td>{{ product.nominal_valas | number:'1.0-0':'id' }}</td>
+                            <td>{{ product.nominal_total | number:'1.0-0':'id' }}</td>
+                            <td>
+                                <i *ngIf="product.hasil === 'Setuju'" class="pi pi-check-circle text-green-500 mr-2"></i>
+                                <i *ngIf="product.hasil === 'Tinjau Ulang'"
+                                    class="pi pi-exclamation-circle text-yellow-500 mr-2"></i>
+                                <i *ngIf="product.hasil === 'Tolak'" class="pi pi-times-circle text-red-500 mr-2"></i>
+                                {{ product.hasil }}
+                            </td>
+                        </tr> -->
+                </ng-template>
+            </p-table>
+
+            <p-table styleClass="mb-4" [value]="modifiedDataTable3" dataKey="id" [tableStyle]="{ 'min-width': '50rem' }"
+                responsiveLayout="scroll">
+                <ng-template pTemplate="header">
+                    <tr>
+                        <th pSortableColumn="pos" style="width:12%">
+                            Skenario Pemburukan
+                            <p-sortIcon field="pos" />
+                        </th>
+                        <th pSortableColumn="nominal_rupiah" style="width:12%">
+                            Kol 1 <p-sortIcon field="nominal_rupiah" />
+                            <i class="ml-4 pi pi-pencil" style="cursor:pointer; margin-left:5px;"></i>
+                        </th>
+                        <th pSortableColumn="nominal_valas" style="width:12%">
+                            Kol 2-4 <p-sortIcon field="nominal_valas" />
+                            <i class="ml-4 pi pi-pencil" style="cursor:pointer; margin-left:5px;"></i>
+                        </th>
+                        <th pSortableColumn="nominal_valas" style="width:12%">
+                            Total <p-sortIcon field="nominal_valas" />
+                            <i class="ml-4 pi pi-pencil" style="cursor:pointer; margin-left:5px;"></i>
+                        </th>
+                        <th pSortableColumn="nominal_valas" style="width:12%">
+                            Keterangan <p-sortIcon field="nominal_valas" />
+                            <i class="ml-4 pi pi-pencil" style="cursor:pointer; margin-left:5px;"></i>
+                        </th>
+
+                    </tr>
+                </ng-template>
+                <ng-template pTemplate="body" let-product>
+                    <!-- <tr>
+                        <td>{{ product.pos }}</td>
+                        <td>{{ product.nominal_rupiah | number:'1.0-0':'id' }}</td>
+                        <td>{{ product.nominal_valas | number:'1.0-0':'id' }}</td>
+                        <td>{{ product.nominal_total | number:'1.0-0':'id' }}</td>
+                        <td>
+                            <i *ngIf="product.hasil === 'Setuju'" class="pi pi-check-circle text-green-500 mr-2"></i>
+                            <i *ngIf="product.hasil === 'Tinjau Ulang'"
+                                class="pi pi-exclamation-circle text-yellow-500 mr-2"></i>
+                            <i *ngIf="product.hasil === 'Tolak'" class="pi pi-times-circle text-red-500 mr-2"></i>
+                            {{ product.hasil }}
+                        </td>
+                    </tr> -->
+                </ng-template>
+            </p-table>
+        </div>
+    </p-tabPanel>
+
+    <p-tabPanel header="GWM" leftIcon="pi pi-lock">
+        <div class="card col-12">
+            <h5>
+                Data Bank
+            </h5>
+            <p-table styleClass="mb-8" [value]="modifiedDataTable1" dataKey="id" [tableStyle]="{ 'min-width': '50rem' }"
+                responsiveLayout="scroll">
+                <ng-template pTemplate="header">
+                    <tr>
+                        <th pSortableColumn="pos" style="width:12%">
+                            Keterangan
+                            <p-sortIcon field="pos" />
+                        </th>
+                        <th pSortableColumn="nominal_rupiah" style="width:12%">
+                            Nilai Awal <p-sortIcon field="nominal_rupiah" />
+                            <i class="ml-4 pi pi-pencil" style="cursor:pointer; margin-left:5px;"></i>
+                        </th>
+                        <th pSortableColumn="nominal_valas" style="width:12%">
+                            Parameter <p-sortIcon field="nominal_valas" />
+                            <i class="ml-4 pi pi-pencil" style="cursor:pointer; margin-left:5px;"></i>
+                        </th>
+                        <th pSortableColumn="nominal_total" style="width:12%">
+                            Hasil Perhitungan <p-sortIcon field="nominal_total" />
+                            <i class="ml-4 pi pi-pencil" style="cursor:pointer; margin-left:5px;"></i>
+                        </th>
+                    </tr>
+                </ng-template>
+                <ng-template pTemplate="body" let-product>
+                    <!-- <tr>
+                            <td>{{ product.pos }}</td>
+                            <td>{{ product.nominal_rupiah | number:'1.0-0':'id' }}</td>
+                            <td>{{ product.nominal_valas | number:'1.0-0':'id' }}</td>
+                            <td>{{ product.nominal_total | number:'1.0-0':'id' }}</td>
+                            <td>
+                                <i *ngIf="product.hasil === 'Setuju'" class="pi pi-check-circle text-green-500 mr-2"></i>
+                                <i *ngIf="product.hasil === 'Tinjau Ulang'"
+                                    class="pi pi-exclamation-circle text-yellow-500 mr-2"></i>
+                                <i *ngIf="product.hasil === 'Tolak'" class="pi pi-times-circle text-red-500 mr-2"></i>
+                                {{ product.hasil }}
+                            </td>
+                        </tr> -->
+                </ng-template>
+            </p-table>
+        </div>
+    </p-tabPanel>
+
+    <p-tabPanel header="Neraca BV & FV" leftIcon="pi pi-align-left">
+        <div class="card p-4">
+            <h5>
+                A. BANK ASAL
+            </h5>
+            <div class="mt-4 flex gap-4 justify-between overflow-x-auto">
+                <div class="w-1/2 min-w-[300px]">
+                    <p-table [value]="assetsBankAsal" [resizableColumns]="true"
+                        styleClass="p-datatable-gridlines p-datatable-sm no-padding-table"
+                        [tableStyle]="{'width': '100%'}">
+
+                        <ng-template pTemplate="header">
+                            <tr>
+                                <th colspan="2" class="text-center font-bold text-xl">ASET</th>
+                            </tr>
+                        </ng-template>
+                        <ng-template pTemplate="body" let-item>
+                            <tr [class.font-bold]="item.isTotal">
+                                <td *ngIf="!item.isSubheader" [style.padding-left.px]="item.indent ? 30 : 10"
+                                    [ngClass]="{'bg-yellow-500 text-white': item.isSubheader}">{{item.label}}</td>
+                                <td *ngIf="!item.isSubheader" class="text-right"
+                                    [ngClass]="{'text-red-500': item.value < 0 || item.label.includes('(-)')}">
+                                    {{ (item.label.includes('(-)') ? '-' : '') + (item.value === 0 ? '-' : (item.value |
+                                    number:'1.0-0')) }}
+                                </td>
+                                <td *ngIf="item.isSubheader" colspan="2"
+                                    class="bg-yellow-500 text-white text-center font-bold">
+                                    {{ item.label }}
+                                </td>
+                            </tr>
+                        </ng-template>
+                    </p-table>
+                </div>
+
+                <div class="w-1/2 min-w-[300px]">
+                    <p-table [value]="liabilitiesEquityBankAsal" [resizableColumns]="true"
+                        styleClass="p-datatable-gridlines p-datatable-sm no-padding-table"
+                        [tableStyle]="{'width': '100%'}">
+                        <ng-template pTemplate="header">
+                            <tr>
+                                <th colspan="2" class="text-center font-bold text-xl">LIABILITAS & EKUITAS</th>
+                            </tr>
+                        </ng-template>
+                        <ng-template pTemplate="body" let-item>
+                            <tr [class.font-bold]="item.isTotal || item.isSubheader">
+                                <td *ngIf="!item.isSubheader" [style.padding-left.px]="item.indent ? 30 : 10"
+                                    [ngClass]="{'bg-yellow-500 text-white': item.isSubheader}">{{item.label}}</td>
+                                <td *ngIf="!item.isSubheader" class="text-right"
+                                    [ngClass]="{'text-red-500': item.value < 0 || item.label.includes('(-)')}">
+                                    <span *ngIf="item.value !== null">
+                                        {{ (item.label.includes('(-)') ? '-' : '') + (item.value === 0 ? '-' :
+                                        (item.value |
+                                        number:'1.0-0')) }}
+                                    </span>
+                                </td>
+                                <td *ngIf="item.isSubheader" colspan="2"
+                                    class="bg-yellow-500 text-white text-center font-bold">
+                                    {{ item.label }}
+                                </td>
+                            </tr>
+                        </ng-template>
+                    </p-table>
+                </div>
+            </div>
+            <h5>
+                B. BANK ASAL MENGGUNAKAN HASIL PEMBURUKAN
+            </h5>
+            <div class="mt-4 flex gap-4 justify-between overflow-x-auto">
+                <div class="w-1/2 min-w-[300px]">
+                    <p-table [value]="assetsBankAsalPemburukan" [resizableColumns]="true"
+                        styleClass="p-datatable-gridlines p-datatable-sm no-padding-table"
+                        [tableStyle]="{'width': '100%'}">
+
+                        <ng-template pTemplate="header">
+                            <tr>
+                                <th colspan="2" class="text-center font-bold text-xl">ASET</th>
+                            </tr>
+                        </ng-template>
+                        <ng-template pTemplate="body" let-item>
+                            <tr [class.font-bold]="item.isTotal">
+                                <td *ngIf="!item.isSubheader" [style.padding-left.px]="item.indent ? 30 : 10"
+                                    [ngClass]="{'bg-yellow-500 text-white': item.isSubheader}">{{item.label}}</td>
+                                <td *ngIf="!item.isSubheader" class="text-right"
+                                    [ngClass]="{'text-red-500': item.value < 0 || item.label.includes('(-)')}">
+                                    {{ (item.label.includes('(-)') ? '-' : '') + (item.value === 0 ? '-' : (item.value |
+                                    number:'1.0-0')) }}
+                                </td>
+                                <td *ngIf="item.isSubheader" colspan="2"
+                                    class="bg-yellow-500 text-white text-center font-bold">
+                                    {{ item.label }}
+                                </td>
+                            </tr>
+                        </ng-template>
+                    </p-table>
+                </div>
+
+                <div class="w-1/2 min-w-[300px]">
+                    <p-table [value]="liabilitiesEquityBankAsalPemburukan" [resizableColumns]="true"
+                        styleClass="p-datatable-gridlines p-datatable-sm no-padding-table"
+                        [tableStyle]="{'width': '100%'}">
+                        <ng-template pTemplate="header">
+                            <tr>
+                                <th colspan="2" class="text-center font-bold text-xl">LIABILITAS & EKUITAS</th>
+                            </tr>
+                        </ng-template>
+                        <ng-template pTemplate="body" let-item>
+                            <tr [class.font-bold]="item.isTotal || item.isSubheader">
+                                <td *ngIf="!item.isSubheader" [style.padding-left.px]="item.indent ? 30 : 10"
+                                    [ngClass]="{'bg-yellow-500 text-white': item.isSubheader}">{{item.label}}</td>
+                                <td *ngIf="!item.isSubheader" class="text-right"
+                                    [ngClass]="{'text-red-500': item.value < 0 || item.label.includes('(-)')}">
+                                    <span *ngIf="item.value !== null">
+                                        {{ (item.label.includes('(-)') ? '-' : '') + (item.value === 0 ? '-' :
+                                        (item.value |
+                                        number:'1.0-0')) }}
+                                    </span>
+                                </td>
+                                <td *ngIf="item.isSubheader" colspan="2"
+                                    class="bg-yellow-500 text-white text-center font-bold">
+                                    {{ item.label }}
+                                </td>
+                            </tr>
+                        </ng-template>
+                    </p-table>
+                </div>
+            </div>
+            <h5>
+                C. BANK ASAL MENGGUNAKAN HASIL PEMBURUKAN
+            </h5>
+            <div class="mt-4 flex gap-4 justify-between overflow-x-auto">
+                <div class="w-1/2 min-w-[300px]">
+                    <p-table [value]="assetsBankAsalPemburukanC" [resizableColumns]="true"
+                        styleClass="p-datatable-gridlines p-datatable-sm no-padding-table"
+                        [tableStyle]="{'width': '100%'}">
+
+                        <ng-template pTemplate="header">
+                            <tr>
+                                <th colspan="2" class="text-center font-bold text-xl">ASET</th>
+                            </tr>
+                        </ng-template>
+                        <ng-template pTemplate="body" let-item>
+                            <tr [class.font-bold]="item.isTotal">
+                                <td *ngIf="!item.isSubheader" [style.padding-left.px]="item.indent ? 30 : 10"
+                                    [ngClass]="{'bg-yellow-500 text-white': item.isSubheader}">{{item.label}}</td>
+                                <td *ngIf="!item.isSubheader" class="text-right"
+                                    [ngClass]="{'text-red-500': item.value < 0 || item.label.includes('(-)')}">
+                                    {{ (item.label.includes('(-)') ? '-' : '') + (item.value === 0 ? '-' : (item.value |
+                                    number:'1.0-0')) }}
+                                </td>
+                                <td *ngIf="item.isSubheader" colspan="2"
+                                    class="bg-yellow-500 text-white text-center font-bold">
+                                    {{ item.label }}
+                                </td>
+                            </tr>
+                        </ng-template>
+                    </p-table>
+                </div>
+
+                <div class="w-1/2 min-w-[300px]">
+                    <p-table [value]="liabilitiesEquityBankAsalPemburukanC" [resizableColumns]="true"
+                        styleClass="p-datatable-gridlines p-datatable-sm no-padding-table"
+                        [tableStyle]="{'width': '100%'}">
+                        <ng-template pTemplate="header">
+                            <tr>
+                                <th colspan="2" class="text-center font-bold text-xl">LIABILITAS & EKUITAS</th>
+                            </tr>
+                        </ng-template>
+                        <ng-template pTemplate="body" let-item>
+                            <tr [class.font-bold]="item.isTotal || item.isSubheader">
+                                <td *ngIf="!item.isSubheader" [style.padding-left.px]="item.indent ? 30 : 10"
+                                    [ngClass]="{'bg-yellow-500 text-white': item.isSubheader}">{{item.label}}</td>
+                                <td *ngIf="!item.isSubheader" class="text-right"
+                                    [ngClass]="{'text-red-500': item.value < 0 || item.label.includes('(-)')}">
+                                    <span *ngIf="item.value !== null">
+                                        {{ (item.label.includes('(-)') ? '-' : '') + (item.value === 0 ? '-' :
+                                        (item.value |
+                                        number:'1.0-0')) }}
+                                    </span>
+                                </td>
+                                <td *ngIf="item.isSubheader" colspan="2"
+                                    class="bg-yellow-500 text-white text-center font-bold">
+                                    {{ item.label }}
+                                </td>
+                            </tr>
+                        </ng-template>
+                    </p-table>
+                </div>
+            </div>
+        </div>
+    </p-tabPanel>
+
+    <p-tabPanel header="SCV Ringkas" leftIcon="pi pi-file">
+        <div class="col-12">
+            <p-toast></p-toast>
+            <div class="card">
+                <div class="flex items-center justify-between mb-4">
+                    <h5>Laporan Single Customer View
+                        <!-- <p-dropdown [options]="dataBank" optionLabel="label" optionValue="value" class="w-60 ml-4"
+                            [filter]="true" [(ngModel)]="selectedSearch" (onChange)="selectedData(selectedSearch)"
+                            (keydown.enter)="findData(findSearch)" placeholder="Select Bank" [showClear]="true"
+                            (onClear)="clear2(dt1)">
+                        </p-dropdown> -->
+
+                        <p-dropdown [options]="dataBankPeriode" optionLabel="periode" optionValue="periode"
+                            class="w-60 ml-4" [filter]="true" [(ngModel)]="selectedPeriode" placeholder="Select Periode"
+                            [showClear]="true" (onChange)="applyPeriodeFilter(selectedSearch, $event)"
+                            (onClear)="selectedData(selectedSearch)">
+                        </p-dropdown>
 
 
-    <div class="card col-12 ">
-        <h5 class="font-medium mb-3 ml-4 text-xl">Select Bank
-            <span class="ml-4">
-                <p-dropdown [options]="dataBank" [(ngModel)]="selectedSearch" optionLabel="label" optionValue="value"
-                    class="text-2xl" [filter]="true" placeholder="Select Bank" [showClear]="true">
-                </p-dropdown>
-                <button pButton pRipple icon="pi pi-plus" class="p-button-success ml-8" (click)="openNew()"
-                    aria-label="Tambah" [disabled]="!selectedSearch">
-                </button>
-                <button pButton pRipple label="Export" icon="pi pi-download" class="p-button-help ml-6"
-                    (click)="openExport()">
-                </button>
-            </span>
-        </h5>
-        <p-table [value]="modifiedDataTable" dataKey="id" [tableStyle]="{ 'min-width': '50rem' }">
-            <ng-template pTemplate="header">
-                <tr>
-                    <th pSortableColumn="pos" style="width:25%">
-                        Pos - Pos <p-sortIcon field="pos" />
-                    </th>
-                    <th pSortableColumn="nominal_rupiah" style="width:20%">
-                        Nominal Rupiah <p-sortIcon field="nominal_rupiah" />
-                        <i class="ml-4 pi pi-pencil" style="cursor:pointer; margin-left:5px;"></i>
-                    </th>
-                    <th pSortableColumn="nominal_valas" style="width:20%">
-                        Nominal Valas <p-sortIcon field="nominal_valas" />
-                        <i class="ml-4 pi pi-pencil" style="cursor:pointer; margin-left:5px;"></i>
-                    </th>
-                    <th pSortableColumn="nominal_total" style="width:20%">
-                        Nominal Total <p-sortIcon field="nominal_total" />
-                        <i class="ml-4 pi pi-pencil" style="cursor:pointer; margin-left:5px;"></i>
-                    </th>
-                    <th pSortableColumn="hasil" style="width:20%">
-                        Hasil <p-sortIcon field="hasil" />
-                    </th>
-                </tr>
+                    </h5>
+                    <div class="flex items-center space-x-4">
 
-                <tr>
-                    <th>
-                        <p-columnFilter type="text" field="pos" [showClearButton]="false" />
-                    </th>
-                    <th>
-                        <p-columnFilter type="text" field="nominal_rupiah" [showClearButton]="false" />
-                    </th>
-                    <th>
-                        <p-columnFilter type="text" field="nominal_valas" [showClearButton]="false" />
-                    </th>
-                    <th>
-                        <p-columnFilter type="text" field="nominal_total" [showClearButton]="false" />
-                    </th>
-                    <th>
-                        <p-columnFilter type="text" field="hasil" [showClearButton]="false" />
-                    </th>
-                </tr>
-            </ng-template>
-            <ng-template pTemplate="body" let-product>
-                <tr>
-                    <td>
-                        {{ product.pos}}
-                    </td>
+                        <!-- <button pButton pRipple icon="pi pi-plus" class="p-button-success" [disabled]="!isAdmin"
+                            (click)="openNew()" aria-label="Tambah">
+                        </button>
 
-                    <td [pEditableColumn]="product.nominal_rupiah" pEditableColumnField="nominal_rupiah">
-                        <p-cellEditor>
-                            <ng-template pTemplate="input">
-                                <input pInputText type="text" [(ngModel)]="product.nominal_rupiah" required />
-                            </ng-template>
-                            <ng-template pTemplate="output">
-                                {{ product.nominal_rupiah | number:'1.0-0':'id' }}
-                            </ng-template>
-                        </p-cellEditor>
-                    </td>
+                        <button pButton pRipple label="Import" icon="pi pi-upload" class="p-button-warning"
+                            (click)="showImportDialog()">
+                        </button>
 
-                    <td [pEditableColumn]="product.nominal_valas" pEditableColumnField="nominal_valas">
-                        <p-cellEditor>
-                            <ng-template pTemplate="input">
-                                <input pInputText type="text" [(ngModel)]="product.nominal_valas" />
-                            </ng-template>
-                            <ng-template pTemplate="output">
-                                {{ product.nominal_valas | number:'1.0-0':'id' }}
-                            </ng-template>
-                        </p-cellEditor>
-                    </td>
+                        <button pButton pRipple label="Export" icon="pi pi-download" class="p-button-help"
+                            (click)="openExport()">
+                        </button> -->
+                    </div>
+                </div>
+                <p-table #dt1 [value]="components1" [lazy]="true" (onLazyLoad)="onLazyLoad($event)" [loading]="loading"
+                    [paginator]="!(findSearch || selectedSearch)" [rows]="30" [totalRecords]="totalRecords" dataKey="id"
+                    [rowHover]="true" styleClass="p-datatable-gridlines p-datatable-sm no-padding-table"
+                    responsiveLayout="scroll" rowGroupMode="subheader" groupRowsBy="kategori" [scrollable]="true"
+                    [tableStyle]="{'min-width': '60rem'}" scrollHeight="700px" sortMode="multiple">
+                    <ng-template pTemplate=" caption">
 
-                    <td [pEditableColumn]="product.nominal_total" pEditableColumnField="nominal_valas_total">
-                        <p-cellEditor>
-                            <ng-template pTemplate="input">
-                                <input pInputText type="text" [(ngModel)]="product.nominal_total" />
-                            </ng-template>
-                            <ng-template pTemplate="output">
-                                {{ product.nominal_total | number:'1.0-0':'id' }}
-                            </ng-template>
-                        </p-cellEditor>
-                    </td>
+                        <div class="flex justify-content-between flex-column sm:flex-row">
+                            <button pButton label="Clear" class="p-button-outlined mb-2" icon="pi pi-filter-slash"
+                                (click)="clear(dt1)"></button>
+                            <span class="p-input-icon-left mb-2">
+                            </span>
+                        </div>
+                    </ng-template>
+                    <ng-template pTemplate="header" style="padding: 0;">
+                        <tr class="p-0">
+                            <th *ngIf="!selectedBank">
+                                <div class="flex justify-content-between align-items-center">
+                                    Kode Bank
+                                    <p-sortIcon field="serial_number"></p-sortIcon>
+                                </div>
+                            </th>
+                            <th *ngIf="!selectedPeriode" style="min-width: 5rem" pSortableColumn="periode_data">
+                                <div class="flex justify-content-between align-items-center">
+                                    Periode
+                                    <p-sortIcon field="periode_data"></p-sortIcon>
+                                </div>
+                            </th>
+                            <th style="min-width: 20rem" pSortableColumn="deskripsi">
+                                <div class="flex justify-content-between align-items-center">
+                                    Deskripsi
+                                    <p-sortIcon field="deskripsi"></p-sortIcon>
+                                </div>
+                            </th>
+                            <th style="min-width: 12rem" pSortableColumn="jumlah_nasabah_penyimpan">
+                                <div class="flex justify-content-between align-items-center">
+                                    Jumlah Nasabah Penyimpan
+                                    <p-sortIcon field="jumlah_nasabah_penyimpan"></p-sortIcon>
+                                </div>
+                            </th>
+                            <th style="min-width: 12rem">
+                                <div class="flex justify-content-between align-items-center">
+                                    Jumlah Rekening Simpanan
+                                    <p-sortIcon field="material_description"></p-sortIcon>
+                                </div>
+                            </th>
+                            <th style="min-width: 12rem">
+                                <div class="flex justify-content-between align-items-center">
+                                    Jumlah Saldo Simpanan
+                                    <p-sortIcon field="material_description"></p-sortIcon>
+                                </div>
+                            </th>
+                            <th style="min-width: 12rem">
+                                <div class="flex justify-content-between align-items-center">
+                                    Jumlah Saldo Simpanan Dijamin
+                                    <p-sortIcon field="material_description"></p-sortIcon>
+                                </div>
+                            </th>
+                            <th style="min-width: 12rem">
+                                <div class="flex justify-content-between align-items-center">
+                                    Actions
+                                </div>
+                            </th>
+                        </tr>
+                    </ng-template>
+                    <ng-template pTemplate="groupheader" let-component>
+                        <ng-container *ngIf="component?.kategori">
+                            <tr pRowGroupHeader>
+                                <td colspan="14">
+                                    <span class="font-bold ml-2">{{ component.kategori }}</span>
+                                </td>
+                            </tr>
+                        </ng-container>
+                    </ng-template>
+                    <ng-template pTemplate="body" let-component>
+                        <tr [ngStyle]="{height: '10px'}">
+                            <td *ngIf="!selectedBank">
+                                {{component.nama_bank}}
+                            </td>
+                            <td *ngIf="!selectedPeriode">
+                                {{ component.tahun }}-{{ component.bulan }}
+                            </td>
+                            <td [ngClass]="{
+                                'pl-4': (component?.deskripsi?.split('.').length - 1) === 2,
+                                'pl-6': (component?.deskripsi?.split('.').length - 1) === 3,
+                                'font-bold': component?.deskripsi?.toLowerCase().includes('total')
+                              }">
+                                {{ component.deskripsi }}
+                            </td>
 
-                    <td>
-                        <i *ngIf="product.hasil === 'Setuju'" class="pi pi-check-circle text-green-500 mr-2"></i>
-                        <i *ngIf="product.hasil === 'Tinjau Ulang'"
-                            class="pi pi-exclamation-circle text-yellow-500 mr-2"></i>
-                        <i *ngIf="product.hasil === 'Tolak'" class="pi pi-times-circle text-red-500 mr-2"></i>
-                        {{ product.hasil }}
-                    </td>
-                </tr>
-            </ng-template>
-        </p-table>
-    </div>
+
+                            <td class="text-right">
+                                {{component.jumlah_nasabah_penyimpan | number:'1.0-0':'id'}}
+                            </td>
+                            <td class="text-right">
+                                {{ component.jumlah_rekening_simpanan | number:'1.0-0':'id' }}
+                            </td>
+                            <td class="text-right">
+                                {{ component.jumlah_saldo_simpanan | number:'1.0-0':'id' }}
+                            </td>
+                            <td class="text-right">
+                                {{ component.jumlah_saldo_simpanan_dijamin | number:'1.0-0':'id' }}
+                            </td>
+
+                            <td class="text-center">
+                                <button pButton pRipple icon="pi pi-pencil"
+                                    class="p-button-rounded p-button-success mr-2"
+                                    style="font-size: 12px; width: 24px; height: 24px;">
+                                </button>
+                                <button pButton pRipple icon="pi pi-trash" class="p-button-rounded p-button-warning"
+                                    style="font-size: 12px; width: 24px; height: 24px;">
+                                </button>
+                            </td>
+
+                        </tr>
+                    </ng-template>
+                    <ng-template pTemplate="emptymessage">
+                        <tr>
+                            <td colspan="8">No components found.</td>
+                        </tr>
+                    </ng-template>
+                    <ng-template pTemplate="loadingbody">
+                        <tr>
+                            <td colspan="8">
+                                Loading components data. Please wait.
+                            </td>
+                        </tr>
+                    </ng-template>
+                </p-table>
+            </div>
+            <p-toast></p-toast>
+        </div>
+
+        <p-toast></p-toast>
+    </p-tabPanel>
+
+    <p-tabPanel header="Rincian Pengalihan" leftIcon="pi pi-arrow-right">
+        <div class="card col-12">
+            <h5>
+                Rincian Data
+            </h5>
+            <p-table styleClass="mb-8" [value]="modifiedDataTable1" dataKey="id" [tableStyle]="{ 'min-width': '50rem' }"
+                responsiveLayout="scroll">
+                <ng-template pTemplate="header">
+                    <tr>
+                        <th pSortableColumn="pos" style="width:12%">
+                            Aset yang Akan Dialihkan
+                            <p-sortIcon field="pos" />
+                        </th>
+                        <th pSortableColumn="nominal_rupiah" style="width:12%">
+                            Nominal <p-sortIcon field="nominal_rupiah" />
+                            <i class="ml-4 pi pi-pencil" style="cursor:pointer; margin-left:5px;"></i>
+                        </th>
+                        <th pSortableColumn="nominal_valas" style="width:12%">
+                            FV <p-sortIcon field="nominal_valas" />
+                            <i class="ml-4 pi pi-pencil" style="cursor:pointer; margin-left:5px;"></i>
+                        </th>
+                        <th pSortableColumn="nominal_total" style="width:12%">
+                            Selisih <p-sortIcon field="nominal_total" />
+                            <i class="ml-4 pi pi-pencil" style="cursor:pointer; margin-left:5px;"></i>
+                        </th>
+                    </tr>
+                </ng-template>
+                <ng-template pTemplate="body" let-product>
+                    <!-- <tr>
+                            <td>{{ product.pos }}</td>
+                            <td>{{ product.nominal_rupiah | number:'1.0-0':'id' }}</td>
+                            <td>{{ product.nominal_valas | number:'1.0-0':'id' }}</td>
+                            <td>{{ product.nominal_total | number:'1.0-0':'id' }}</td>
+                            <td>
+                                <i *ngIf="product.hasil === 'Setuju'" class="pi pi-check-circle text-green-500 mr-2"></i>
+                                <i *ngIf="product.hasil === 'Tinjau Ulang'"
+                                    class="pi pi-exclamation-circle text-yellow-500 mr-2"></i>
+                                <i *ngIf="product.hasil === 'Tolak'" class="pi pi-times-circle text-red-500 mr-2"></i>
+                                {{ product.hasil }}
+                            </td>
+                        </tr> -->
+                </ng-template>
+            </p-table>
+            <p-table styleClass="mb-8" [value]="modifiedDataTable1" dataKey="id" [tableStyle]="{ 'min-width': '50rem' }"
+                responsiveLayout="scroll">
+                <ng-template pTemplate="header">
+                    <tr>
+                        <th pSortableColumn="pos" style="width:12%">
+                            Kewajiban yang Akan Dialihkan
+                            <p-sortIcon field="pos" />
+                        </th>
+                        <th pSortableColumn="nominal_rupiah" style="width:12%">
+                            Nominal <p-sortIcon field="nominal_rupiah" />
+                            <i class="ml-4 pi pi-pencil" style="cursor:pointer; margin-left:5px;"></i>
+                        </th>
+                        <th pSortableColumn="nominal_valas" style="width:12%">
+                            FV <p-sortIcon field="nominal_valas" />
+                            <i class="ml-4 pi pi-pencil" style="cursor:pointer; margin-left:5px;"></i>
+                        </th>
+                        <th pSortableColumn="nominal_total" style="width:12%">
+                            Selisih <p-sortIcon field="nominal_total" />
+                            <i class="ml-4 pi pi-pencil" style="cursor:pointer; margin-left:5px;"></i>
+                        </th>
+                    </tr>
+                </ng-template>
+                <ng-template pTemplate="body" let-product>
+                    <!-- <tr>
+                        <td>{{ product.pos }}</td>
+                        <td>{{ product.nominal_rupiah | number:'1.0-0':'id' }}</td>
+                        <td>{{ product.nominal_valas | number:'1.0-0':'id' }}</td>
+                        <td>{{ product.nominal_total | number:'1.0-0':'id' }}</td>
+                        <td>
+                            <i *ngIf="product.hasil === 'Setuju'" class="pi pi-check-circle text-green-500 mr-2"></i>
+                            <i *ngIf="product.hasil === 'Tinjau Ulang'"
+                                class="pi pi-exclamation-circle text-yellow-500 mr-2"></i>
+                            <i *ngIf="product.hasil === 'Tolak'" class="pi pi-times-circle text-red-500 mr-2"></i>
+                            {{ product.hasil }}
+                        </td>
+                    </tr> -->
+                </ng-template>
+            </p-table>
+            <div class="flex flex-wrap gap-4 overflow-hidden">
+                <!-- Tabel Aset & P&A dan BB -->
+                <div class="flex-1 min-w-[300px] max-w-[48%]">
+                    <p-table styleClass="mb-8" [value]="modifiedDataTable1" dataKey="id"
+                        [tableStyle]="{ 'min-width': '100%' }" responsiveLayout="scroll">
+                        <ng-template pTemplate="header">
+                            <tr>
+                                <th pSortableColumn="pos" style="width:12%">
+                                    Aset
+                                    <p-sortIcon field="pos" />
+                                </th>
+                                <th pSortableColumn="nominal_rupiah" style="width:12%">
+                                    P&A dan BB <p-sortIcon field="nominal_rupiah" />
+                                    <i class="ml-4 pi pi-pencil" style="cursor:pointer; margin-left:5px;"></i>
+                                </th>
+                            </tr>
+                        </ng-template>
+                        <ng-template pTemplate="body" let-product>
+                            <!-- <tr>
+                                <td>{{ product.pos }}</td>
+                                <td>{{ product.nominal_rupiah | number:'1.0-0':'id' }}</td>
+                                <td>{{ product.nominal_total | number:'1.0-0':'id' }}</td>
+                            </tr> -->
+                        </ng-template>
+                    </p-table>
+                </div>
+
+                <!-- Tabel Kewajiban -->
+                <div class="flex-1 min-w-[300px] max-w-[48%]">
+                    <p-table styleClass="mb-8" [value]="modifiedDataTable2" dataKey="id"
+                        [tableStyle]="{ 'min-width': '100%' }" responsiveLayout="scroll">
+                        <ng-template pTemplate="header">
+                            <tr>
+                                <th pSortableColumn="pos" style="width:12%">
+                                    Kewajiban
+                                    <p-sortIcon field="pos" />
+                                </th>
+                                <th pSortableColumn="nominal_valas" style="width:12%">
+                                    P&A dan BB<p-sortIcon field="nominal_valas" />
+                                    <i class="ml-4 pi pi-pencil" style="cursor:pointer; margin-left:5px;"></i>
+                                </th>
+                            </tr>
+                        </ng-template>
+                        <ng-template pTemplate="body" let-product>
+                            <!-- <tr>
+                                <td>{{ product.pos }}</td>
+                                <td>{{ product.nominal_valas | number:'1.0-0':'id' }}</td>
+                            </tr> -->
+                        </ng-template>
+                    </p-table>
+                </div>
+            </div>
+
+        </div>
+    </p-tabPanel>
+
+    <p-tabPanel header="BB" leftIcon="pi pi-briefcase">
+    </p-tabPanel>
+
+    <p-tabPanel header="P&A" leftIcon="pi pi-users">
+    </p-tabPanel>
+
+    <p-tabPanel header="PMS" leftIcon="pi pi-sliders-h">
+    </p-tabPanel>
+
+    <p-tabPanel header="LIK" leftIcon="pi pi-sitemap">
+    </p-tabPanel>
+
+    <p-tabPanel header="Biaya Resolusi" leftIcon="pi pi-money-bill">
+    </p-tabPanel>
+
+</p-tabView>
 
 
-</div>
 
 <p-dialog [(visible)]="recordDialog" [style]="{ width: '850px' }" header="Added Pos" [modal]="true" styleClass="p-fluid"
     class="grid grid-cols-2 gap-4">
@@ -186,3 +906,12 @@
 
 <p-confirmDialog [style]="{ width: '450px' }" rejectButtonStyleClass="p-button-danger"
     acceptButtonStyleClass="p-button-success"></p-confirmDialog>
+
+<style>
+    ::ng-deep .no-padding-table .p-datatable-thead>tr>th,
+    ::ng-deep .no-padding-table .p-datatable-tbody>tr>td {
+        padding-top: 0 !important;
+        padding-bottom: 0 !important;
+        /* Hilangkan padding */
+    }
+</style>

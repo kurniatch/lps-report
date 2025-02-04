@@ -364,16 +364,101 @@ export class NeracaComponent implements OnInit, OnDestroy {
             try {
                 const search = await this.crudService.getComponentsReportSearch(body);
                 console.log('hasil search post Neraca', search);
-    
+            
                 if (requestId === this.currentRequestId) {
                     this.components1 = search;
                 }
-    
+            
+                // // Fungsi untuk memastikan nilai nominal adalah angka dan mengganti nilai null atau undefined dengan 0
+                // const ensureNumber = (value: any) => {
+                //     return Number(value) || 0;
+                // };
+            
+                // const calculateNominal = (report: any, components1: any) => {
+                //     const ensureNumber = (value: any) => Number(value) || 0;
+                
+                //     // Fungsi untuk memeriksa apakah suatu kode adalah parent (memiliki .00 di segmen terakhir)
+                //     const isParent = (pos: string) => {
+                //         const segments = pos.split('.');
+                        
+                //         // Alternatif untuk findLastIndex: cari dari belakang secara manual
+                //         let lastNonZeroIndex = -1;
+                //         for (let i = segments.length - 3; i >= 0; i--) {
+                //             if (segments[i] !== '00') {
+                //                 lastNonZeroIndex = i;
+                //                 break;
+                //             }
+                //         }
+                
+                //         // Jika setelah segmen terakhir yang bukan '00' diikuti oleh .00.00.00, maka ini adalah parent
+                //         return lastNonZeroIndex !== -1 && segments.slice(lastNonZeroIndex + 1).every(seg => seg === '00');
+                //     };
+                
+                //     // Jika bukan parent, kembalikan nilai asli
+                //     if (!isParent(report.pos_laporan_keuangan)) {
+                //         return {
+                //             total_nominal_rupiah: ensureNumber(report.total_nominal_rupiah),
+                //             total_nominal_valas: ensureNumber(report.total_nominal_valas),
+                //             total_nominal_total: ensureNumber(report.total_nominal_total),
+                //         };
+                //     }
+                
+                //     // Jika ini parent, hitung total dari sub-poin
+                //     let totalRupiah = ensureNumber(report.total_nominal_rupiah);
+                //     let totalValas = ensureNumber(report.total_nominal_valas);
+                //     let totalNominal = ensureNumber(report.total_nominal_total);
+                
+                //     // Ambil segmen parent (contoh: "03.05.01" untuk parent "03.05.01.00.00.00")
+                //     const parentSegments = report.pos_laporan_keuangan.split('.').filter((seg: string) => seg !== '00');
+                //     const parentPrefix = parentSegments.join('.'); // Contoh: "03.05.01"
+                
+                //     components1.forEach((subReport: any) => {
+                //         const subSegments = subReport.pos_laporan_keuangan.split('.');
+                //         const subPrefix = subSegments.slice(0, parentSegments.length).join('.');
+                
+                //         // Pastikan sub-poin benar-benar milik parent
+                //         if (
+                //             subPrefix === parentPrefix &&
+                //             subReport.pos_laporan_keuangan !== report.pos_laporan_keuangan &&
+                //             subSegments.length > parentSegments.length
+                //         ) {
+                //             totalRupiah += ensureNumber(subReport.total_nominal_rupiah);
+                //             totalValas += ensureNumber(subReport.total_nominal_valas);
+                //             totalNominal += ensureNumber(subReport.total_nominal_total);
+                //         }
+                //     });
+                
+                //     return {
+                //         total_nominal_rupiah: totalRupiah,
+                //         total_nominal_valas: totalValas,
+                //         total_nominal_total: totalNominal,
+                //     };
+                // };
+                
+                // // Proses semua data untuk penjumlahan
+                // const dataNeraca = this.components1.map((report) => {
+                //     const { total_nominal_rupiah, total_nominal_valas, total_nominal_total } = calculateNominal(report, this.components1);
+            
+                //     return {
+                //         ...report,
+                //         total_nominal_rupiah,
+                //         total_nominal_valas,
+                //         total_nominal_total
+                //     };
+                // });
+            
                 this.loading = false;
-                console.log('hasil search post', search);
+                // this.components1 = dataNeraca;
+                console.log('Hasil data Neraca yang sudah diproses:', this.components1);
+            
             } catch (error) {
                 console.error('Failed to fetch component data:', error);
             }
+            
+            
+            
+            
+                   
         } else {
             this.loading = false;
             this.messageService.add({

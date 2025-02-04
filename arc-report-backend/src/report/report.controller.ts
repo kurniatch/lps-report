@@ -122,6 +122,11 @@ export class ReportController {
     return await this.reportService.createData(data);
   }
 
+  @Post('/new-laba')
+  async createDataLaba(@Body() data: any): Promise<any> {
+    return await this.reportService.createDataLaba(data);
+  }
+
   @Post('/update-bank')
   async updateData(@Body() data: any): Promise<any> {
     return await this.reportService.updateData(data);
