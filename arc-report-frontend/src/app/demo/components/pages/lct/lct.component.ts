@@ -2,7 +2,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { MenuItem } from 'primeng/api';
 import { Product } from '../../../api/product';
-import { Subscription } from 'rxjs';
+import { map, Subscription } from 'rxjs';
 import { LayoutService } from 'src/app/layout/service/app.layout.service';
 import { ViewChild, ElementRef } from '@angular/core';
 import { Representative, Data } from 'src/app/demo/api/customer';
@@ -15,6 +15,8 @@ import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
+import { ConstantPool } from '@angular/compiler';
+
 
 interface expandedRows {
     [key: string]: boolean;
@@ -74,6 +76,14 @@ interface DataTableNeracaBank {
     totalKewajibanDanEkuitas: number;
   }
 
+interface GwmData {
+    giroBi : number;
+    dpkPdbl : number;
+    total : number;
+    parameter1 : number;
+    parameter2 : number;
+}
+
 type ReportDataType = {
     id_pelapor_prefix: string;
     deskripsi: string;
@@ -91,6 +101,17 @@ type ReportDataType = {
     value: string; // Nilai yang akan dipilih dari dropdown
   };
 
+  interface KewajibanItem {
+    label: string;
+    nominal: number;
+    fv: number;
+}
+
+interface AsetBP {
+    label: string;
+    value: number;
+}
+
 @Component({
     templateUrl: './lct.component.html',
     providers: [MessageService, ConfirmationService],
@@ -103,6 +124,25 @@ export class LctComponent implements OnInit, OnDestroy {
     [key: string]: any;
 
     dataReportLct: any ;
+
+    gwmData: GwmData = {
+        giroBi: 0,
+        dpkPdbl: 0,
+        total: 0,
+        parameter1: 0,
+        parameter2: 0,
+    };
+
+    gwmDataHasilBi: number = 0;
+
+    gwmDataHasilPdbl: number = 0;
+
+    cekDataBb = [
+        {label: 'BB + BDL', aset: 0, kewajiban: 0, modal: 0, kew_modal: 0},
+        {label: 'BA', aset: 0, kewajiban: 0, modal: 0, kew_modal: 0},
+    ];
+
+    ati_ke_properti_terbengkalai: number = 0;
 
     dataTable = [
         { id: 1, deskripsi_pos: 'P1001', nominal_rupiah: 1000000, nominal_valas: 500000, hasil: 'Setuju' },
@@ -170,68 +210,101 @@ export class LctComponent implements OnInit, OnDestroy {
 
     baseAssets = [
         { label: 'ASET', value: null, isSubheader: true },
-        { label: 'Kas', value: 355946679462 },
-        { label: 'Penempatan pada BI', value: 13008172313408 },
-        { label: 'Penempatan pada Bank Lain', value: 1458451807258 },
-        { label: 'Tagihan Spot dan Derivatif', value: 69311274 },
-        { label: 'Surat Berharga', value: 8896715838433 },
+        { label: 'Kas', value: 0 },
+        { label: 'Penempatan pada BI', value: 0 },
+        { label: 'Penempatan pada Bank Lain', value: 0 },
+        { label: 'Tagihan Spot dan Derivatif', value: 0 },
+        { label: 'Surat Berharga', value: 0 },
         { label: 'CKPN Surat Berharga (-)', value: 0, indent: 1 },
         { label: 'Surat Berharga (Repo)', value: 0 },
-        { label: 'Reverse Repo', value: 983443463645 },
-        { label: 'Tagihan Akseptasi', value: 295023898276 },
-        { label: 'Kredit', value: 105718143720092 },
-        { label: 'CKPN Kredit (-)', value: 1330279622151, indent: 1 },
-        { label: 'Aset Keuangan Lain', value: 4563053374405 },
-        { label: 'CKPN Aset Keuangan Lain (-)', value: 1109657144, indent: 1 },
-        { label: 'Aset Tetap dan Inventaris', value: 5473012302104 },
-        { label: 'Akumulasi Penyusutan (-)', value: 1164168141068, indent: 1 },
+        { label: 'Reverse Repo', value: 0 },
+        { label: 'Tagihan Akseptasi', value: 0 },
+        { label: 'Kredit', value: 0 },
+        { label: 'CKPN Kredit (-)', value: 0, indent: 1 },
+        { label: 'Aset Keuangan Lain', value: 0 },
+        { label: 'CKPN Aset Keuangan Lain (-)', value: 0, indent: 1 },
+        { label: 'Aset Tetap dan Inventaris', value: 0 },
+        { label: 'Akumulasi Penyusutan (-)', value: 0, indent: 1 },
         { label: 'Aset Tidak Berwujud', value: 0 },
         { label: 'Akumulasi Amortisasi', value: 0 },
-        { label: 'Properti Terbengkalai', value: 32545208000 },
-        { label: 'AYDA', value: 298912742024 },
-        { label: 'Aset Lainnya', value: 10165519352243 },
-        { label: 'TOTAL ASET', value: 148753452590261, isTotal: true }
+        { label: 'Properti Terbengkalai', value: 0 },
+        { label: 'AYDA', value: 0 },
+        { label: 'Aset Lainnya', value: 0 },
+        { label: 'TOTAL ASET', value: 0, isTotal: true }
       ];
       
       assets = [...this.baseAssets];
-      assetsBankAsal = [...this.baseAssets];
-      assetsBankAsalPemburukan = [...this.baseAssets];
-      assetsBankAsalPemburukanC = [...this.baseAssets];
+      assetsBankAsal = [
+        ...this.baseAssets.slice(0, 11),
+        { label: 'Kol Lancar', value: 0, indent: 1 },
+        { label: 'Kol Dalam Perhatian Khusus', value: 0, indent: 1 },
+        { label: 'Kol Kurang Lancar', value: 0, indent: 1 },
+        { label: 'Kol Diragukan', value: 0, indent: 1 },
+        { label: 'Kol Macet', value: 0, indent: 1 },
+        ...this.baseAssets.slice(11)
+    ];
+    assetsBankAsalPemburukan = [
+        ...this.baseAssets.slice(0, 10),
+        { label: 'Kredit-Net', value: 0 },
+        { label: 'Kredit Kol 1', value: 0 },
+        { label: 'CKPN Kredit Kol 1 (-)', value: 0 ,indent: 1 },
+        { label: 'Kredit Kol 2', value: 0 },
+        { label: 'CKPN Kredit Kol 2 (-)', value: 0, indent: 1 },
+        { label: 'Kredit Kol 3', value: 0 },
+        { label: 'CKPN Kredit Kol 3 (-)', value: 0, indent: 1 },
+        { label: 'Kredit Kol 4', value: 0 },
+        { label: 'CKPN Kredit Kol 4 (-)', value: 0, indent: 1 },
+        { label: 'Kredit Kol 5', value: 0 },
+        { label: 'CKPN Kredit Kol 5 (-)', value: 0, indent: 1 },
+        ...this.baseAssets.slice(11, 18),
+    ];
+
+    // assign data to kas assets pemburukan
+      assetsBankAsalPemburukanC = [...this.assetsBankAsalPemburukan];
+      assetsBankAsalPemburukanP = [...this.assetsBankAsalPemburukan];
+      assetsBankAsalPemburukanPA = [...this.assetsBankAsalPemburukanP];
 
       baseLiabilitiesEquity = [
         { label: 'LIABILITAS', value: null, isSubheader: true },
-        { label: 'Giro', value: 5119950312333 },
-        { label: 'Tabungan', value: 10894237572343 },
-        { label: 'Simpanan Berjangka', value: 109094117683246 },
-        { label: 'Kewajiban pada Bank Lain', value: 2130130360182 },
-        { label: 'Kewajiban Spot dan Derivatif', value: 193846954 },
+        { label: 'Giro', value: 0 },
+        { label: 'Tabungan', value: 0 },
+        { label: 'Simpanan Berjangka', value: 0 },
+        { label: 'Kewajiban pada Bank Lain', value: 0 },
+        { label: 'Kewajiban Spot dan Derivatif', value: 0 },
         { label: 'Kewajiban Repo', value: 0 },
-        { label: 'Kewajiban Akseptasi', value: 295023898276 },
-        { label: 'Surat Berharga yang Diterbitkan', value: 801481118334 },
-        { label: 'Pinjaman', value: 880000000000 },
-        { label: 'Setoran Jaminan', value: 4253228836 },
-        { label: 'Kewajiban Lainnya', value: 2525005545193 },
-        { label: 'Total Kewajiban', value: 131744393565697, isTotal: true },
+        { label: 'Kewajiban Akseptasi', value: 0 },
+        { label: 'Surat Berharga yang Diterbitkan', value: 0 },
+        { label: 'Pinjaman', value: 0 },
+        { label: 'Setoran Jaminan', value: 0 },
+        { label: 'Kewajiban Lainnya', value: 0 },
+        { label: 'Total Kewajiban', value: 0, isTotal: true },
         { label: 'EKUITAS', value: null, isSubheader: true },
         { label: 'Modal Disetor', value: null },
-        { label: 'Modal Dasar', value: 5300000000000, indent: 1 },
-        { label: 'Modal yg Belum Disetor (-)', value: 3961460515000, indent: 1 },
+        { label: 'Modal Dasar', value: 0, indent: 1 },
+        { label: 'Modal yg Belum Disetor (-)', value: 0, indent: 1 },
         { label: 'Tambahan Modal Disetor', value: null },
-        { label: 'Agio', value: 8364828457816, indent: 1 },
-        { label: 'Penghasilan Komprehensif Lain', value: 1595626189836 },
-        { label: 'Dana Setoran Modal', value: 2144516116500 },
-        { label: 'Cadangan Umum', value: 131600000000 },
+        { label: 'Agio', value: 0, indent: 1 },
+        { label: 'Penghasilan Komprehensif Lain', value: 0 },
+        { label: 'Dana Setoran Modal', value: 0},
+        { label: 'Cadangan Umum', value: 0 },
         { label: 'Laba (Rugi)', value: null },
-        { label: 'Laba Tahun Lalu', value: 3361336312523, indent: 1 },
-        { label: 'Laba Tahun Berjalan', value: 72612462889, indent: 1 },
-        { label: 'Total Ekuitas', value: 17009059024564, isTotal: true },
-        { label: 'TOTAL KEWAJIBAN DAN EKUITAS', value: 148753452590261, isTotal: true }
+        { label: 'Laba Tahun Lalu', value: 0, indent: 1 },
+        { label: 'Laba Tahun Berjalan', value: 0, indent: 1 },
+        { label: 'Total Ekuitas', value: 0, isTotal: true },
+        { label: 'TOTAL KEWAJIBAN DAN EKUITAS', value: 0, isTotal: true }
       ];
 
       liabilitiesEquity = [...this.baseLiabilitiesEquity];
-      liabilitiesEquityBankAsal = [...this.baseLiabilitiesEquity];
-      liabilitiesEquityBankAsalPemburukan = [...this.baseLiabilitiesEquity];
-      liabilitiesEquityBankAsalPemburukanC = [...this.baseLiabilitiesEquity];
+      liabilitiesEquityBankAsal = [ ...this.baseLiabilitiesEquity];
+      liabilitiesEquityBankAsalPemburukan = [ 
+        ...this.baseLiabilitiesEquity.slice(0, 25),
+        { label: 'Estimasi Kerugian (-)', value: 0},
+        ...this.baseLiabilitiesEquity.slice(25),
+    ];
+      liabilitiesEquityBankAsalPemburukanC = [...this.liabilitiesEquityBankAsalPemburukan];
+      liabilitiesEquityBankAsalPemburukanPA = [...this.liabilitiesEquityBankAsalPemburukan];
+
+      liabilitiesEquityBankBp = [ ...this.liabilitiesEquityBankAsalPemburukanC];
   
 
     variabel1: number = 1; // Nilai default untuk Variabel 1
@@ -272,10 +345,27 @@ export class LctComponent implements OnInit, OnDestroy {
 
     modifiedDataTable2: any[] = [];
 
-    modifiedDataTable3  : any[] = [];
+    modifiedDataTableGwm= [{}];
 
+    modifiedDataTable3: any[] = [{
+    }];
+          
 
     dataBank: any = [];
+
+    atmr: number = 0;
+
+    modalAtmr: number = 0;
+
+    totalAsetB: number = 0;
+
+    totalAsetP: number = 0;
+
+    totalAsetPA: number = 0;
+
+    calTotalModal: number = 0;
+
+    calTotalAtmr: number = 0;
 
     recordDialog: boolean = false;
 
@@ -309,6 +399,134 @@ export class LctComponent implements OnInit, OnDestroy {
 
     dataPopLct: ReportDataType[] = [];
 
+    selisishBp: number = 0;
+
+    financialTerms = [
+        { label: "Kas", nominal: 0, fv: 0 },
+        { label: "Penempatan Pada Bank Indonesia", nominal: 0, fv: 0 },
+        { label: "Penempatan Pada Bank Lain", nominal: 0, fv: 0 },
+        { label: "Surat Berharga yang Dimiliki", nominal: 0, fv: 0 },
+        { label: "Surat Berharga (REPO)", nominal: 0, fv: 0 },
+        { label: "Reverse Repo", nominal: 0, fv: 0 },
+        { label: "Kredit Yang Diberikan (Nilai Nominal/Baki debet)", nominal: 0, fv: 0 },
+        { label: "CKPN Kredit yang Diberikan", nominal: 0, fv: 0 },
+        { label: "Aset tetap dan Inventaris", nominal: 0, fv: 0 },
+        { label: "Akumulasi Penyusutan Aset Tetap dan Inventaris", nominal: 0, fv: 0 },
+        { label: "Aset Tetap dan dan Inventaris Neto", nominal: 0, fv: 0 },
+        { label: "Aset Tidak Berwujud", nominal: 0, fv: 0 },
+        { label: "Akumulasi Amortisasi Aset Tidak berwujud", nominal: 0, fv: 0 },
+        { label: "Aset Tak Berwujud Neto", nominal: 0, fv: 0 },
+        { label: "Total Aset", nominal: 0, fv: 0 }
+    ];
+
+    kewajibanAlih : KewajibanItem[] = [
+        { label: "Insured Deposits", nominal: 0, fv: 0 },
+        { label: "Kewajiban Repo", nominal: 0, fv: 0 }
+    ];
+
+    posPengalihan = [
+        { label: "Aset yang dialihkan", nominal: 0 },
+        { label: "Kewajiban yang dialihkan", nominal: 0 },
+        { label: "Selisih", nominal: 0 }
+    ];
+    
+    asetBp = [
+        { label: 'ASET', value: 0, isSubheader: true },
+        { label: 'Kas', value: 0 },
+        { label: 'Penempatan pada BI', value: 0 },
+        { label: 'Penempatan pada Bank Lain', value: 0 },
+        { label: 'Surat Berharga', value: 0 },
+        { label: 'Surat Berharga (REPO)', value: 0 },
+        { label: 'Reverse Repo', value: 0 },
+        { label: 'Kredit (Net)', value: 0 },
+        { label: 'Lancar', value: 0 },
+        { label: 'Dalam Perhatian Khusus', value: 0 },
+        { label: 'Aset tetap dan inventaris - Net', value: 0 },
+        { label: 'Aset tak berwujud - Net', value: 0 },
+        { label: 'Total Aset', value: 0 }
+    ];
+    
+    kewajibanBp = [
+        { label: 'LIABILITAS', value: 0, isSubheader: true },
+        { label: 'Insured Deposits', value: 0 },
+        { label: 'Kewajiban Repo', value: 0 },
+        { label: 'Kewajiban kepada BDL', value: 0 },
+        { label: 'Total Kewajiban', value: 0 },
+        { label: 'EKUITAS', value: 0, isSubheader: true },
+        { label: 'Modal KPMM', value: 0 },
+        { label: 'Total Ekuitas', value: 0 },
+        { label: 'Total Kewajiban dan Ekuitas', value: 0 }
+    ];
+
+    asetBdl = [
+        { label: 'ASET', value: 0, isSubheader: true },
+        { label: 'Kas', value: 355947 },
+        { label: 'Penempatan pada BI', value: 0 },
+        { label: 'Penempatan pada Bank Lain', value: 0 },
+        { label: 'Tagihan Spot dan Derivatif', value: 0 },
+        { label: 'Surat Berharga', value: 0 },
+        { label: 'Surat Berharga (REPO)', value: 0 },
+        { label: 'Reverse Repo', value: 0 },
+        { label: 'Tagihan Akseptasi', value: 0 },
+        { label: 'Tagihan kepada BB', value: 37125248 },
+        { label: 'Total Kredit (Net)', value: 53596 },
+        { label: 'Kredit Lancar', value: 0 },
+        { label: 'Kredit Dalam Perhatian Khusus', value: 0 },
+        { label: 'Kredit Kurang Lancar', value: 41412 },
+        { label: 'Kredit Diragukan', value: 12184 },
+        { label: 'Kredit Macet', value: 0 },
+        { label: 'Aset Keuangan Lain', value: 4561944 },
+        { label: 'CKPN Aset Keuangan Lainnya', value: 0 },
+        { label: 'Aset Tetap dan Inventaris-Net', value: 0 },
+        { label: 'Aset Tidak Berwujud-Net', value: 0 },
+        { label: 'Properti Terbengkalai-Net', value: 0 },
+        { label: 'AYDA-Net', value: 298913 },
+        { label: 'Aset Lainnya', value: 0 },
+        { label: 'Total Aset', value: 0 } // To be calculated
+      ];
+    
+      // Kewajiban BDL data
+      kewajibanBdl = [
+        { label: 'LIABILITAS', value: 0, isSubheader: true },
+        { label: 'Uninsured Deposits', value: 110980981 },
+        { label: 'Kewajiban pada Bank Lain', value: 0 },
+        { label: 'Kewajiban Spot dan Derivatif', value: 0 },
+        { label: 'Kewajiban Repo', value: 0 },
+        { label: 'Kewajiban Akseptasi', value: 0 },
+        { label: 'Surat Berharga yang Diterbitkan', value: 801481 },
+        { label: 'Pinjaman', value: 880000 },
+        { label: 'Setoran Jaminan', value: 4253 },
+        { label: 'Kewajiban Lainnya', value: 2525006 },
+        { label: 'Total Kewajiban', value: 0 },  // To be calculated
+        { label: 'EKUITAS', value: 0, isSubheader: true },
+        { label: 'Modal Disetor', value: 0 },
+        { label: 'Modal Dasar', value: 5300000 },
+        { label: 'Modal yg Belum Disetor', value: -3961461 },
+        { label: 'Tambahan Modal Disetor', value: 0 },
+        { label: 'Agio', value: 8364828 },
+        { label: 'Penghasilan Komprehensif Lain', value: 1595626 },
+        { label: 'Dana Setoran Modal', value: 2144516 },
+        { label: 'Cadangan Umum', value: 131600 },
+        { label: 'Laba (Rugi)', value: 0 },
+        { label: 'Laba Tahun Lalu', value: 3361336 },
+        { label: 'Laba Tahun Berjalan', value: 72612 },
+        { label: 'Estimasi Kerugian', value: -90161081 },
+        { label: 'Total Ekuitas', value: 0 },  // To be calculated
+        { label: 'Total Kewajiban dan Ekuitas', value: 0 }  // To be calculated
+      ];
+
+    jumlahModal: number = 14737776;
+    koreksiNeraca: number = -88452809;
+    jumlahModalKPMM: number = -73715033;
+    atmrAwal: number = 127236145;
+    atmrPemburukan: number = 42367828;
+    modalPMS: number = 5931496;
+    jumlahPMSLPS: number = 79646529;
+
+    estimasiKerugian: number = 0;
+    
+    
+
     @ViewChild('filter') filter!: ElementRef;
 
     constructor(
@@ -331,6 +549,14 @@ export class LctComponent implements OnInit, OnDestroy {
             { label: 'Add New', icon: 'pi pi-fw pi-plus' },
             { label: 'Remove', icon: 'pi pi-fw pi-minus' },
         ];
+
+        this.gwmData = {
+            giroBi: 13008172313408,
+            dpkPdbl: 127238629775058,
+            total: 140246802088466,
+            parameter1: 0,
+            parameter2: 0
+          };
     }
 
     onEdit(event: any) {
@@ -372,6 +598,49 @@ export class LctComponent implements OnInit, OnDestroy {
         const keyword = event.value.value;
         this.getReportLct(this.selectedSearch, keyword);
     }
+
+    addRow() {
+        console.log("add table");
+        const newRow = {
+          pos: this.modifiedDataTable1.length + 1,
+          ckpn_aset_baik: 0,
+          ckpn_aset_kurang_baik: 0,
+          ckpn_aset_tidak_baik: 0,
+          ckpn: 0,
+          jumlah_rekening: 0,
+          baki_debet: 0,
+          baki_debet_pemeriksa: null,
+          hasil_hitung: 0,
+          children: ['Normal', 'Restrukturisasi']
+        };
+    
+        this.modifiedDataTable1 = [...this.modifiedDataTable1, newRow];
+      }
+
+      getTotal(tableName: string, field: string): number {
+        const table = (this as any)[tableName]; // Ambil tabel berdasarkan nama
+        if (!Array.isArray(table)) {
+            console.error(`Table ${tableName} not found or is not an array`);
+            return 0;
+        }
+        return table.reduce((sum: number, item: { [key: string]: any }) => sum + (item[field] || 0), 0);
+    }
+    
+    
+      onRowToggle(event : any) {
+        // Handle row toggle event, to update expanded rows
+        if (event.type === 'expand') {
+          this.expandedRows[event.index] = true;
+        } else {
+          this.expandedRows[event.index] = false;
+        }
+      }
+    
+      deleteRow(index: number) {
+        console.log("Deleting row at index", index);
+        this.modifiedDataTable1.splice(index, 1);
+        this.modifiedDataTable1 = [...this.modifiedDataTable1];
+      }
 
     findDataById(id: string): void {
         if (this.dataPopLct && Array.isArray(this.dataPopLct)) {
@@ -486,6 +755,7 @@ export class LctComponent implements OnInit, OnDestroy {
             totalKewajibanDanEkuitas:0,
         };
 
+
         this.dataTableNeracaBank.totalAset =
         Number(this.dataTableNeracaBank.kas) +
         Number(this.dataTableNeracaBank.penempatanPadaBI) +
@@ -510,15 +780,12 @@ export class LctComponent implements OnInit, OnDestroy {
         Number(this.dataTableNeracaBank.penyertaanModal) +
         Number(this.dataTableNeracaBank.rekeningTunda);
 
-        console.log("Akumulasi Penyusutan (-)", this.dataTableNeracaBank.akumulasiPenyusutan);
-        console.log("ckpn asset (-)", this.dataTableNeracaBank.ckpnAsetKeuanganLain);
-        console.log("ckpn surat (-)", this.dataTableNeracaBank.ckpnSuratBerharga);
-        console.log("ckpn kredit (-)", this.dataTableNeracaBank.ckpnKredit);
-        console.log("akumulasi (-)", this.dataTableNeracaBank.akumulasiAmortisasi);
+        // console.log("Akumulasi Penyusutan (-)", this.dataTableNeracaBank.akumulasiPenyusutan);
+        // console.log("ckpn asset (-)", this.dataTableNeracaBank.ckpnAsetKeuanganLain);
+        // console.log("ckpn surat (-)", this.dataTableNeracaBank.ckpnSuratBerharga);
+        // console.log("ckpn kredit (-)", this.dataTableNeracaBank.ckpnKredit);
+        // console.log("akumulasi (-)", this.dataTableNeracaBank.akumulasiAmortisasi);
 
-
-
-    
 
         this.dataTableNeracaBank.totalKewajiban =
             this.dataTableNeracaBank.giro +
@@ -577,6 +844,141 @@ export class LctComponent implements OnInit, OnDestroy {
                 { label: 'Aset Lainnya', value: this.dataTableNeracaBank.asetLainnya },
                 { label: 'TOTAL ASET', value: this.dataTableNeracaBank.totalAset, isTotal: true }
             ];
+
+            // Mapping dengan .map()
+            this.assetsBankAsal = this.assets.map(item => ({ ...item }));
+            this.assetsBankAsalPemburukan = this.assets.map(item => ({ ...item }));
+            this.assetsBankAsalPemburukanC = this.assets.map(item => ({ ...item }));
+
+
+            console.log("modifed data table", this.modifiedDataTable1);
+
+            // Contoh penambahan atau modifikasi data khusus untuk assetsBankAsal
+            this.assetsBankAsal.splice(11, 0, 
+                { label: 'Kol Lancar', value: this.modifiedDataTable1[0]?.baki_debet ?? 0, indent: 1 },
+                { label: 'Kol Dalam Perhatian Khusus', value: this.modifiedDataTable1[1]?.baki_debet ?? 0, indent: 1 },
+                { label: 'Kol Kurang Lancar', value: this.modifiedDataTable1[2]?.baki_debet ?? 0, indent: 1 },
+                { label: 'Kol Diragukan', value: this.modifiedDataTable1[3]?.baki_debet ?? 0, indent: 1 },
+                { label: 'Kol Macet', value: this.modifiedDataTable1[4]?.baki_debet ?? 0, indent: 1 }
+            );
+
+
+        
+            // Menghitung total Kredit-Net dan CKPN
+            const totalKredit = (
+                (this.modifiedDataTable1[0]?.baki_debet_res ?? 0) + 
+                -(this.modifiedDataTable1[0]?.baki_debet_res ?? 0) * 1/100 + 
+                (this.modifiedDataTable1[1]?.baki_debet_res ?? 0) + 
+                -(this.modifiedDataTable1[1]?.baki_debet_res ?? 0) * 5/100 + 
+                (this.modifiedDataTable1[2]?.baki_debet_res ?? 0) + 
+                -(this.modifiedDataTable1[2]?.baki_debet_res ?? 0) * 15/100 + 
+                (this.modifiedDataTable1[3]?.baki_debet_res ?? 0) + 
+                -(this.modifiedDataTable1[3]?.baki_debet_res ?? 0) * 50/100 + 
+                (this.modifiedDataTable1[4]?.baki_debet_res ?? 0) + 
+                -(this.modifiedDataTable1[4]?.baki_debet_res ?? 0) * 100/100
+            );
+            
+            // Menambahkan objek ke dalam assetsBankAsalPemburukan
+            this.assetsBankAsalPemburukan.splice(10, 0, 
+                { label: 'Kredit-Net', value: totalKredit },
+                { label: 'Kredit Kol 1', value: this.modifiedDataTable1[0]?.baki_debet_res ?? 0 },
+                { label: 'CKPN Kredit Kol 1 (-)', value: -(this.modifiedDataTable1[0]?.baki_debet_res ?? 0) * 1/100 , indent: 1 },
+                { label: 'Kredit Kol 2', value: this.modifiedDataTable1[1]?.baki_debet_res ?? 0 },
+                { label: 'CKPN Kredit Kol 2 (-)', value: -(this.modifiedDataTable1[1]?.baki_debet_res ?? 0) * 5/100, indent: 1 },
+                { label: 'Kredit Kol 3', value: this.modifiedDataTable1[2]?.baki_debet_res ?? 0 },
+                { label: 'CKPN Kredit Kol 3 (-)', value: -(this.modifiedDataTable1[2]?.baki_debet_res ?? 0) * 15/100, indent: 1 },
+                { label: 'Kredit Kol 4', value: this.modifiedDataTable1[3]?.baki_debet_res ?? 0 },
+                { label: 'CKPN Kredit Kol 4 (-)', value: -(this.modifiedDataTable1[3]?.baki_debet_res ?? 0) * 50/100, indent: 1 },
+                { label: 'Kredit Kol 5', value: this.modifiedDataTable1[4]?.baki_debet_res ?? 0 },
+                { label: 'CKPN Kredit Kol 5 (-)', value: -(this.modifiedDataTable1[4]?.baki_debet_res ?? 0) * 100/100, indent: 1 }
+            );
+
+            this.assetsBankAsalPemburukan[2].value = this.gwmDataHasilBi || 0;
+
+            this.assetsBankAsalPemburukan.filter(item => item.label === 'Surat Berharga')[0].value = 0;
+
+            const item2 = this.assetsBankAsalPemburukan.find(item => item.label === 'Aset Tetap dan Inventaris');
+
+            if (item2) {
+
+                console.log("Item value before addition:", item2.value);
+
+                if (typeof item2.value === 'number' && !isNaN(item2.value)) {
+                    item2.value = (item2.value || 0) - (this.ati_ke_properti_terbengkalai || 0);
+                    console.log("Item value after addition:", item2.value);  
+                } else {
+                    console.warn("item.value is not a valid number:", item2.value);
+                }
+            } else {
+                console.warn("Item with label 'Properti Terbengkalai' not found.");
+            }
+            
+            const item = this.assetsBankAsalPemburukan.find(item => item.label === 'Properti Terbengkalai');
+
+            if (item) {
+
+                if (typeof item.value === 'number' && !isNaN(item.value)) {
+                    item.value = (item.value || 0) + (this.ati_ke_properti_terbengkalai || 0);
+                    console.log("Item value after addition:", item.value);  
+                } else {
+                    console.warn("item.value is not a valid number:", item.value);
+                }
+            } else {
+                console.warn("Item with label 'Properti Terbengkalai' not found.");
+            }
+            
+
+            this.assetsBankAsalPemburukan.splice(31, 0, 
+                { 
+                  label: 'CKPN Prop Terbengkalai (-)', 
+                  value: this.assetsBankAsalPemburukan.find(item => item.label === 'Properti Terbengkalai')?.value || 0 
+                }
+              );
+              
+            
+            this.assetsBankAsalPemburukan.splice(33, 0, 
+                { label: 'CKPN AYDA (-)', value: 0 }
+            );
+
+            this.assetsBankAsalPemburukan[21].value = null;
+            this.assetsBankAsalPemburukan[22].value = null;
+            this.assetsBankAsalPemburukan[23].value = null;
+
+            this.assetsBankAsalPemburukan[35].value = 1708396000000;
+
+            let totalAsset = this.assetsBankAsalPemburukan
+            .reduce((sum, item) => 
+              (item.label !== "Kredit-Net" && item.label !== "TOTAL ASET") ? sum + (item.value ?? 0) : sum
+            , 0);
+
+            this.assetsBankAsalPemburukan.filter(item => item.label === 'TOTAL ASET')[0].value = totalAsset;
+
+            this.assetsBankAsalPemburukanC = this.assetsBankAsalPemburukan.map(item => ({ ...item }));
+
+            this.assetsBankAsalPemburukanC
+            .filter(item1 => item1.label === 'Tagihan Akseptasi' || item1.label === 'Tagihan Spot dan Derivatif')
+            .forEach(item1 => item1.value = 0); 
+
+            const item3 = this.assetsBankAsalPemburukanC.find(item3 => item3.label === 'Aset Lainnya');
+
+            if (item3) {
+                console.log("Item found:", item3);
+                item3.value = 0;  
+                console.log("Updated item:", item3);
+            } else {
+                console.warn("Item with label 'Aset Lainnya' not found.");
+}
+
+            console.log("assetsBankAsalPemburukan", this.assetsBankAsalPemburukanC);
+            
+            const totalAssetC = this.assetsBankAsalPemburukanC
+            .reduce((sum, item) => 
+              (item.label !== "Kredit-Net" && item.label !== "TOTAL ASET") ? sum + (item.value ?? 0) : sum
+            , 0);
+
+            this.assetsBankAsalPemburukanC.filter(item => item.label === 'TOTAL ASET')[0].value = totalAssetC;
+
+            console.log("assetsBankAsalPemburukan", this.assetsBankAsalPemburukanC);
         
             this.liabilitiesEquity = [
                 { label: 'LIABILITAS', value: null, isSubheader: true },
@@ -607,9 +1009,318 @@ export class LctComponent implements OnInit, OnDestroy {
                 { label: 'Total Ekuitas', value: this.dataTableNeracaBank.totalEkuitas, isTotal: true },
                 { label: 'TOTAL KEWAJIBAN DAN EKUITAS', value: this.dataTableNeracaBank.totalKewajibanDanEkuitas, isTotal: true }
             ];
+
+            // Menyisipkan Estimasi Kerugian sebelum Total Ekuitas
+            // Menyisipkan Estimasi Kerugian sebelum Total Ekuitas
+
+            const ckpnAyda = 0;
+            const asetLainnyaBv = 1708396000000;
+
         
+            //change mapping
+            this.liabilitiesEquityBankAsal = this.liabilitiesEquity.map(item => ({ ...item }));
+            this.liabilitiesEquityBankAsalPemburukan = this.liabilitiesEquity.map(item => ({ ...item }));
+
+            this.liabilitiesEquityBankAsalPemburukan.filter(item => item.label === 'Kewajiban pada Bank Lain')[0].value = 0;
+
+            const penempatanBIA = this.assetsBankAsal.filter(item => item.label === 'Penempatan pada BI')[0].value || 0;
+            console.log("penempatanBIA", penempatanBIA);
+            const simpananBerjangkaA = this.liabilitiesEquityBankAsal.filter(item => item.label === 'Simpanan Berjangka')[0].value || 0;
+            console.log("simpananBerjangkaA", simpananBerjangkaA);
+            const suratBerhargaA = this.assetsBankAsal.filter(item => item.label === 'Surat Berharga')[0].value || 0;
+            console.log("suratBerhargaA", suratBerhargaA);
+            const kewBankLainA = this.liabilitiesEquityBankAsal.filter(item => item.label === 'Kewajiban pada Bank Lain')[0].value || 0;
+            console.log("kewBankLainA", kewBankLainA);
+
+            const penempatanBI = this.assetsBankAsalPemburukan.filter(item => item.label === 'Penempatan pada BI')[0].value || 0;
+            console.log("penempatanBI", penempatanBI);
+            const suratBerharga = this.assetsBankAsalPemburukan.filter(item => item.label === 'Surat Berharga')[0].value || 0;
+            console.log("suratBerharga", suratBerharga);
+            const kewBankLain = this.liabilitiesEquityBankAsalPemburukan.filter(item => item.label === 'Kewajiban pada Bank Lain')[0].value || 0;
+            console.log("kewBankLain", kewBankLain);
+
+
+            this.liabilitiesEquityBankAsalPemburukan.filter(item => item.label === 'Simpanan Berjangka')[0].value = simpananBerjangkaA + (suratBerharga - suratBerhargaA) + (penempatanBI - penempatanBIA) - (kewBankLain - kewBankLainA);
+
+            const estimasiKerugian = (-(this.modifiedDataTable1[0]?.baki_debet_res ?? 0) * 1/100) + (-(this.modifiedDataTable1[1]?.baki_debet_res ?? 0) * 5/100) + (-(this.modifiedDataTable1[2]?.baki_debet_res ?? 0) * 15/100) + (-(this.modifiedDataTable1[3]?.baki_debet_res ?? 0) * 50/100) + 
+                (-(this.modifiedDataTable1[4]?.baki_debet_res ?? 0) * 100/100) - this.dataTableNeracaBank.ckpnKredit + ckpnAyda + asetLainnyaBv - this.dataTableNeracaBank.asetLainnya - this.dataTableNeracaBank.propertiTerbengkalai;
+                this.liabilitiesEquityBankAsalPemburukan.splice(                                                
+                this.liabilitiesEquityBankAsalPemburukan.findIndex(item => item.label === 'Total Ekuitas'), // Temukan indeks 'Total Ekuitas'
+                0, // 0 berarti tidak ada elemen yang dihapus
+                { label: 'Estimasi Kerugian', value: estimasiKerugian } // Menyisipkan objek estimasi kerugian
+                );
+
+
+            const liabilityCategories = [
+                "Giro",
+                "Tabungan",
+                "Simpanan Berjangka",
+                "Kewajiban pada Bank Lain",
+                "Kewajiban Spot dan Derivatif",
+                "Kewajiban Repo",
+                "Kewajiban Akseptasi",
+                "Surat Berharga yang Diterbitkan",
+                "Pinjaman",
+                "Setoran Jaminan",
+                "Kewajiban Lainnya",
+              ];
+            
+            this.liabilitiesEquityBankAsalPemburukan.filter(item => item.label === 'Kewajiban pada Bank Lain')[0].value = 0;
+
+            const totalLiabilities = this.liabilitiesEquityBankAsalPemburukan
+                .filter(item => liabilityCategories.includes(item.label)) 
+                .reduce((sum, item) => sum + (item.value ?? 0), 0);
+            
+            this.liabilitiesEquityBankAsalPemburukan.filter(item => item.label === 'Total Kewajiban')[0].value = totalLiabilities;
+
+            const equityCategories = [
+                "Modal Dasar",
+                "Modal yg Belum Disetor (-)",
+                "Agio",
+                "Penghasilan Komprehensif Lain",
+                "Dana Setoran Modal",
+                "Cadangan Umum",
+                "Laba Tahun Lalu",
+                "Laba Tahun Berjalan",
+                "Estimasi Kerugian",
+              ];
+            
+            const totalEquity = this.liabilitiesEquityBankAsalPemburukan.reduce((sum, item) =>
+                equityCategories.includes(item.label) ? sum + (item.value ?? 0) : sum
+            , 0);
+
+            this.liabilitiesEquityBankAsalPemburukan.filter(item => item.label === 'Total Ekuitas')[0].value = totalEquity;
+
+            const totalLiabilitiesEquity = totalLiabilities + totalEquity;
+
+            this.liabilitiesEquityBankAsalPemburukan.filter(item => item.label === 'TOTAL KEWAJIBAN DAN EKUITAS')[0].value = totalLiabilitiesEquity;
+
+            this.liabilitiesEquityBankAsalPemburukanC = this.liabilitiesEquityBankAsalPemburukan.map(item => ({ ...item })); 
+            
+            
+            this.liabilitiesEquityBankAsalPemburukanC
+            .filter(item1 => item1.label === 'Kewajiban Spot dan Derivatif' || item1.label === 'Kewajiban Akseptasi')
+            .forEach(item1 => item1.value = 0); // Mengubah value menjadi null untuk semua item yang cocok
+
+            const asalPemburukan = this.liabilitiesEquityBankAsalPemburukan;
+            const asalPemburukanC = this.liabilitiesEquityBankAsalPemburukanC;
+            const asetPemburukan = this.assetsBankAsalPemburukan;
+            
+            const estimasiKerugianC = asalPemburukanC.find(item => item.label === 'Estimasi Kerugian');
+            
+            if (estimasiKerugianC) {
+                estimasiKerugianC.value =
+                    (asalPemburukan.find(item => item.label === 'Estimasi Kerugian')?.value ?? 0) -
+                    (asalPemburukan.find(item => item.label === 'Kewajiban Akseptasi')?.value ?? 0) -
+                    (asalPemburukan.find(item => item.label === 'Kewajiban Spot dan Derivatif')?.value ?? 0) -
+                    (asetPemburukan.find(item => item.label === 'Tagihan Akseptasi')?.value ?? 0) -
+                    (asetPemburukan.find(item => item.label === 'Tagihan Spot dan Derivatif')?.value ?? 0) -
+                    (asetPemburukan.find(item => item.label === 'Aset Lainnya')?.value ?? 0);
+            }
+            
+            const totalEquityC = this.liabilitiesEquityBankAsalPemburukanC.reduce((sum, item) =>
+                equityCategories.includes(item.label) ? sum + (item.value ?? 0) : sum
+            , 0);
+
+            this.liabilitiesEquityBankAsalPemburukanC.filter(item => item.label === 'Total Ekuitas')[0].value = totalEquityC;
+            
+            const totalLiabilitiesC = this.liabilitiesEquityBankAsalPemburukanC.reduce((sum, item) =>
+                liabilityCategories.includes(item.label) ? sum + (item.value ?? 0) : sum
+            , 0);
+
+            this.liabilitiesEquityBankAsalPemburukanC.filter(item => item.label === 'Total Kewajiban')[0].value = totalLiabilitiesC;
+
+            const totalLiabilitiesEquityC = totalLiabilitiesC + totalEquityC;
+
+            this.liabilitiesEquityBankAsalPemburukanC.filter(item => item.label === 'TOTAL KEWAJIBAN DAN EKUITAS')[0].value = totalLiabilitiesEquityC;
+            
+            this.liabilitiesEquityBankBp = this.liabilitiesEquityBankAsalPemburukanC.map(item => ({ ...item }));
+
+            this.liabilitiesEquityBankBp.splice(1, 0, 
+                {
+                label: 'Total Simpanan', 
+                value: this.liabilitiesEquityBankAsalPemburukanC.reduce((sum, item) =>
+                    ["Giro", "Tabungan", "Simpanan Berjangka", "Kewajiban pada Bank Lain"].includes(item.label) 
+                    ? sum + (item.value ?? 0) 
+                    : sum, 0) 
+                }
+            );
+            
+
+            this.getGwmData();
+
+            console.log("assets asal Pemburukan", this.assetsBankAsalPemburukan);
+            this.financialTerms = [
+                { label: 'Kas', nominal: this.assetsBankAsalPemburukan.filter(item => item.label === 'Kas')[0]?.value || 0, fv:  this.assetsBankAsalPemburukanC.filter(item => item.label === 'Kas')[0]?.value || 0 },
+                { label: 'Penempatan Pada Bank Indonesia', nominal: this.assetsBankAsalPemburukan.filter(item => item.label === 'Penempatan pada BI')[0]?.value || 0, fv: this.assetsBankAsalPemburukanC.filter(item => item.label === 'Penempatan pada BI')[0]?.value || 0 },
+                { label: 'Penempatan Pada Bank Lain', nominal: this.assetsBankAsalPemburukan.filter(item => item.label === 'Penempatan pada Bank Lain')[0]?.value || 0, fv: this.assetsBankAsalPemburukanC.filter(item => item.label === 'Penempatan pada Bank Lain')[0]?.value || 0 },
+                { label: 'Surat Berharga yang Dimiliki', nominal: ((this.assetsBankAsalPemburukan.filter(item => item.label === 'Surat Berharga')[0]?.value || 0) - (this.assetsBankAsalPemburukan.filter(item => item.label === 'CKPN Surat Berharga (-)')[0]?.value || 0)) || 0, fv: this.assetsBankAsalPemburukanC.filter(item => item.label === 'Surat Berharga')[0]?.value || 0 },
+                { label: 'Surat Berharga (REPO)', nominal: this.assetsBankAsalPemburukan.filter(item => item.label === 'Surat Berharga (Repo)')[0]?.value || 0, fv:  this.assetsBankAsalPemburukanC.filter(item => item.label === 'Surat Berharga (Repo)')[0]?.value || 0 },
+                { label: 'Reverse Repo', nominal: this.assetsBankAsalPemburukan.filter(item => item.label === 'Reverse Repo')[0]?.value || 0, fv: this.assetsBankAsalPemburukanC.filter(item => item.label === 'Reverse Repo')[0]?.value || 0 },
+                { label: 'Kredit Yang Diberikan (Nilai Nominal/Baki debet)', nominal: ((this.assetsBankAsalPemburukan.filter(item => item.label === 'Kredit Kol 1')[0]?.value || 0) + (this.assetsBankAsalPemburukan.filter(item => item.label === 'Kredit Kol 2')[0]?.value || 0)) || 0, fv: ((this.assetsBankAsalPemburukanC.filter(item => item.label === 'Kredit Kol 1')[0]?.value || 0) + (this.assetsBankAsalPemburukanC.filter(item => item.label === 'Kredit Kol 2')[0]?.value || 0)) || 0 },
+                { label: 'CKPN Kredit yang Diberikan', nominal: ((this.assetsBankAsalPemburukan.filter(item => item.label === 'CKPN Kredit Kol 1 (-)')[0]?.value || 0) + (this.assetsBankAsalPemburukan.filter(item => item.label === 'CKPN Kredit Kol 2 (-)')[0]?.value || 0)) || 0, fv: ((this.assetsBankAsalPemburukanC.filter(item => item.label === 'CKPN Kredit Kol 1 (-)')[0]?.value || 0) + (this.assetsBankAsalPemburukanC.filter(item => item.label === 'CKPN Kredit Kol 2 (-)')[0]?.value || 0)) || 0 },
+                { label: 'Aset tetap dan Inventaris', nominal: this.assetsBankAsalPemburukan.filter(item => item.label === 'Aset Tetap dan Inventaris')[0]?.value || 0, fv: ((this.assetsBankAsalPemburukanC.filter(item => item.label === 'Aset Tetap dan Inventaris')[0]?.value || 0) + (this.assetsBankAsalPemburukanC.filter(item => item.label === 'Akumulasi Penyusutan (-)')[0]?.value || 0)) || 0 },
+                { label: 'Akumulasi Penyusutan Aset Tetap dan Inventaris', nominal: this.assetsBankAsalPemburukan.filter(item => item.label === 'Akumulasi Penyusutan (-)')[0]?.value || 0, fv: 0 },
+                { label: 'Aset Tetap dan dan Inventaris Neto', nominal: ((this.assetsBankAsalPemburukan.filter(item => item.label === 'Aset Tetap dan Inventaris')[0]?.value || 0) + (this.assetsBankAsalPemburukan.filter(item => item.label === 'Akumulasi Penyusutan (-)')[0]?.value || 0)) || 0, fv: ((this.assetsBankAsalPemburukanC.filter(item => item.label === 'Aset Tetap dan Inventaris')[0]?.value || 0) + (this.assetsBankAsalPemburukanC.filter(item => item.label === 'Akumulasi Penyusutan (-)')[0]?.value || 0)) || 0 },
+                { label: 'Aset Tidak Berwujud', nominal: this.assetsBankAsalPemburukan.filter(item => item.label === 'Aset Tidak Berwujud')[0]?.value || 0, fv: ((this.assetsBankAsalPemburukanC.filter(item => item.label === 'Aset Tidak Berwujud')[0]?.value || 0) + (this.assetsBankAsalPemburukanC.filter(item => item.label === 'Akumulasi Amortisasi')[0]?.value || 0)) || 0 },
+                { label: 'Akumulasi Amortisasi Aset Tidak berwujud', nominal: this.assetsBankAsalPemburukan.filter(item => item.label === 'Akumulasi Amortisasi')[0]?.value || 0, fv: 0 },
+                { label: 'Aset Tak Berwujud Neto', nominal: ((this.assetsBankAsalPemburukan.filter(item => item.label === 'Aset Tidak Berwujud')[0]?.value || 0) + (this.assetsBankAsalPemburukan.filter(item => item.label === 'Akumulasi Amortisasi')[0]?.value || 0)) || 0, fv: ((this.assetsBankAsalPemburukanC.filter(item => item.label === 'Aset Tidak Berwujud')[0]?.value || 0) + (this.assetsBankAsalPemburukanC.filter(item => item.label === 'Akumulasi Amortisasi')[0]?.value || 0)) || 0 },
+                { label: 'Total Aset', nominal: 0, fv: 0 }
+            ];
+
+            //total asset financial terms
+            this.financialTerms.filter(item => item.label === 'Total Aset')[0].nominal = this.financialTerms.reduce((sum, item) => sum + (item.nominal || 0), 0);
+            this.financialTerms.filter(item => item.label === 'Total Aset')[0].fv = this.financialTerms.reduce((sum, item) => sum + (item.fv || 0), 0);
+
+            const posPengalihan =  this.posPengalihan.find(item => item.label === 'Aset yang dialihkan') ;
+
+            if(posPengalihan){
+                posPengalihan.nominal = this.financialTerms.filter(item => item.label === 'Total Aset')[0].nominal;
+            }
+            
+            this.cekDataBb.filter(item => item.label === 'BB + BDL')[0].aset = (this.asetBdl.find(item => item.label === 'Total Aset')?.value || 0) + (this.asetBp.find(item => item.label === 'Total Aset')?.value || 0) - ((this.kewajibanBp.find(item => item.label === 'Modal KPMM')?.value || 0) + (this.kewajibanBp.find(item => item.label === 'Kewajiban kepada BDL')?.value || 0)) + ((this.assetsBankAsal.find(item => item.label === 'Penempatan pada Bank Lain')?.value || 0) - (this.asetBp.find(item => item.label === 'Penempatan pada Bank Lain')?.value || 0) + (this.kewajibanBp.find(item => item.label === 'Modal KPMM')?.value || 0));
+            this.cekDataBb.filter(item => item.label === 'BA')[0].aset = this.assetsBankAsalPemburukanC.find(item => item.label === 'TOTAL ASET')?.value || 0;
+
+            this.cekDataBb.filter(item => item.label === 'BB + BDL')[0].kewajiban = (this.kewajibanBdl.find(item => item.label === 'Total Kewajiban')?.value || 0) + (this.kewajibanBp.find(item => item.label === 'Total Kewajiban')?.value || 0) - (this.kewajibanBp.find(item => item.label === 'Kewajiban pada BDL')?.value || 0) - (this.kewajibanBp.find(item => item.label === 'Kewajiban kepada BDL')?.value || 0);
+            this.cekDataBb.filter(item => item.label === 'BA')[0].kewajiban = this.liabilitiesEquityBankAsalPemburukanC.find(item => item.label === 'Total Kewajiban')?.value || 0;
+
+            this.cekDataBb.filter(item => item.label === 'BB + BDL')[0].modal = (this.kewajibanBdl.find(item => item.label === 'Total Ekuitas')?.value || 0) + (this.kewajibanBp.find(item => item.label === 'Total Ekuitas')?.value || 0) + ((this.assetsBankAsal.find(item => item.label === 'Penempatan pada Bank Lain')?.value || 0) - (this.asetBp.find(item => item.label === 'Penempatan pada Bank Lain')?.value || 0) );
+            this.cekDataBb.filter(item => item.label === 'BA')[0].modal = this.liabilitiesEquityBankAsalPemburukanC.find(item => item.label === 'Total Ekuitas')?.value || 0;
+
+            this.cekDataBb.filter(item => item.label === 'BB + BDL')[0].kew_modal = this.cekDataBb.filter(item => item.label === 'BB + BDL')[0].kewajiban + this.cekDataBb.filter(item => item.label === 'BB + BDL')[0].modal;
+            this.cekDataBb.filter(item => item.label === 'BA')[0].kew_modal = this.cekDataBb.filter(item => item.label === 'BA')[0].kewajiban + this.cekDataBb.filter(item => item.label === 'BA')[0].modal;
+
+            console.log("financial terms", this.financialTerms);
+
+            
+            this.assetsBankAsalPemburukanP = this.assetsBankAsal.map(item => ({ ...item }));
+
+            this.assetsBankAsalPemburukanP.splice(10, 0, 
+                { label: 'Kredit-Net', value: 0 },
+                { label: 'Kredit Kol 1', value: this.modifiedDataTable1[0]?.baki_debet ?? 0 },
+                { label: 'CKPN Kredit Kol 1 (-)', value: -(this.modifiedDataTable1[0]?.ckpn) || 0 , indent: 1 },
+                { label: 'Kredit Kol 2', value: this.modifiedDataTable1[1]?.baki_debet ?? 0 },
+                { label: 'CKPN Kredit Kol 2 (-)', value: -(this.modifiedDataTable1[1]?.ckpn)  || 0, indent: 1 },
+                { label: 'Kredit Kol 3', value: this.modifiedDataTable1[2]?.baki_debet ?? 0 },
+                { label: 'CKPN Kredit Kol 3 (-)', value: -(this.modifiedDataTable1[2]?.ckpn) || 0, indent: 1 },
+                { label: 'Kredit Kol 4', value: this.modifiedDataTable1[3]?.baki_debet ?? 0 },
+                { label: 'CKPN Kredit Kol 4 (-)', value: -(this.modifiedDataTable1[3]?.ckpn) || 0, indent: 1 },
+                { label: 'Kredit Kol 5', value: this.modifiedDataTable1[4]?.baki_debet ?? 0 },
+                { label: 'CKPN Kredit Kol 5 (-)', value: -(this.modifiedDataTable1[4]?.ckpn) || 0, indent: 1 }
+            );
+
+            // sum kredit net fron and kol 1 - 5
+            const totalKreditP = this.assetsBankAsalPemburukanP
+                .filter(item => item.label === 'Kredit Kol 1' || item.label === 'Kredit Kol 2' || item.label === 'Kredit Kol 3' || item.label === 'Kredit Kol 4' || item.label === 'Kredit Kol 5' || item.label === 'CKPN Kredit Kol 1 (-)' || item.label === 'CKPN Kredit Kol 2 (-)' || item.label === 'CKPN Kredit Kol 3 (-)' || item.label === 'CKPN Kredit Kol 4 (-)' || item.label === 'CKPN Kredit Kol 5 (-)')
+                .reduce((sum, item) => sum + (item.value || 0), 0);
+            
+            this.assetsBankAsalPemburukanP.filter(item => item.label === 'Kredit-Net')[0].value = totalKreditP;
+
+            // Pastikan array tidak kosong sebelum mencoba menghapus
+            if (this.assetsBankAsalPemburukanP.length > 26) {
+                this.assetsBankAsalPemburukanP.splice(21, 8);
+            }
+
+            // filter string wit CKPN set value 0
+            // this.assetsBankAsalPemburukanP.filter(item => item.label === 'CKPN Kredit Kol 1 (-)' || item.label === 'CKPN Kredit Kol 2 (-)' || item.label === 'CKPN Kredit Kol 3 (-)' || item.label === 'CKPN Kredit Kol 4 (-)' || item.label === 'CKPN Kredit Kol 5 (-)').forEach(item => item.value = 0);
+            this.assetsBankAsalPemburukanP.filter(item => item.label === 'TOTAL ASET')[0].value = 0;
+            // Menggunakan find untuk mencari elemen dan memastikan bahwa nilai tidak null
+            const totalAsetItem = this.assetsBankAsalPemburukanP.find(item => item.label === 'TOTAL ASET');
+            const kreditNetItem = this.assetsBankAsalPemburukanP.find(item => item.label === 'Kredit-Net');
+
+            // Pastikan elemen ditemukan, jika tidak, berikan nilai default
+            if (totalAsetItem && kreditNetItem) {
+            totalAsetItem.value = this.assetsBankAsalPemburukanP.reduce((sum, item) => sum + (item.value || 0), 0) - (kreditNetItem.value || 0);
+            } else {
+            console.log("Item 'TOTAL ASET' atau 'Kredit-Net' tidak ditemukan");
+            }
+                        
+            
+            this.assetsBankAsalPemburukanPA = this.assetsBankAsalPemburukanP.map(item => ({ ...item }));
+            this.liabilitiesEquityBankAsalPemburukanPA = this.liabilitiesEquityBankAsalPemburukan.map(item => ({ ...item }));
+
+            this.totalAsetB = this.assetsBankAsalPemburukanP.filter(item => item.label === 'TOTAL ASET')[0].value || 0;
+            this.totalAsetP = this.assetsBankAsalPemburukan.filter(item => item.label === 'TOTAL ASET')[0].value || 0;
+            this.totalAsetPA = this.assetsBankAsalPemburukanPA.filter(item => item.label === 'TOTAL ASET')[0].value || 0;
+            
+            this.estimasiKerugian = this.liabilitiesEquityBankAsalPemburukanPA.find(item => item.label === 'Estimasi Kerugian')?.value || 0;
+
+            console.log("modalAtmr", this.modalAtmr);
+
+            const jumlah_pms = ((this.atmr * (this.totalAsetP / this.totalAsetB)) * 14 / 100) - (this.modalAtmr + this.estimasiKerugian);
+
+            let asset_temp = this.assetsBankAsalPemburukanPA.find(item => item.label === 'Penempatan pada BI')?.value || 0;
+            this.assetsBankAsalPemburukanPA.filter(item => item.label === 'Penempatan pada BI')[0].value = jumlah_pms + asset_temp;
+
+            let liability_temp = this.liabilitiesEquityBankAsalPemburukanPA.find(item => item.label === 'Dana Setoran Modal')?.value || 0;
+            this.liabilitiesEquityBankAsalPemburukanPA.filter(item => item.label === 'Dana Setoran Modal')[0].value = jumlah_pms + liability_temp;
+
+            this.assetsBankAsalPemburukanPA.filter(item => item.label === 'TOTAL ASET')[0].value = 0;
+            const totalAsetPA = this.assetsBankAsalPemburukanPA.reduce((sum, item) => sum + (item.value || 0), 0);
+            this.assetsBankAsalPemburukanPA.filter(item => item.label === 'TOTAL ASET')[0].value = totalAsetPA;
+
+            this.liabilitiesEquityBankAsalPemburukanPA.filter(item => item.label === 'Total Ekuitas')[0].value = 0;
+
+            const totalEkuitasPA = this.liabilitiesEquityBankAsalPemburukanPA
+              .filter(item => [
+                'Modal Disetor',
+                'Modal Dasar',
+                'Modal yg Belum Disetor (-)',
+                'Tambahan Modal Disetor',
+                'Agio',
+                'Penghasilan Komprehensif Lain',
+                'Dana Setoran Modal',
+                'Cadangan Umum',
+                'Laba (Rugi)',
+                'Laba Tahun Lalu',
+                'Laba Tahun Berjalan',
+                'Estimasi Kerugian'
+              ].includes(item.label))
+              .reduce((sum, item) => sum + (item.value || 0), 0);
+
+              this.liabilitiesEquityBankAsalPemburukanPA.filter(item => item.label === 'Total Ekuitas')[0].value = totalEkuitasPA;
+
+              const totalKewajiban = this.liabilitiesEquityBankAsalPemburukanPA.find(item => item.label === 'Total Kewajiban')?.value || 0;
+              const total = totalEkuitasPA + totalKewajiban;
+              this.liabilitiesEquityBankAsalPemburukanPA.filter(item => item.label === 'TOTAL KEWAJIBAN DAN EKUITAS')[0].value = total || 0;
+              
+              let nilai_ekuitas = this.liabilitiesEquityBankAsal.find(item => item.label === 'Total Ekuitas')?.value || 0;
+              this.calTotalModal = totalEkuitasPA / nilai_ekuitas * this.modalAtmr;
+
+              console.log("calTotalModal", this.calTotalModal);
+              console.log("totalEkuitasPA", totalEkuitasPA);
+              console.log("nilai_ekuitas", nilai_ekuitas);
+              console.log("modalAtmr", this.modalAtmr);
+            
+              this.calTotalAtmr = this.calTotalModal / 14 / 100;
+              console.log("calTotalAtmr", this.calTotalAtmr);
+
+
         }
+        
     
+    async getGwmData(){
+        this.gwmData.giroBi = this.dataTableNeracaBank.penempatanPadaBI;
+
+        const liabilitasBank = this.liabilitiesEquityBankAsal;
+                
+        if (liabilitasBank) {
+            this.gwmData.dpkPdbl =
+                (liabilitasBank.find(item => item.label === 'Giro')?.value ?? 0) +
+                (liabilitasBank.find(item => item.label === 'Tabungan')?.value ?? 0) +
+                (liabilitasBank.find(item => item.label === 'Simpanan Berjangka')?.value ?? 0) +
+                (liabilitasBank.find(item => item.label === 'Kewajiban pada Bank Lain')?.value ?? 0) +
+                (liabilitasBank.find(item => item.label === 'Kewajiban Spot dan Derivatif')?.value ?? 0);
+        }
+
+        this.gwmDataHasilBi = (this.gwmData.total * +this.gwmData.parameter1 / 100) / ((+this.gwmData.parameter1 + +this.gwmData.parameter2) / 100)
+
+        this.gwmDataHasilPdbl = (this.gwmData.total * +this.gwmData.parameter2 / 100) / ((+this.gwmData.parameter1 + +this.gwmData.parameter2) / 100)
+
+        this.gwmData.total = this.gwmData.giroBi + this.gwmData.dpkPdbl;
+
+        console.log("GWM Data", this.gwmData);
+    }
 
     async getReportLct(tableName: string, keyword: string): Promise<void> {
         console.log('Table Name:', tableName);
@@ -681,6 +1392,125 @@ export class LctComponent implements OnInit, OnDestroy {
         });
     }
     
+    updateParentTotal(product: any) {
+        console.log("ini product", product);
+        console.log("ini table", this.modifiedDataTable1);
+        this.updateDataFromModifiedTable1(product.pos);
+    
+        product.ckpn_aset_baik = (Number(product.ckpn_aset_baik_normal) || 0) + (Number(product.ckpn_aset_baik_restrukturisasi) || 0);
+        product.ckpn_aset_kurang_baik = (Number(product.ckpn_aset_kurang_baik_normal) || 0) + (Number(product.ckpn_aset_kurang_baik_restrukturisasi) || 0);
+        product.ckpn_aset_tidak_baik = (Number(product.ckpn_aset_tidak_baik_normal) || 0) + (Number(product.ckpn_aset_tidak_baik_restrukturisasi) || 0);
+        product.ckpn = (Number(product.ckpn_normal) || 0) + (Number(product.ckpn_restrukturisasi) || 0);
+        product.jumlah_rekening = (Number(product.jumlah_rekening_normal) || 0) + (Number(product.jumlah_rekening_restrukturisasi) || 0);
+        product.baki_debet = (Number(product.baki_debet_normal) || 0) + (Number(product.baki_debet_restrukturisasi) || 0);
+    
+        if (product) {
+            if (product.pos === 1) {
+                // find pos nilai 1 di modifiedDataTable1
+                const product = this.modifiedDataTable1.find(item => item.pos === 1);
+
+                product.hasil_hitung = Number(product.baki_debet_pemeriksa) - Number(product.baki_debet);
+                // let totalHasilHitung = this.modifiedDataTable1
+                // .filter(item => [1].includes(item.pos))
+                // .reduce((sum, item) => sum + (Number(item.baki_debet_pemeriksa) - Number(item.baki_debet) || 0), 0);
+                console.log("hasil hitung rf1", product.hasil_hitung);
+
+                this.modifiedDataTable3[0].diligence1 = -(
+                    (Number(product.hasil_hitung))+
+                    (Number(this.modifiedDataTable3[0].kredit_ffs1)) +
+                    (Number(this.modifiedDataTable3[0].baki_debet_restrukturisasi1
+                    ) || 0)
+                );
+            }
+    
+            if ([2, 3, 4].includes(product.pos)) {
+                // product.hasil_hitung = Number(product.baki_debet_pemeriksa) - Number(product.baki_debet);
+
+                // console.log("hasil hitung rf2", product.hasil_hitung);
+    
+                let totalHasilHitung = this.modifiedDataTable1
+                    .filter(item => [2, 3, 4].includes(item.pos))
+                    .reduce((sum, item) => sum + (Number(item.baki_debet_pemeriksa) - Number(item.baki_debet) || 0), 0);
+                
+                console.log("total", totalHasilHitung);
+
+                this.modifiedDataTable3[0].diligence24 = -(
+                    (Number(totalHasilHitung) || 0) +
+                    (Number(this.modifiedDataTable3[0].restru1) || 0) +
+                    (Number(this.modifiedDataTable3[0].baki_debet_restrukturisasi24) || 0)
+                );
+            }
+        }
+        this.modifiedDataTable3[0].baki_debet_restrukturisasi1 = this.modifiedDataTable1[0].baki_debet_restrukturisasi;
+        console.log("baki_debet_restrukturisasi1", this.modifiedDataTable3[0].baki_debet_restrukturisasi1);
+        console.log("baki debet", this.modifiedDataTable1[0].baki_debet);
+        console.log("kredit ffs1", this.modifiedDataTable3[0].kredit_ffs1);
+        console.log("baki debet restrukturisasi1", this.modifiedDataTable3[0].baki_debet_restrukturisasi1);
+        console.log("diligence1", this.modifiedDataTable3[0].diligence1);
+        
+        this.modifiedDataTable1[0].baki_debet_res = parseInt(this.modifiedDataTable1[0].baki_debet) - (parseInt(this.modifiedDataTable3[0].kredit_ffs1) + parseInt(this.modifiedDataTable3[0].baki_debet_restrukturisasi1) + parseInt(this.modifiedDataTable3[0].diligence1));
+        this.modifiedDataTable1[1].baki_debet_res = parseInt(this.modifiedDataTable1[1].baki_debet) - (parseInt(this.modifiedDataTable3[0].kredit_ffs2) + parseInt(this.modifiedDataTable3[0].baki_debet_restrukturisasi24) + parseInt(this.modifiedDataTable3[0].diligence24));
+        this.modifiedDataTable1[2].baki_debet_res = parseInt(this.modifiedDataTable1[2].baki_debet)
+        this.modifiedDataTable1[3].baki_debet_res = parseInt(this.modifiedDataTable1[3].baki_debet)
+        this.modifiedDataTable1[4].baki_debet_res = parseInt(this.modifiedDataTable1[4].baki_debet) + (parseInt(this.modifiedDataTable3[0].kredit_ffs1) + parseInt(this.modifiedDataTable3[0].baki_debet_restrukturisasi1) + parseInt(this.modifiedDataTable3[0].diligence1)) + (parseInt(this.modifiedDataTable3[0].kredit_ffs2) + parseInt(this.modifiedDataTable3[0].baki_debet_restrukturisasi24) + parseInt(this.modifiedDataTable3[0].diligence24));
+        
+
+        console.log("modifiedtable1", this.modifiedDataTable1);
+        console.log("modifiedtable3", this.modifiedDataTable3);
+    }
+    
+    updateKreditFFS1(value: number) {
+        this.modifiedDataTable3[0].kredit_ffs1 = value;
+        this.modifiedDataTable3[0].pos = 1;
+        this.updateParentTotal(this.modifiedDataTable3[0]);
+    }
+
+    updateKreditFFS2(value: number) {
+        this.modifiedDataTable3[0].kredit_ffs2 = value;
+        this.modifiedDataTable3[0].pos = 2;
+        this.updateParentTotal(this.modifiedDataTable3[0]);
+    }
+
+    updateTotalPemburukan(product: any){
+        console.log('modifiedTable1:', this.modifiedDataTable1);
+        console.log('modifiedTable3:', this.modifiedDataTable3);
+    }
+    
+    updateDataFromModifiedTable1(productId: number) {
+        console.log('product', productId);
+    
+        if (!this.modifiedDataTable3 || this.modifiedDataTable3.length === 0) {
+            this.modifiedDataTable3 = [{}];
+        }
+    
+        if (productId === 1) {
+            const product1 = this.modifiedDataTable1.find(item => item.pos === productId);
+            if (!product1) {
+                console.warn(`Produk dengan ID ${productId} tidak ditemukan.`);
+                return;
+            }
+            this.modifiedDataTable3[0].baki_debet_baki_debet_ = product1.baki_debet_restrukturisasi;
+            console.log('tabel3 -1 ', this.modifiedDataTable3);
+        }
+    
+        if ([2, 3, 4].includes(productId)) {
+            const filteredProducts = this.modifiedDataTable1.filter(item => [2, 3, 4].includes(item.pos));
+    
+            if (filteredProducts.length === 0) {
+                console.warn('Tidak ada produk dengan ID 2, 3, atau 4 yang ditemukan.');
+                return;
+            }
+    
+            const totalBakiDebet = filteredProducts.reduce((sum, item) => sum + (+item.baki_debet_restrukturisasi || 0), 0);
+    
+            this.modifiedDataTable3[0].baki_debet_restrukturisasi24 = totalBakiDebet;
+            console.log('tabel3 -1 ', this.modifiedDataTable3);
+        }
+
+
+    }
+    
+    
       
       calculateHasil(nominalRupiah: number, nominalValas: number): string {
         const total = nominalRupiah + nominalValas;
@@ -696,6 +1526,10 @@ export class LctComponent implements OnInit, OnDestroy {
       // Trigger saat variabel diubah
       onVariableChange(): void {
         this.updateTableValues();
+      }
+
+      onVariableChange2(): void {
+        console.log('ati terbengkalai', this.ati_ke_properti_terbengkalai);
       }
 
     async findData(keyword: string) {
@@ -996,12 +1830,148 @@ export class LctComponent implements OnInit, OnDestroy {
             this.components1 = this.components1.filter(
                 (item) => item.tahun === tahun && item.bulan === bulan
             );
+            const Insured = this.kewajibanAlih.find(item1 => item1.label === 'Insured Deposits');
+            this.components1.filter(item => item.deskripsi === 'B.1 Kategori 1' || item.deskripsi === 'B. 3 Kategori 3').forEach(item => {
+                if (Insured) {
+                    Insured.nominal = 0;
+                    Insured.nominal += item.jumlah_saldo_simpanan_dijamin || 0;
+                    console.log('Insured', Insured);
+                    const InsuredPos = this.posPengalihan.find(item1 => item1.label === 'Kewajiban yang dialihkan');
+                    if (InsuredPos) {
+                        InsuredPos.nominal = Insured.nominal;
+                    }
+                    //BB
+                        this.asetBp = [
+                            { label: 'ASET', value: 0, isSubheader: true },
+                            { label: 'Kas', value: 0 },
+                            { label: 'Penempatan pada BI', value: this.dataTableNeracaBank.penempatanPadaBI },
+                            { label: 'Penempatan pada Bank Lain', value: this.dataTableNeracaBank.penempatanPadaBankLain },
+                            { label: 'Surat Berharga', value: this.dataTableNeracaBank.suratBerharga },
+                            { label: 'Surat Berharga (REPO)', value: this.dataTableNeracaBank.suratBerhargaRepo },
+                            { label: 'Reverse Repo', value: this.dataTableNeracaBank.reverseRepo },
+                            { label: 'Kredit (Net)', value: (+this.modifiedDataTable1[0]?.baki_debet + +this.modifiedDataTable1[1]?.baki_debet) || 0 },
+                            { label: 'Lancar', value: this.modifiedDataTable1[0]?.baki_debet ?? 0 },
+                            { label: 'Dalam Perhatian Khusus', value: this.modifiedDataTable1[1]?.baki_debet ?? 0 },
+                            { label: 'Aset tetap dan inventaris - Net', value: ((this.assetsBankAsalPemburukanC.filter(item => item.label === 'Aset Tetap dan Inventaris')[0]?.value || 0) + (this.assetsBankAsalPemburukanC.filter(item => item.label === 'Akumulasi Penyusutan (-)')[0]?.value || 0)) || 0},
+                            { label: 'Aset tak berwujud - Net', value: ((this.assetsBankAsalPemburukanC.filter(item => item.label === 'Aset Tidak Berwujud')[0]?.value || 0) + (this.assetsBankAsalPemburukanC.filter(item => item.label === 'Akumulasi Amortisasi')[0]?.value || 0)) || 0 },
+                            { label: 'Total Aset', value: this.asetBp.slice(1).reduce((sum, item) => sum + (item.value || 0), 0) 
+                            }
+                        ];
+
+                        this.kewajibanBp = [
+                            { label: 'LIABILITAS', value: 0, isSubheader: true },
+                            { label: 'Insured Deposits', value: Insured.nominal },
+                            { label: 'Kewajiban Repo', value: this.dataTableNeracaBank.kewajibanRepo },
+                            { label: 'Kewajiban kepada BDL', value: this.selisishBp },
+                            { label: 'Total Kewajiban', value: 0 },
+                            { label: 'EKUITAS', value: 0, isSubheader: true },
+                            { label: 'Modal KPMM', value: 0 },
+                            { label: 'Total Ekuitas', value: 0 },
+                            { label: 'Total Kewajiban dan Ekuitas', value: 0 }
+                        ];
+                        this.kewajibanBp[4].value = this.kewajibanBp[1].value + this.kewajibanBp[2].value + this.kewajibanBp[3].value;  
+                        this.kewajibanBp[7].value = this.kewajibanBp[6].value;  
+                        this.kewajibanBp[8].value = this.kewajibanBp[4].value + this.kewajibanBp[7].value;  
+
+                        this.asetBdl = [
+                                { label: 'ASET', value: 0, isSubheader: true },
+                                { label: 'Kas', value: +this.dataTableNeracaBank.kas - +this.asetBp[1].value },
+                                { label: 'Penempatan pada BI', value: 0 },
+                                { label: 'Penempatan pada Bank Lain', value: 0 },
+                                { label: 'Tagihan Spot dan Derivatif', value: this.assetsBankAsalPemburukanC.find(item => item.label === 'Tagihan Spot dan Derivatif')?.value || 0 },
+                                { label: 'Surat Berharga', value: 0 },
+                                { label: 'Surat Berharga (REPO)', value: 0 },
+                                { label: 'Reverse Repo', value: (this.assetsBankAsalPemburukanC.find(item => item.label === 'Reverse Repo')?.value || 0) - (this.assetsBankAsalPemburukanC.find(item => item.label === 'Reverse Repo')?.value || 0) },
+                                { label: 'Tagihan Akseptasi', value: this.assetsBankAsalPemburukanC.find(item => item.label === 'Tagihan Akseptasi')?.value || 0 },
+                                { label: 'Tagihan kepada BB', value: this.kewajibanBp.find(item => item.label === 'Kewajiban kepada BDL')?.value || 0 },
+                                { label: 'Total Kredit (Net)', value: 0 },
+                                { label: 'Kredit Lancar', value: (this.assetsBankAsalPemburukanC.find(item => item.label === 'Kredit Lancar')?.value || 0) - (this.asetBp.find(item => item.label === "Lancar")?.value || 0) },
+                                { label: 'Kredit Dalam Perhatian Khusus', value: (this.assetsBankAsalPemburukanC.find(item => item.label === 'Kredit Lancar')?.value || 0) - (this.asetBp.find(item => item.label === "Lancar")?.value || 0) },
+                                { label: 'Kredit Kurang Lancar', value: this.assetsBankAsalPemburukanC.find(item => item.label === 'Kredit Kol 3')?.value || 0 },
+                                { label: 'Kredit Diragukan', value: this.assetsBankAsalPemburukanC.find(item => item.label === 'Kredit Kol 4')?.value || 0 },
+                                { label: 'Kredit Macet', value: this.assetsBankAsalPemburukanC.find(item => item.label === 'Kredit Kol 5')?.value || 0 },
+                                { label: 'Aset Keuangan Lain', value: this.assetsBankAsalPemburukanC.find(item => item.label === 'Aset Keuangan Lainnya')?.value || 0 },
+                                { label: 'CKPN Aset Keuangan Lainnya', value: this.assetsBankAsalPemburukanC.find(item => item.label === 'CKPN Aset Keuangan Lainnya')?.value || 0 },
+                                { label: 'Aset Tetap dan Inventaris-Net', value: (this.assetsBankAsalPemburukanC.find(item => item.label === 'Aset Tetap dan Inventaris-Net')?.value || 0) - (this.asetBp.find(item => item.label === 'Aset tetap dan inventaris - Net')?.value || 0) },
+                                { label: 'Aset Tidak Berwujud-Net', value: (this.assetsBankAsalPemburukan.find(item => item.label === "Aset Tidak Berwujud")?.value || 0) + (this.assetsBankAsalPemburukan.find(item => item.label === "Akumulasi Amortisasi")?.value || 0) - (this.assetsBankAsalPemburukanC.find(item => item.label === 'Aset Tetap dan Inventaris-Net')?.value || 0)},
+                                { label: 'Properti Terbengkalai-Net', value: this.assetsBankAsalPemburukanC.find(item => item.label === 'Properti Terbengkalai-Net')?.value || 0 },
+                                { label: 'AYDA-Net', value: this.assetsBankAsalPemburukanC.find(item => item.label === 'AYDA-Net')?.value || 0 },
+                                { label: 'Aset Lainnya', value: this.assetsBankAsalPemburukanC.find(item => item.label === 'Aset Lainnya')?.value || 0 },
+                                { label: 'Total Aset', value: this.asetBdl.slice(1).reduce((sum, item) => sum + (item.value || 0), 0)
+                                }
+                              ];
+                        this.kewajibanBdl = [
+                                { label: 'LIABILITAS', value: 0, isSubheader: true },
+                                { label: 'Uninsured Deposits', value: (this.liabilitiesEquityBankBp.find(item => item.label === 'Total Simpanan')?.value || 0) - (this.kewajibanBp.find(item => item.label === 'Insured Deposits')?.value || 0) },   
+                                { label: 'Kewajiban pada Bank Lain', value: 0 },
+                                { label: 'Kewajiban Spot dan Derivatif', value: this.liabilitiesEquityBankBp.find(item => item.label === 'Kewajiban Spot dan Derivatif')?.value || 0 },
+                                { label: 'Kewajiban Repo', value: 0 },
+                                { label: 'Kewajiban Akseptasi', value: this.liabilitiesEquityBankBp.find(item => item.label === 'Kewajiban Akseptasi')?.value || 0 },
+                                { label: 'Surat Berharga yang Diterbitkan', value: this.liabilitiesEquityBankBp.find(item => item.label === 'Surat Berharga yang Diterbitkan')?.value || 0 },
+                                { label: 'Pinjaman', value: this.liabilitiesEquityBankBp.find(item => item.label === 'Pinjaman')?.value || 0 },
+                                { label: 'Setoran Jaminan', value: this.liabilitiesEquityBankBp.find(item => item.label === 'Setoran Jaminan')?.value || 0 },
+                                { label: 'Kewajiban Lainnya', value: this.liabilitiesEquityBankBp.find(item => item.label === 'Kewajiban Lainnya')?.value || 0 },
+                                { label: 'Total Kewajiban', value: 0 },
+                                { label: 'EKUITAS', value: 0, isSubheader: true },
+                                { label: 'Modal Disetor', value: 0 },
+                                { label: 'Modal Dasar', value: this.liabilitiesEquityBankAsal.find(item => item.label === 'Modal Dasar')?.value || 0 },
+                                { label: 'Modal yg Belum Disetor', value: this.liabilitiesEquityBankAsal.find(item => item.label === 'Modal yg Belum Disetor')?.value || 0 },
+                                { label: 'Tambahan Modal Disetor', value: 0 },
+                                { label: 'Agio', value: this.liabilitiesEquityBankAsal.find(item => item.label === 'Agio')?.value || 0 },
+                                { label: 'Penghasilan Komprehensif Lain', value: this.liabilitiesEquityBankAsal.find(item => item.label === 'Penghasilan Komprehensif Lain')?.value || 0 },
+                                { label: 'Dana Setoran Modal', value: this.liabilitiesEquityBankAsal.find(item => item.label === 'Dana Setoran Modal')?.value || 0 },
+                                { label: 'Cadangan Umum', value: this.liabilitiesEquityBankAsal.find(item => item.label === 'Cadangan Umum')?.value || 0 },
+                                { label: 'Laba (Rugi)', value: this.liabilitiesEquityBankAsal.find(item => item.label === 'Laba (Rugi)')?.value || 0 },
+                                { label: 'Laba Tahun Lalu', value: this.liabilitiesEquityBankAsal.find(item => item.label === 'Laba Tahun Lalu')?.value || 0 },
+                                { label: 'Laba Tahun Berjalan', value: this.liabilitiesEquityBankAsal.find(item => item.label === 'Laba Tahun Berjalan')?.value || 0 },
+                                { label: 'Estimasi Kerugian', value: this.liabilitiesEquityBankBp.find(item => item.label === 'Estimasi Kerugian')?.value || 0 },
+                                { label: 'Total Ekuitas', value: 0 },
+                                { label: 'TOTAL KEWAJIBAN DAN EKUITAS', value: 0 },
+                              ];
+                        // Calculate total liabilities and ekuitas
+                        this.kewajibanBdl[10].value = this.kewajibanBdl[1].value + this.kewajibanBdl[2].value + this.kewajibanBdl[3].value + this.kewajibanBdl[4].value + this.kewajibanBdl[5].value + this.kewajibanBdl[6].value + this.kewajibanBdl[7].value + this.kewajibanBdl[8].value + this.kewajibanBdl[9].value;
+                        this.kewajibanBdl[24].value = this.kewajibanBdl[11].value + this.kewajibanBdl[12].value + this.kewajibanBdl[13].value + this.kewajibanBdl[14].value + this.kewajibanBdl[15].value + this.kewajibanBdl[16].value + this.kewajibanBdl[17].value + this.kewajibanBdl[18].value + this.kewajibanBdl[19].value + this.kewajibanBdl[20].value + this.kewajibanBdl[21].value + this.kewajibanBdl[22].value + this.kewajibanBdl[23].value;
+                        this.kewajibanBdl[25].value = this.kewajibanBdl[10].value + this.kewajibanBdl[24].value;
+
+                } else {
+                    console.log('Label "Insured Deposit" not found in kewajibanAlih');
+                }
+            });
             this.loading = false;
         }
+        
+        const Repo = this.kewajibanAlih.find(item1 => item1.label === 'Kewajiban Repo');
+        if (Repo) {
+            Repo.nominal = this.dataTableNeracaBank.kewajibanRepo;
+            console.log('Repo', Repo);
+        } else {
+            console.log('Label "Repo" not found in kewajibanAlih');
+        }
+        
         // if (this.dt1) {
         //   this.dt1.filter(event.value, 'periode_data', 'contains');  // Correct number of arguments
         // }
       }
+
+      getTotalKewajibanAlih(field: 'nominal' | 'fv'): number {
+        const hasil = this.kewajibanAlih.reduce((sum, item) => sum + (item[field] || 0), 0);
+        return hasil;
+    }
+
+    getSelisihTotal(): number {
+        const asetDialihkan = this.posPengalihan.find(item => item.label === "Aset yang dialihkan")?.nominal || 0;
+        const kewajibanDialihkan = this.posPengalihan.find(item => item.label === "Kewajiban yang dialihkan")?.nominal || 0;
+        const selisih = asetDialihkan - kewajibanDialihkan;
+        const selisihItem = this.posPengalihan.find(item => item.label === "Selisih");
+        if (selisihItem) {
+            selisihItem.nominal = selisih;
+            this.selisishBp = selisih;
+        }
+        
+        return selisih;
+    }
+        
+    
 
     addData(): void {
         if (this.selectedBase && this.selectedPos && this.selectedDataPop) {
@@ -1020,6 +1990,23 @@ export class LctComponent implements OnInit, OnDestroy {
         console.warn('Data is incomplete. Please fill in all fields before saving.');
         }
     }
+
+    onRowExpand(event: any) {
+        this.expandedRows[event.data.id] = true;
+    }
+
+    onRowCollapse(event: any) {
+        delete this.expandedRows[event.data.id];
+    }
+
+    toggleRow(product: any) {
+        if (this.expandedRows[product.id]) {
+            delete this.expandedRows[product.id];
+        } else {
+            this.expandedRows[product.id] = true;
+        }
+    }
+
 
     async selectedData(keyword: string) {
         this.loading = true;
@@ -1045,6 +2032,16 @@ export class LctComponent implements OnInit, OnDestroy {
                 this.loading = false;
                 this.getBankDataPeriode(keyword);
                 console.log('hasil search post', search);
+
+                // this.components1.filter(item => item.deskripsi === 'B.1 Kategori 1' || item.deskripsi === 'B. 3 Kategori 3').forEach(item => {
+                //     const foundItem = this.kewajibanAlih.find(item1 => item1.label === 'Insured Deposits');
+                //     if (foundItem) {
+                //         foundItem.nominal += item.jumlah_saldo_simpanan_dijamin || 0;
+                //         console.log('foundItem', foundItem);
+                //     } else {
+                //         console.log('Label "Insured Deposit" not found in kewajibanAlih');
+                //     }
+                // });
             } catch (error) {
                 console.error('Failed to fetch component data:', error);
             }

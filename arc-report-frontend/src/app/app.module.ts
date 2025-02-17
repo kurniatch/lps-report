@@ -18,6 +18,7 @@ import { ButtonModule } from 'primeng/button';
 import { CalendarModule } from 'primeng/calendar';
 import { registerLocaleData } from '@angular/common';
 import localeId from '@angular/common/locales/id';
+import { TableModule } from 'primeng/table';
 
 // Daftarkan locale Indonesia
 registerLocaleData(localeId);
@@ -29,6 +30,7 @@ registerLocaleData(localeId);
         AppLayoutModule,
         ButtonModule,
         CalendarModule,
+        TableModule,
         RouterModule.forRoot([], { useHash: false }),
     ],
     providers: [
