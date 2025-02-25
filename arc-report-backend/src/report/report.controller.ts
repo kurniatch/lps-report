@@ -231,5 +231,18 @@ export class ReportController {
   
     return this.reportService.getDataLct(tableName, keyword);
   }
+
+  @Get('data-lct-periode')
+  async getDataLctPeriode(
+    @Query('tableName') tableName: string, 
+    @Query('keyword') keyword: string,
+    @Query('tanggal') tanggal: string,
+  ) {
+    if (!tableName || !keyword) {
+      throw new BadRequestException('Both tableName and keyword are required');
+    }
+  
+    return this.reportService.getDataLctPeriode(tableName, keyword, tanggal);
+  }
   
 }

@@ -10,6 +10,7 @@ import { NeracaModule } from './neraca/neraca.module';
 import * as path from 'path';
 import * as multer from 'multer';
 import { ScvModule } from './scv/scv.module';
+import { KreditModule } from './kredit/kredit.module';
 
 
 @Module({
@@ -20,6 +21,7 @@ import { ScvModule } from './scv/scv.module';
     LabaModule,
     NeracaModule,
     ScvModule,
+    KreditModule,
     MulterModule.register({
       storage: multer.diskStorage({
         destination: function (req, file, cb) {

@@ -917,6 +917,43 @@ export class ReportService {
     }
   }
   
+  async getDataLctPeriode(keyword: string, tableName: string, tanggal: string) {
+    console.log(`Keyword: ${keyword}`);
+    console.log(`Table Name: ${tableName}`);
+  
+    try {
+      const tableNames = ['neraca_bank', 'laba_rugi'];
+      if (!tableNames.includes(tableName)) {
+        throw new Error('Invalid table name');
+      }
+  
+      const deskripsiColumn =
+        tableName === 'neraca_bank'
+          ? 'deskripsi_pos_laporan_keuangan'
+          : 'deskripsi_pos_laba_rugi';
+  
+      const result = await this.prisma.$queryRaw(
+        Prisma.sql`
+          SELECT 
+            LEFT("id_pelapor", 3) AS id_pelapor_prefix, 
+            "id",
+            ${Prisma.raw(deskripsiColumn)} AS deskripsi,
+            SUM("nominal_rupiah") AS total_nominal_rupiah,
+            SUM("nominal_valas") AS total_nominal_valas,
+            SUM("nominal_total") AS total_nominal_total
+          FROM ${Prisma.raw(tableName)}
+          WHERE LEFT("id_pelapor", 3) = ${keyword}
+            AND LEFT("periode_data", 7) = ${tanggal}
+          GROUP BY "id", ${Prisma.raw(deskripsiColumn)}, LEFT("id_pelapor", 3)
+          ORDER BY "id";
+        `
+      );
+      return result;
+    } catch (error) {
+      console.error('Error executing custom query:', error);
+      throw new Error('Error executing custom query');
+    }
+  }
     
 
 }
