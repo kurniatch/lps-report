@@ -29,6 +29,11 @@
                         optionValue="value" class="text-2xl" [filter]="true" placeholder="Select Bank"
                         [showClear]="true" (onChange)="getTableData(selectedSearch)">
                     </p-dropdown>
+                    <p-dropdown [options]="dataBankPeriode" optionLabel="periode" optionValue="periode"
+                        class="w-60 ml-4" [filter]="true" [(ngModel)]="selectedPeriode" placeholder="Select Periode"
+                        [showClear]="true" (onChange)="getTableData(selectedSearch)"
+                        (onClear)="selectedData(selectedSearch)">
+                    </p-dropdown>
                     <button pButton pRipple icon="pi pi-plus" class="p-button-success ml-8" (click)="openNew()"
                         aria-label="Tambah" [disabled]="!selectedSearch">
                     </button>
@@ -845,8 +850,9 @@
                         </p-dropdown> -->
 
                         <p-dropdown [options]="dataBankPeriode" optionLabel="periode" optionValue="periode"
-                            class="w-60 ml-4" [filter]="true" [(ngModel)]="selectedPeriode" placeholder="Select Periode"
-                            [showClear]="true" (onChange)="applyPeriodeFilter(selectedSearch, $event)"
+                            class="w-60 ml-4" [filter]="true" [(ngModel)]="selectedPeriode2"
+                            placeholder="Select Periode" [showClear]="true"
+                            (onChange)="applyPeriodeFilter(selectedSearch, $event)"
                             (onClear)="selectedData(selectedSearch)">
                         </p-dropdown>
 
@@ -1886,14 +1892,14 @@
                                 <tr class="border-b border-gray-300">
                                     <td class="px-4 py-2 font-semibold text-left">Modal</td>
                                     <td class="px-4 py-2 text-right text-red-500">({{ this.modalAtmr +
-                                        this.estimasiKerugian || 0 | number:'1.0-3' }})</td>
+                                        this.estimasiKerugian || 0 | number:'1.0-0' }})</td>
                                 </tr>
                                 <tr class="bg-green-100 font-bold">
                                     <td class="px-4 py-2 text-left">Rasio KPMM (Real)</td>
                                     <td class="px-4 py-2 text-right text-red-500">{{(this.modalAtmr +
                                         this.estimasiKerugian) / (this.atmr * (this.totalAsetP / this.totalAsetB)) * 100
                                         ||
-                                        0}} %
+                                        0 | number:'1.2-2'}} %
                                     </td>
                                 </tr>
                             </tbody>
@@ -1909,17 +1915,17 @@
                                 <tr class="border-b border-gray-300">
                                     <td class="px-4 py-2 font-semibold text-left">ATMR Proporsional</td>
                                     <td class="px-4 py-2 text-right">{{ this.calTotalAtmr || 0 |
-                                        number:'1.0-3' }}</td>
+                                        number:'1.0-0' }}</td>
                                 </tr>
                                 <tr class="border-b border-gray-300">
                                     <td class="px-4 py-2 font-semibold text-left">Modal</td>
                                     <td class="px-4 py-2 text-right text-red-500">({{ this.calTotalModal || 0 |
-                                        number:'1.0-3' }})</td>
+                                        number:'1.0-0' }})</td>
                                 </tr>
                                 <tr class="bg-green-100 font-bold">
                                     <td class="px-4 py-2 text-left">Rasio KPMM (Real)</td>
                                     <td class="px-4 py-2 text-right text-red-500">{{this.calTotalModal /
-                                        this.calTotalAtmr * 100}} %</td>
+                                        this.calTotalAtmr * 100 | number:'1.2-2'}} %</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -1936,12 +1942,12 @@
                             <!-- Jumlah Modal -->
                             <tr>
                                 <td class="px-2 py-1 font-semibold text-left">Jumlah Modal</td>
-                                <td class="px-2 py-1 font-semibold text-right">{{ this.modalAtmr | number:'1.0-3' }}
+                                <td class="px-2 py-1 font-semibold text-right">{{ this.modalAtmr | number:'1.0-0' }}
                                 </td>
                             </tr>
                             <tr>
                                 <td class="px-2 py-1 text-left pl-4 text-gray-500">Koreksi Neraca</td>
-                                <td class="px-2 py-1 text-right text-red-500">({{ this.estimasiKerugian | number:'1.0-3'
+                                <td class="px-2 py-1 text-right text-red-500">({{ this.estimasiKerugian | number:'1.0-0'
                                     }})
                                 </td>
                             </tr>
@@ -1954,34 +1960,34 @@
                                     [ngClass]="{ 'text-red-500': (this.modalAtmr + this.estimasiKerugian) < 0, 'text-black': (this.modalAtmr + this.estimasiKerugian) >= 0 }">
                                     {{ this.modalAtmr +
                                     this.estimasiKerugian |
-                                    number:'1.0-3' }}</td>
+                                    number:'1.0-0' }}</td>
                             </tr>
 
                             <!-- ATMR (Awal) -->
                             <tr>
                                 <td class="px-2 py-1 text-left">ATMR (Awal)</td>
-                                <td class="px-2 py-1 text-right">{{ this.atmr | number:'1.0-3' }}</td>
+                                <td class="px-2 py-1 text-right">{{ this.atmr | number:'1.0-0' }}</td>
                             </tr>
 
                             <!-- ATMR (Pemburukan) -->
                             <tr>
                                 <td class="px-2 py-1 text-left">ATMR (Pemburukan)</td>
                                 <td class="px-2 py-1 text-right">{{ this.atmr * (this.totalAsetP / this.totalAsetB) || 0
-                                    | number:'1.0-3' }}</td>
+                                    | number:'1.0-0' }}</td>
                             </tr>
 
                             <!-- Modal untuk memenuhi KPMM 14% -->
                             <tr class="bg-yellow-300 font-bold">
                                 <td class="px-2 py-1 text-left">Modal untuk memenuhi KPMM 14%</td>
                                 <td class="px-2 py-1 text-right">{{ (this.atmr * (this.totalAsetP / this.totalAsetB)) *
-                                    14 / 100 | number:'1.0-3' }}</td>
+                                    14 / 100 | number:'1.0-0' }}</td>
                             </tr>
 
                             <!-- Jumlah PMS LPS -->
                             <tr class="bg-blue-300 font-bold">
                                 <td class="px-2 py-1 text-left">Jumlah PMS LPS</td>
                                 <td class="px-2 py-1 text-right">{{ ((this.atmr * (this.totalAsetP / this.totalAsetB)) *
-                                    14 / 100) - (this.modalAtmr + this.estimasiKerugian) | number:'1.0-3' }}</td>
+                                    14 / 100) - (this.modalAtmr + this.estimasiKerugian) | number:'1.0-0' }}</td>
                             </tr>
                         </tbody>
                     </table>
@@ -2191,10 +2197,70 @@
     </p-tabPanel>
 
     <p-tabPanel header="LIK" leftIcon="pi pi-sitemap">
+        <div class="card p-4">
+            <p-table [value]="datalik" styleClass="p-datatable-gridlines p-datatable-sm ">
+                <ng-template pTemplate="header">
+                    <tr>
+                        <th>Keterangan</th>
+                        <th>Biaya Likuidasi</th>
+                    </tr>
+                </ng-template>
+
+                <ng-template pTemplate="body" let-row>
+                    <tr *ngIf="!row.isSubheader">
+                        <td>{{ row.label }}</td>
+                        <td *ngIf="row.noInput">
+                            <!-- Disable input field completely when noInput is false -->
+                            <p-inputNumber class="w-full" [(ngModel)]="row.value" [locale]="'id'"
+                                [disabled]="!row.noInput" [readonly]="!row.noInput"
+                                (ngModelChange)="onValueChange($event)"></p-inputNumber>
+                        </td>
+                        <td *ngIf="!row.noInput" class="pl-3">{{ row.value | number:'1.0-0' }}</td>
+                    </tr>
+                    <tr *ngIf="row.isSubheader">
+                        <td colspan="2" class="text-center text-black subheader bg-yellow-500">{{ row.label }}</td>
+                    </tr>
+                </ng-template>
+            </p-table>
+        </div>
     </p-tabPanel>
 
     <p-tabPanel header="Biaya Resolusi" leftIcon="pi pi-money-bill">
+        <div class="card p-4">
+            <p-table [value]="dataBiayaResolusi" styleClass="p-datatable-gridlines p-datatable-sm no-padding-table"
+                selectionMode="single">
+                <ng-template pTemplate="header">
+                    <tr>
+                        <th>Keterangan</th>
+                        <th>Bank Perantara</th>
+                        <th>Bank Penerima</th>
+                        <th>PMS</th>
+                        <th>Likuidasi</th>
+                    </tr>
+                </ng-template>
+
+                <ng-template pTemplate="body" let-row>
+                    <!-- Check if the row is a subheader -->
+                    <tr *ngIf="!row.isSubheader">
+                        <td [class.font-bold]="row.label.toLowerCase().includes('total')">{{ row.label }}</td>
+                        <td [ngClass]="{'text-red-500': row.bankPerantara < 0}">{{ row.bankPerantara | number:'1.0-0' }}
+                        </td>
+                        <td [ngClass]="{'text-red-500': row.bankPenerima < 0}">{{ row.bankPenerima | number:'1.0-0' }}
+                        </td>
+                        <td [ngClass]="{'text-red-500': row.pms < 0}">{{ row.pms | number:'1.0-0' }}</td>
+                        <td [ngClass]="{'text-red-500': row.likuidasi < 0}">{{ row.likuidasi | number:'1.0-0' }}</td>
+                    </tr>
+                    <!-- Render the subheader row differently -->
+                    <tr *ngIf="row.isSubheader">
+                        <td colspan="5" class="text-center font-bold text-black subheader bg-yellow-500">{{ row.label }}
+                        </td>
+                    </tr>
+                </ng-template>
+            </p-table>
+        </div>
     </p-tabPanel>
+
+
 
 </p-tabView>
 

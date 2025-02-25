@@ -19,6 +19,7 @@ import { CalendarModule } from 'primeng/calendar';
 import { registerLocaleData } from '@angular/common';
 import localeId from '@angular/common/locales/id';
 import { TableModule } from 'primeng/table';
+import { KreditService } from './demo/service/kredit.service';
 
 // Daftarkan locale Indonesia
 registerLocaleData(localeId);
@@ -45,6 +46,7 @@ registerLocaleData(localeId);
         CrudService,
         AnalyticsService,
         ScvService,
+        KreditService,
     ],
     bootstrap: [AppComponent],
 })

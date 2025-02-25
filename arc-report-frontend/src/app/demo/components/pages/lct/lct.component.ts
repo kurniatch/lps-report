@@ -9,6 +9,7 @@ import { Representative, Data } from 'src/app/demo/api/customer';
 import { LocationService } from 'src/app/demo/service/location.service';
 import { ScvService } from 'src/app/demo/service/scv.service';
 import { CrudService } from 'src/app/demo/service/crud.service';
+import { KreditService } from 'src/app/demo/service/kredit.service';
 import { Table } from 'primeng/table';
 import { MessageService, ConfirmationService } from 'primeng/api';
 import { jsPDF } from 'jspdf';
@@ -16,6 +17,7 @@ import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import { ConstantPool } from '@angular/compiler';
+
 
 
 interface expandedRows {
@@ -324,7 +326,10 @@ export class LctComponent implements OnInit, OnDestroy {
 
     selectedPos: string = '';
 
-    selectedPeriode: string | undefined;
+    selectedPeriode: string = '';
+
+    selectedPeriode2: string = '';
+
 
     selectedBank: boolean = false;
 
@@ -418,6 +423,22 @@ export class LctComponent implements OnInit, OnDestroy {
         { label: "Aset Tak Berwujud Neto", nominal: 0, fv: 0 },
         { label: "Total Aset", nominal: 0, fv: 0 }
     ];
+
+    datalik = [
+        { label: 'ASUMSI BIAYA LIKUIDASI', value: 0, isSubheader: true },
+        { label: 'Perkiraan Biaya Likuidasi', value: 0, noInput: true },  // added noInput property
+        { label: 'Perkiraan biaya talangan pesangon pegawai', value: 0, noInput: true },  // added noInput property
+        { label: 'Estimasi Biaya Klaim Penjaminan', value: 0, noInput: true },  // added noInput property
+        { label: 'Total Biaya', value: 0, noInput: false },
+        { label: 'Estimasi Hasil Likuidasi', value: 0, noInput: true },  // added noInput property
+        { label: 'Surplus (Defisit)', value: 0, noInput: false },
+        { label: 'ASUMSI BIAYA TENAGA KERJA', value: 0, isSubheader: true },
+        { label: 'Per bulan', value: 0, noInput: true },  // added noInput property
+        { label: 'Pesangon (50% * 9 x gaji)', value: 0, noInput: false },
+        { label: 'Talangan gaji (3x)', value: 0, noInput: true },  // added noInput property
+        { label: 'Total', value: 0, noInput: false }
+    ];
+    
 
     kewajibanAlih : KewajibanItem[] = [
         { label: "Insured Deposits", nominal: 0, fv: 0 },
@@ -515,6 +536,22 @@ export class LctComponent implements OnInit, OnDestroy {
         { label: 'Total Kewajiban dan Ekuitas', value: 0 }  // To be calculated
       ];
 
+      dataBiayaResolusi = [
+        { label: 'REKAPITULASI', bankPerantara: 0, bankPenerima: 0, pms: 0, likuidasi: 0, isSubheader: true },
+        { label: 'Modal KPMM', bankPerantara: 0, bankPenerima: 0, pms: 0, likuidasi: 0 },
+        { label: 'Top-Up LPS', bankPerantara: 0, bankPenerima: 0, pms: 0, likuidasi: 0 },
+        { label: 'Biaya Likuidasi', bankPerantara: 0, bankPenerima: 0, pms: 0, likuidasi: 0 },
+        { label: 'Biaya Klaim Penjaminan', bankPerantara: 0, bankPenerima: 0, pms: 0, likuidasi: 0 },
+        { label: 'TOTAL ESTIMASI BIAYA (A)', bankPerantara: 0, bankPenerima: 0, pms: 0, likuidasi: 0 },
+        { label: 'Hasil Divestasi', bankPerantara: 0, bankPenerima: 0, pms: 0, likuidasi: 0 },
+        { label: 'Estimasi Hasil Recovery BDL', bankPerantara: 0, bankPenerima: 0, pms: 0, likuidasi: 0 },
+        { label: 'TOTAL ESTIMASI PENERIMAAN (B)', bankPerantara: 0, bankPenerima: 0, pms: 0, likuidasi: 0 },
+        { label: 'TOTAL ESTIMASI BIAYA BERSIH (A)-(B)', bankPerantara: 0, bankPenerima: 0, pms: 0, likuidasi: 0 },
+        { label: 'PEMBEBANAN', bankPerantara: 0, bankPenerima: 0, pms: 0, likuidasi: 0, isSubheader: true },
+        { label: 'Surplus (Defisit) LPS', bankPerantara: 0, bankPenerima: 0, pms: 0, likuidasi: 0 },
+        { label: 'Surplus (Defisit) Non LPS', bankPerantara: 0, bankPenerima: 0, pms: 0, likuidasi: 0 }
+      ];
+
     jumlahModal: number = 14737776;
     koreksiNeraca: number = -88452809;
     jumlahModalKPMM: number = -73715033;
@@ -534,6 +571,7 @@ export class LctComponent implements OnInit, OnDestroy {
         private locationService: LocationService,
         private crudService: CrudService,
         private scvService: ScvService,
+        private kreditService: KreditService,
         private confirmationService: ConfirmationService,
         private messageService: MessageService,
     ) {
@@ -557,6 +595,19 @@ export class LctComponent implements OnInit, OnDestroy {
             parameter1: 0,
             parameter2: 0
           };
+
+          this.modifiedDataTable1 = Array.from({ length: 5 }, (_, i) => ({
+            pos: i + 1,
+            ckpn_aset_baik: 0,
+            ckpn_aset_kurang_baik: 0,
+            ckpn_aset_tidak_baik: 0,
+            ckpn: 0,
+            jumlah_rekening: 0,
+            baki_debet: 0,
+            baki_debet_pemeriksa: null,
+            hasil_hitung: 0,
+            children: ['Normal', 'Restrukturisasi']
+        }));
     }
 
     onEdit(event: any) {
@@ -623,8 +674,17 @@ export class LctComponent implements OnInit, OnDestroy {
             console.error(`Table ${tableName} not found or is not an array`);
             return 0;
         }
-        return table.reduce((sum: number, item: { [key: string]: any }) => sum + (item[field] || 0), 0);
+    
+        return table.reduce((sum: number, item: { [key: string]: any }) => {
+            const value = Number(item[field]); // Konversi ke number
+            if (isNaN(value)) {
+                console.warn(`Invalid number detected in field '${field}':`, item[field]);
+                return sum; // Lewati nilai yang tidak valid
+            }
+            return sum + value;
+        }, 0);
     }
+    
     
     
       onRowToggle(event : any) {
@@ -662,9 +722,47 @@ export class LctComponent implements OnInit, OnDestroy {
     
     async getTableData(tableName: string): Promise<void> {
         this.selectedData(tableName);
-        const result = (await this.crudService.getDataLct(tableName, "neraca_bank")) as ReportDataType[] | undefined;
-        console.log('result: ', result);
-    
+        let result = await this.crudService.getDataLct(tableName, "neraca_bank") as ReportDataType[] | undefined;
+        if(this.selectedPeriode){
+            result = (await this.crudService.getDataLctPeriode(tableName, "neraca_bank", this.selectedPeriode)) as ReportDataType[] | undefined;
+            console.log('result: ', result);
+        } else {
+            result = (await this.crudService.getDataLct(tableName, "neraca_bank")) as ReportDataType[] | undefined;
+            console.log('result: ', result);
+        }
+
+        console.log('selectedSearch: ', this.selectedSearch);
+
+        const resultSummary = await this.kreditService.getSummaryKredit({ table: this.selectedSearch, period: this.selectedPeriode }) as any;
+
+        console.log('resultSummary: ', resultSummary);
+
+        const getValue = resultSummary.find((item: any) => item.id_unik === '1-Normal')?.total_baki_debet ?? 0;
+
+        // Fungsi addRow dihapus karena tidak perlu
+        // Fungsi deleteRow juga tidak perlu karena baris harus tetap 5
+
+        
+        if (resultSummary) {
+            for (let i = 0; i < 5; i++) {
+                const normalKey = `${i + 1}-Normal`;
+                const restruKey = `${i + 1}-Restru`;
+        
+                this.modifiedDataTable1[i].baki_debet_normal = resultSummary.find((item: any) => item.id_unik === normalKey)?.total_baki_debet ?? 0;
+                this.modifiedDataTable1[i].baki_debet_restrukturisasi = resultSummary.find((item: any) => item.id_unik === restruKey)?.total_baki_debet ?? 0;
+                this.modifiedDataTable1[i].baki_debet = this.modifiedDataTable1[i].baki_debet_normal + this.modifiedDataTable1[i].baki_debet_restrukturisasi;
+            }
+        }
+
+        console.log("getValue", getValue);
+
+        // TODO : Implement logic to calculate Summary Kredit
+        
+        // if(resultSummary){
+        //     this.modifiedDataTable1[0].baki_debet_normal = resultSummary.find((item: any) => item.id_unik === '1-Normal')?.total_baki_debet ?? 0;
+        //     this.modifiedDataTable1[0].baki_debet_restrukturisasi = resultSummary.find((item: any) => item.id_unik === '1-Normal')?.total_baki_debet ?? 0;
+        // }
+            
         if (!result) return;
     
         const getValueFromId = (data: ReportDataType[], id: string): number => {
@@ -971,6 +1069,9 @@ export class LctComponent implements OnInit, OnDestroy {
 
             console.log("assetsBankAsalPemburukan", this.assetsBankAsalPemburukanC);
             
+
+            // this.assetsBankAsalPemburukanC.find(item => item.label === 'Kredit-Net').value = 0;
+
             const totalAssetC = this.assetsBankAsalPemburukanC
             .reduce((sum, item) => 
               (item.label !== "Kredit-Net" && item.label !== "TOTAL ASET") ? sum + (item.value ?? 0) : sum
@@ -1169,8 +1270,8 @@ export class LctComponent implements OnInit, OnDestroy {
             ];
 
             //total asset financial terms
-            this.financialTerms.filter(item => item.label === 'Total Aset')[0].nominal = this.financialTerms.reduce((sum, item) => sum + (item.nominal || 0), 0);
-            this.financialTerms.filter(item => item.label === 'Total Aset')[0].fv = this.financialTerms.reduce((sum, item) => sum + (item.fv || 0), 0);
+            this.financialTerms.filter(item => item.label === 'Total Aset')[0].nominal = this.financialTerms.reduce((sum, item) => sum + (item.nominal || 0), 0) - this.financialTerms[10].nominal;
+            this.financialTerms.filter(item => item.label === 'Total Aset')[0].fv = this.financialTerms.reduce((sum, item) => sum + (item.fv || 0), 0) - this.financialTerms[10].fv;
 
             const posPengalihan =  this.posPengalihan.find(item => item.label === 'Aset yang dialihkan') ;
 
@@ -1292,10 +1393,57 @@ export class LctComponent implements OnInit, OnDestroy {
               console.log("nilai_ekuitas", nilai_ekuitas);
               console.log("modalAtmr", this.modalAtmr);
             
-              this.calTotalAtmr = this.calTotalModal / 14 / 100;
+              this.calTotalAtmr = this.calTotalModal / 14 * 100;
               console.log("calTotalAtmr", this.calTotalAtmr);
 
 
+              const jumlahPmsLps = ((this.atmr * (this.totalAsetP / this.totalAsetB)) * 14 / 100) - (this.modalAtmr + this.estimasiKerugian);
+              const totalBdl = this.asetBdl.find(item => item.label === 'Total Aset')?.value || 0;
+
+              this.dataBiayaResolusi[1].pms = jumlahPmsLps || 0;
+              this.dataBiayaResolusi[3].bankPerantara = (2/100 * totalBdl + this.datalik[2].value);
+              this.dataBiayaResolusi[3].bankPenerima = this.dataBiayaResolusi[3].bankPerantara;
+              this.dataBiayaResolusi[3].likuidasi = this.datalik[1].value + this.datalik[2].value;
+              this.dataBiayaResolusi[4].likuidasi = this.datalik[3].value;
+              this.dataBiayaResolusi[4].bankPenerima = this.dataBiayaResolusi[4].likuidasi;
+              this.dataBiayaResolusi[4].bankPerantara = this.dataBiayaResolusi[4].likuidasi;
+
+              this.dataBiayaResolusi[5].bankPenerima = this.dataBiayaResolusi[1].bankPenerima + this.dataBiayaResolusi[2].bankPenerima + this.dataBiayaResolusi[3].bankPenerima + this.dataBiayaResolusi[4].bankPenerima;
+              this.dataBiayaResolusi[5].bankPerantara = this.dataBiayaResolusi[1].bankPerantara + this.dataBiayaResolusi[2].bankPerantara + this.dataBiayaResolusi[3].bankPerantara + this.dataBiayaResolusi[4].bankPerantara;
+              this.dataBiayaResolusi[5].likuidasi = this.dataBiayaResolusi[1].likuidasi + this.dataBiayaResolusi[2].likuidasi + this.dataBiayaResolusi[3].likuidasi + this.dataBiayaResolusi[4].likuidasi;
+              this.dataBiayaResolusi[5].pms = this.dataBiayaResolusi[1].pms + this.dataBiayaResolusi[2].pms + this.dataBiayaResolusi[3].pms + this.dataBiayaResolusi[4].pms || 0;
+
+              const kreditBp = this.asetBp.find(item => item.label === 'Kredit (Net)')?.value || 0;
+              const totalEkuitasPms = this.liabilitiesEquityBankAsalPemburukanPA.find(item => item.label === 'Total Ekuitas')?.value || 0;
+              const kreditKol5 = this.assetsBankAsalPemburukan.find(item => item.label === 'Kredit Kol 5')?.value || 0;
+              const propertiTb = this.assetsBankAsalPemburukan.find(item => item.label === 'Properti Terbengkalai')?.value || 0;
+              const aydaTb = this.assetsBankAsalPemburukan.find(item => item.label === 'AYDA')?.value || 0;
+
+
+              this.dataBiayaResolusi[6].bankPerantara = (4.97 / 100 * kreditBp);
+              this.dataBiayaResolusi[6].pms = (((((((totalEkuitasPms * 1.002) * 1.002) * 1.002) * 1.002) * 1.002)) + (0.05 * (kreditKol5 + propertiTb + aydaTb)));
+
+              this.dataBiayaResolusi[7].bankPerantara = totalBdl;
+              this.dataBiayaResolusi[7].bankPenerima = totalBdl;
+              this.dataBiayaResolusi[7].likuidasi = this.datalik[5].value;
+
+              this.dataBiayaResolusi[8].bankPenerima = this.dataBiayaResolusi[6].bankPenerima + this.dataBiayaResolusi[7].bankPenerima;
+              this.dataBiayaResolusi[8].bankPerantara = this.dataBiayaResolusi[6].bankPerantara + this.dataBiayaResolusi[7].bankPerantara;
+              this.dataBiayaResolusi[8].likuidasi = this.dataBiayaResolusi[6].likuidasi + this.dataBiayaResolusi[7].likuidasi;
+              this.dataBiayaResolusi[8].pms = this.dataBiayaResolusi[6].pms + this.dataBiayaResolusi[7].pms;
+
+              this.dataBiayaResolusi[9].bankPenerima = this.dataBiayaResolusi[5].bankPenerima - this.dataBiayaResolusi[8].bankPenerima;
+              this.dataBiayaResolusi[9].bankPerantara = this.dataBiayaResolusi[5].bankPerantara - this.dataBiayaResolusi[8].bankPerantara;
+              this.dataBiayaResolusi[9].likuidasi = this.dataBiayaResolusi[5].likuidasi - this.dataBiayaResolusi[8].likuidasi;
+              this.dataBiayaResolusi[9].pms = this.dataBiayaResolusi[5].pms - this.dataBiayaResolusi[8].pms;
+
+              this.dataBiayaResolusi[11].bankPerantara = this.dataBiayaResolusi[6].bankPerantara;
+              this.dataBiayaResolusi[11].pms = -(this.dataBiayaResolusi[9].pms);
+
+              this.dataBiayaResolusi[12].bankPerantara = -(this.dataBiayaResolusi[9].bankPerantara) - this.dataBiayaResolusi[11].bankPerantara;
+              this.dataBiayaResolusi[12].pms = -(this.dataBiayaResolusi[9].pms) - this.dataBiayaResolusi[11].pms;
+              this.dataBiayaResolusi[12].likuidasi = -(this.dataBiayaResolusi[9].likuidasi) - this.dataBiayaResolusi[11].likuidasi;
+              this.dataBiayaResolusi[12].bankPenerima = -(this.dataBiayaResolusi[9].bankPenerima) - this.dataBiayaResolusi[11].bankPenerima;
         }
         
     
@@ -1322,6 +1470,7 @@ export class LctComponent implements OnInit, OnDestroy {
         console.log("GWM Data", this.gwmData);
     }
 
+
     async getReportLct(tableName: string, keyword: string): Promise<void> {
         console.log('Table Name:', tableName);
         console.log('Keyword:', keyword);
@@ -1332,8 +1481,13 @@ export class LctComponent implements OnInit, OnDestroy {
           }
       
           // Pastikan result selalu berupa array
-          const result = (await this.crudService.getDataLct(tableName, keyword)) as ReportDataType[] | undefined;
-      
+          let result = await this.crudService.getDataLct(tableName, keyword) as ReportDataType[] | undefined;
+          if(this.selectedPeriode == null){
+                result = (await this.crudService.getDataLct(tableName, keyword)) as ReportDataType[] | undefined;
+          }
+          else{
+                result = (await this.crudService.getDataLctPeriode(tableName, keyword, this.selectedPeriode)) as ReportDataType[] | undefined;
+          }
           if (Array.isArray(result)) {
             this.dataPopLct = result;
             this.reportDataLct = result.map((item) => ({
@@ -1570,6 +1724,23 @@ export class LctComponent implements OnInit, OnDestroy {
 
     onLazyLoad(event: any) {
         console.log(event);
+    }
+
+    onValueChange(event: any) {
+        // Total Biaya
+        this.datalik[4].value = this.datalik[0].value + this.datalik[1].value + this.datalik[2].value + this.datalik[3].value;
+
+        // Total Surplus
+        this.datalik[6].value = this.datalik[5].value - this.datalik[4].value;
+
+
+        this.datalik[9].value = this.datalik[8].value * 9 * 50 / 100;
+
+        this.datalik[11].value = this.datalik[9].value + this.datalik[10].value;
+
+        console.log('Data LIK', this.datalik);
+        console.log('Event  ', event);
+
     }
 
 
@@ -1831,9 +2002,12 @@ export class LctComponent implements OnInit, OnDestroy {
                 (item) => item.tahun === tahun && item.bulan === bulan
             );
             const Insured = this.kewajibanAlih.find(item1 => item1.label === 'Insured Deposits');
+            if (Insured) {
+                Insured.nominal = 0;
+            }
+
             this.components1.filter(item => item.deskripsi === 'B.1 Kategori 1' || item.deskripsi === 'B. 3 Kategori 3').forEach(item => {
                 if (Insured) {
-                    Insured.nominal = 0;
                     Insured.nominal += item.jumlah_saldo_simpanan_dijamin || 0;
                     console.log('Insured', Insured);
                     const InsuredPos = this.posPengalihan.find(item1 => item1.label === 'Kewajiban yang dialihkan');
@@ -1843,18 +2017,18 @@ export class LctComponent implements OnInit, OnDestroy {
                     //BB
                         this.asetBp = [
                             { label: 'ASET', value: 0, isSubheader: true },
-                            { label: 'Kas', value: 0 },
-                            { label: 'Penempatan pada BI', value: this.dataTableNeracaBank.penempatanPadaBI },
+                            { label: 'Kas', value: this.dataTableNeracaBank.kas },
+                            { label: 'Penempatan pada BI', value: this.assetsBankAsalPemburukan[2].value || 0 },
                             { label: 'Penempatan pada Bank Lain', value: this.dataTableNeracaBank.penempatanPadaBankLain },
-                            { label: 'Surat Berharga', value: this.dataTableNeracaBank.suratBerharga },
+                            { label: 'Surat Berharga', value: this.assetsBankAsalPemburukan[4].value || 0},
                             { label: 'Surat Berharga (REPO)', value: this.dataTableNeracaBank.suratBerhargaRepo },
                             { label: 'Reverse Repo', value: this.dataTableNeracaBank.reverseRepo },
-                            { label: 'Kredit (Net)', value: (+this.modifiedDataTable1[0]?.baki_debet + +this.modifiedDataTable1[1]?.baki_debet) || 0 },
-                            { label: 'Lancar', value: this.modifiedDataTable1[0]?.baki_debet ?? 0 },
-                            { label: 'Dalam Perhatian Khusus', value: this.modifiedDataTable1[1]?.baki_debet ?? 0 },
+                            { label: 'Kredit (Net)', value: (this.assetsBankAsalPemburukanC[11].value || 0 + (this.assetsBankAsalPemburukanC[13].value || 0))},
+                            { label: 'Lancar', value: this.assetsBankAsalPemburukanC[11].value || 0},
+                            { label: 'Dalam Perhatian Khusus', value: this.assetsBankAsalPemburukanC[13].value || 0},
                             { label: 'Aset tetap dan inventaris - Net', value: ((this.assetsBankAsalPemburukanC.filter(item => item.label === 'Aset Tetap dan Inventaris')[0]?.value || 0) + (this.assetsBankAsalPemburukanC.filter(item => item.label === 'Akumulasi Penyusutan (-)')[0]?.value || 0)) || 0},
                             { label: 'Aset tak berwujud - Net', value: ((this.assetsBankAsalPemburukanC.filter(item => item.label === 'Aset Tidak Berwujud')[0]?.value || 0) + (this.assetsBankAsalPemburukanC.filter(item => item.label === 'Akumulasi Amortisasi')[0]?.value || 0)) || 0 },
-                            { label: 'Total Aset', value: this.asetBp.slice(1).reduce((sum, item) => sum + (item.value || 0), 0) 
+                            { label: 'Total Aset', value: (this.asetBp.slice(1).reduce((sum, item) => sum + (item.value || 0), 0)) - (this.assetsBankAsalPemburukanC[11].value || 0 + (this.assetsBankAsalPemburukanC[13].value || 0))
                             }
                         ];
 
@@ -1873,9 +2047,11 @@ export class LctComponent implements OnInit, OnDestroy {
                         this.kewajibanBp[7].value = this.kewajibanBp[6].value;  
                         this.kewajibanBp[8].value = this.kewajibanBp[4].value + this.kewajibanBp[7].value;  
 
+                        console.log("asset bank pemburukan insured", this.assetsBankAsalPemburukan);
+
                         this.asetBdl = [
                                 { label: 'ASET', value: 0, isSubheader: true },
-                                { label: 'Kas', value: +this.dataTableNeracaBank.kas - +this.asetBp[1].value },
+                                { label: 'Kas', value: 0 },
                                 { label: 'Penempatan pada BI', value: 0 },
                                 { label: 'Penempatan pada Bank Lain', value: 0 },
                                 { label: 'Tagihan Spot dan Derivatif', value: this.assetsBankAsalPemburukanC.find(item => item.label === 'Tagihan Spot dan Derivatif')?.value || 0 },
@@ -1885,21 +2061,22 @@ export class LctComponent implements OnInit, OnDestroy {
                                 { label: 'Tagihan Akseptasi', value: this.assetsBankAsalPemburukanC.find(item => item.label === 'Tagihan Akseptasi')?.value || 0 },
                                 { label: 'Tagihan kepada BB', value: this.kewajibanBp.find(item => item.label === 'Kewajiban kepada BDL')?.value || 0 },
                                 { label: 'Total Kredit (Net)', value: 0 },
-                                { label: 'Kredit Lancar', value: (this.assetsBankAsalPemburukanC.find(item => item.label === 'Kredit Lancar')?.value || 0) - (this.asetBp.find(item => item.label === "Lancar")?.value || 0) },
-                                { label: 'Kredit Dalam Perhatian Khusus', value: (this.assetsBankAsalPemburukanC.find(item => item.label === 'Kredit Lancar')?.value || 0) - (this.asetBp.find(item => item.label === "Lancar")?.value || 0) },
-                                { label: 'Kredit Kurang Lancar', value: this.assetsBankAsalPemburukanC.find(item => item.label === 'Kredit Kol 3')?.value || 0 },
-                                { label: 'Kredit Diragukan', value: this.assetsBankAsalPemburukanC.find(item => item.label === 'Kredit Kol 4')?.value || 0 },
-                                { label: 'Kredit Macet', value: this.assetsBankAsalPemburukanC.find(item => item.label === 'Kredit Kol 5')?.value || 0 },
-                                { label: 'Aset Keuangan Lain', value: this.assetsBankAsalPemburukanC.find(item => item.label === 'Aset Keuangan Lainnya')?.value || 0 },
-                                { label: 'CKPN Aset Keuangan Lainnya', value: this.assetsBankAsalPemburukanC.find(item => item.label === 'CKPN Aset Keuangan Lainnya')?.value || 0 },
-                                { label: 'Aset Tetap dan Inventaris-Net', value: (this.assetsBankAsalPemburukanC.find(item => item.label === 'Aset Tetap dan Inventaris-Net')?.value || 0) - (this.asetBp.find(item => item.label === 'Aset tetap dan inventaris - Net')?.value || 0) },
+                                { label: 'Kredit Lancar', value: 0 },
+                                { label: 'Kredit Dalam Perhatian Khusus', value: 0 },
+                                { label: 'Kredit Kurang Lancar', value: (this.assetsBankAsalPemburukanC.find(item => item.label === 'Kredit Kol 3')?.value || 0 ) + (this.assetsBankAsalPemburukan.find(item => item.label === 'CKPN Kredit Kol 3 (-)')?.value || 0)},
+                                { label: 'Kredit Diragukan', value: (this.assetsBankAsalPemburukanC.find(item => item.label === 'Kredit Kol 4')?.value || 0) + (this.assetsBankAsalPemburukan.find(item => item.label === 'CKPN Kredit Kol 4 (-)')?.value || 0) },
+                                { label: 'Kredit Macet', value: (this.assetsBankAsalPemburukanC.find(item => item.label === 'Kredit Kol 5')?.value || 0) + (this.assetsBankAsalPemburukan.find(item => item.label === 'CKPN Kredit Kol 5 (-)')?.value || 0) },
+                                { label: 'Aset Keuangan Lain', value: this.assetsBankAsalPemburukanC.find(item => item.label === 'Aset Keuangan Lain')?.value || 0 },
+                                { label: 'CKPN Aset Keuangan Lainnya', value: this.assetsBankAsalPemburukanC.find(item => item.label === 'CKPN Aset Keuangan Lain (-)')?.value || 0 },
+                                { label: 'Aset Tetap dan Inventaris-Net', value: 0 },
                                 { label: 'Aset Tidak Berwujud-Net', value: (this.assetsBankAsalPemburukan.find(item => item.label === "Aset Tidak Berwujud")?.value || 0) + (this.assetsBankAsalPemburukan.find(item => item.label === "Akumulasi Amortisasi")?.value || 0) - (this.assetsBankAsalPemburukanC.find(item => item.label === 'Aset Tetap dan Inventaris-Net')?.value || 0)},
                                 { label: 'Properti Terbengkalai-Net', value: this.assetsBankAsalPemburukanC.find(item => item.label === 'Properti Terbengkalai-Net')?.value || 0 },
-                                { label: 'AYDA-Net', value: this.assetsBankAsalPemburukanC.find(item => item.label === 'AYDA-Net')?.value || 0 },
+                                { label: 'AYDA-Net', value: this.assetsBankAsalPemburukanC.find(item => item.label === 'AYDA')?.value || 0 },
                                 { label: 'Aset Lainnya', value: this.assetsBankAsalPemburukanC.find(item => item.label === 'Aset Lainnya')?.value || 0 },
                                 { label: 'Total Aset', value: this.asetBdl.slice(1).reduce((sum, item) => sum + (item.value || 0), 0)
                                 }
                               ];
+                        
                         this.kewajibanBdl = [
                                 { label: 'LIABILITAS', value: 0, isSubheader: true },
                                 { label: 'Uninsured Deposits', value: (this.liabilitiesEquityBankBp.find(item => item.label === 'Total Simpanan')?.value || 0) - (this.kewajibanBp.find(item => item.label === 'Insured Deposits')?.value || 0) },   
@@ -2031,6 +2208,8 @@ export class LctComponent implements OnInit, OnDestroy {
     
                 this.loading = false;
                 this.getBankDataPeriode(keyword);
+                this.getBankDataPeriodeScv(keyword);
+
                 console.log('hasil search post', search);
 
                 // this.components1.filter(item => item.deskripsi === 'B.1 Kategori 1' || item.deskripsi === 'B. 3 Kategori 3').forEach(item => {
@@ -2066,7 +2245,23 @@ export class LctComponent implements OnInit, OnDestroy {
             }));
                         console.log('dataBankPeriode', this.dataBankPeriode);
         } catch (error) {
-            console.error('Failed to fetch data.', error);
+            console.error('Failed to fetch data.', error);                                                 
+        }
+    }
+
+
+    async getBankDataPeriodeScv(keyword: string) {
+        try {
+            this.dataBankPeriode = await this.scvService.getBankPeriode({ keyword });
+            console.log('dataBankPeriode', this.dataBankPeriode);
+            this.dataBankPeriode = this.dataBankPeriode
+            .filter((item: any) => item.tahun !== null && item.bulan !== null)
+            .map((item: any) => ({
+                periode: item.tahun + '-' + item.bulan,
+            }));
+                        console.log('dataBankPeriode', this.dataBankPeriode);
+        } catch (error) {
+            console.error('Failed to fetch data.', error);                                                 
         }
     }
 }

@@ -34,10 +34,16 @@ import { AdminAuthGuard } from 'src/app/admin.auth.guard';
                 path: 'neraca',
                 loadChildren: () =>
                     import('./neraca/neraca.module').then((m) => m.NeracaModule),
-            },            {
+            },            
+            {
                 path: 'scv',
                 loadChildren: () =>
                     import('./scv/scv.module').then((m) => m.ScvModule),
+            },
+            {
+                path: 'kredit',
+                loadChildren: () =>
+                    import('./kredit/kredit.module').then((m) => m.KreditModule),
             },
             { path: '**', redirectTo: '/notfound' },
         ]),

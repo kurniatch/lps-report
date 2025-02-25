@@ -1,8 +1,8 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { ScvRoutingModule } from './scv-routing.module';
-import { ScvComponent } from './scv.component';
+import { KreditRoutingModule } from './kredit-routing.module';
+import { KreditComponent } from './kredit.component';
 import { TableModule } from 'primeng/table';
 import { FileUploadModule } from 'primeng/fileupload';
 import { ButtonModule } from 'primeng/button';
@@ -37,7 +37,7 @@ registerLocaleData(localeId);
 @NgModule({
     imports: [
         CommonModule,
-        ScvRoutingModule,
+        KreditRoutingModule,
         TableModule,
         FileUploadModule,
         FormsModule,
@@ -77,6 +77,6 @@ registerLocaleData(localeId);
         TabViewModule,
         
     ],
-    declarations: [ScvComponent],
+    declarations: [KreditComponent],
 })
-export class ScvModule {}
+export class KreditModule {}

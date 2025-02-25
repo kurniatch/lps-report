@@ -185,7 +185,13 @@ export class CrudService {
 
     getDataLct(tableName: string, keyword: string) {
         const url = `${environment.backendUrl}/report/data-lct`;
-        const params = { tableName, keyword };
+        const params = { tableName, keyword};
+        return this.http.get(url, { headers: this.headers, params }).toPromise();
+    }
+
+    getDataLctPeriode(tableName: string, keyword: string, tanggal: string) {
+        const url = `${environment.backendUrl}/report/data-lct-periode`;
+        const params = { tableName, keyword, tanggal };
         return this.http.get(url, { headers: this.headers, params }).toPromise();
     }
     

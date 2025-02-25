@@ -6,7 +6,7 @@ import { LayoutService } from 'src/app/layout/service/app.layout.service';
 import { ViewChild, ElementRef } from '@angular/core';
 import { Customer, Data2 } from 'src/app/demo/api/customer';
 import { CrudService } from 'src/app/demo/service/crud.service';
-import { ScvService } from 'src/app/demo/service/scv.service';
+import { KreditService } from 'src/app/demo/service/kredit.service';
 import { Table } from 'primeng/table';
 import { MessageService, ConfirmationService } from 'primeng/api';
 import { jsPDF } from 'jspdf';
@@ -20,9 +20,9 @@ interface expandedRows {
 }
 @Injectable()
 @Component({
-    templateUrl: './scv.component.html',
+    templateUrl: './kredit.component.html',
     providers: [MessageService, ConfirmationService],})
-export class ScvComponent implements OnInit, OnDestroy {
+export class KreditComponent implements OnInit, OnDestroy {
     components$: Customer[] = [];
 
     @ViewChild('dt1') dt1: Table | undefined; // Referensi untuk p-table
@@ -132,6 +132,8 @@ export class ScvComponent implements OnInit, OnDestroy {
 
     totalData: number = 100;
 
+    pieCharts: any = {}; // Awalnya sebagai objek kosong, bukan array
+
     pages: number = 0;
 
     items!: MenuItem[];
@@ -158,9 +160,13 @@ export class ScvComponent implements OnInit, OnDestroy {
 
     subscription!: Subscription;
 
-    components1: Data2[] = [];
+    components1: any[] = [];
 
     components2: Data2[] = [];
+
+    options: any;
+
+    optionsBar: any;
 
     expandedRows: expandedRows = {};
 
@@ -170,22 +176,31 @@ export class ScvComponent implements OnInit, OnDestroy {
 
     submitted2: boolean = false;
 
-    selectedProducts!: Product[] | null;
+    totalKualitas1: number = 0;
 
-    options: any ;
+    totalKualitas2: number = 0;
 
+    totalKualitas3: number = 0;
 
-    showDataChart: boolean = false;
+    totalKualitas4: number = 0;
+
+    totalKualitas5: number = 0;
 
     showDataPie: boolean = false;
 
+    showDataChart: boolean =  false;
+
+    dataBar: any;
+
+
+    selectedProducts!: Product[] | null;
 
     @ViewChild('filter') filter!: ElementRef;
 
     constructor(
         public layoutService: LayoutService,
         private crudService: CrudService,
-        private scvService: ScvService,
+        private kreditService: KreditService,
         private confirmationService: ConfirmationService,
         private messageService: MessageService,
         private papa: Papa
@@ -218,7 +233,7 @@ export class ScvComponent implements OnInit, OnDestroy {
             { name: 'Bank Permata', code: 'PERM' },
             { name: 'Bank Maybank Indonesia', code: 'MAYB' }
         ];
-
+        
         const documentStyle = getComputedStyle(document.documentElement);
 
         const textColor = documentStyle.getPropertyValue('--text-color');
@@ -239,7 +254,7 @@ export class ScvComponent implements OnInit, OnDestroy {
         this.loading = true;
         try {
             const totalRecord: any =
-                await this.scvService.getComponentsReportTotal();
+                await this.kreditService.getComponentsReportTotal();
 
             this.totalRecords = totalRecord[0].total;
 
@@ -258,7 +273,7 @@ export class ScvComponent implements OnInit, OnDestroy {
         };
 
         try {
-            const components = await this.scvService.getComponentsReport(
+            const components = await this.kreditService.getComponentsReport(
                 params
             );
             this.components1 = components;
@@ -276,7 +291,7 @@ export class ScvComponent implements OnInit, OnDestroy {
       }
     
       
-    async findData(keyword: string) {
+    async findData(keyword: string, currentPage: number, perPage: number) {
         this.loading = true;
         keyword = keyword.trim();
         this.components1 = [];
@@ -289,10 +304,12 @@ export class ScvComponent implements OnInit, OnDestroy {
             console.log('keyword', keyword);
             const body = {
                 keyword: keyword.toUpperCase(),
+                page: currentPage.toString(),
+                perPage: perPage.toString(),
             };
             console.log('body', body);
             try {
-                const search = await this.scvService.getComponentsReportSearch(
+                const search = await this.kreditService.getComponentsReportSearch(
                     body
                 );
 
@@ -315,25 +332,165 @@ export class ScvComponent implements OnInit, OnDestroy {
         }
     }
 
-    async selectedData(keyword: string) {
+    async selectedData(keyword: string, currentPage: number, perPage: number) {
+        this.pieCharts = {};
+        this.showDataPie = false;
+        this.showDataChart = true;
         this.loading = true;
         this.selectedBank = true;
         keyword = keyword.trim();
         console.log('keyword 1', keyword);
     
+        try {
+            const resultSummary: any = await this.kreditService.getSummaryKreditGeneral({ table: keyword });
+        
+            console.log("result line summary", resultSummary);
+        
+            const kreditData = Array.isArray(resultSummary)
+                ? resultSummary
+                : resultSummary?.neraca_bank || resultSummary?.data_scv;
+        
+            if (!Array.isArray(kreditData) || kreditData.length === 0) {
+                console.warn("No valid data found for Line Chart.");
+                this.showDataChart = false;
+                return;
+            }
+        
+            // Ambil daftar unik periode_data sebagai sumbu X
+            const periodeLabels = [...new Set(kreditData.map((item: any) => item.periode_data))].sort();
+        
+            // Ambil daftar unik kualitas (1-5)
+            const kualitasLabels = [...new Set(kreditData.map((item: any) => item.kualitas))].sort();
+        
+            // Palet warna unik
+            const colors = [
+                "#1f77b4", "#ff7f0e", // Kualitas 1 (Normal, Restru)
+                "#2ca02c", "#d62728", // Kualitas 2
+                "#9467bd", "#8c564b", // Kualitas 3
+                "#e377c2", "#7f7f7f", // Kualitas 4
+                "#bcbd22", "#17becf"  // Kualitas 5
+            ];
+        
+            let datasets: any[] = [];
+        
+            kualitasLabels.forEach((kualitas, index) => {
+                let normalData = Array(periodeLabels.length).fill(0);
+                let restruData = Array(periodeLabels.length).fill(0);
+        
+                kreditData.forEach((item: any) => {
+                    const periodeIndex = periodeLabels.indexOf(item.periode_data);
+                    if (periodeIndex !== -1) {
+                        if (item.kualitas === kualitas) {
+                            if (item.kategori === "Normal") {
+                                normalData[periodeIndex] = item.total_baki_debet;
+                            } else if (item.kategori === "Restru") {
+                                restruData[periodeIndex] = item.total_baki_debet;
+                            }
+                        }
+                    }
+                });
+        
+                // Tambahkan dataset untuk Normal
+                datasets.push({
+                    label: `Kualitas ${kualitas} - Normal`,
+                    borderColor: colors[index * 2], // Warna unik untuk Normal
+                    backgroundColor: colors[index * 2], 
+                    data: normalData,
+                    fill: false,
+                    tension: 0.3,
+                    pointRadius: 5,
+                    pointHoverRadius: 7
+                });
+        
+                // Tambahkan dataset untuk Restrukturisasi
+                datasets.push({
+                    label: `Kualitas ${kualitas} - Restru`,
+                    borderColor: colors[index * 2 + 1], // Warna unik untuk Restru
+                    backgroundColor: colors[index * 2 + 1],
+                    data: restruData,
+                    fill: false,
+                    tension: 0.3,
+                    pointRadius: 5,
+                    pointHoverRadius: 7
+                });
+            });
+        
+            console.log("periodeLabels", periodeLabels);
+            console.log("datasets", datasets);
+        
+            // Tambahkan nilai awal 0 di periode pertama
+            periodeLabels.unshift("Start");
+        
+            datasets.forEach(dataset => {
+                dataset.data.unshift(0);
+            });
+        
+            // Set data untuk Line Chart
+            this.dataBar = {
+                labels: [...periodeLabels], // Periode waktu di sumbu X
+                datasets: datasets
+            };
+        
+            // Opsi untuk Line Chart
+            this.optionsBar = {
+                responsive: true,
+                maintainAspectRatio: false,
+                aspectRatio: 0.3,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Total Baki Debet'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Periode Data'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function (tooltipItem: any) {
+                                return `${tooltipItem.dataset.label}: ${tooltipItem.raw.toLocaleString()}`;
+                            }
+                        }
+                    }
+                }
+            };
+        
+            this.showDataChart = true;
+        
+        } catch (error) {
+            console.error('Error fetching summary kredit:', error);
+        }
+        
         if (keyword.length >= 3) {
             this.loading = true;
-
+    
             console.log('keyword', keyword);
             console.log('kategori', this.kategori);
     
-            const body = { keyword: keyword.toUpperCase()};
+            const body = {
+                keyword: keyword.toUpperCase(),
+                page: currentPage.toString(),
+                perPage: perPage.toString(),
+            };
+    
             console.log('body', body);
+    
+            this.getBankDataPeriode(keyword);
     
             const requestId = ++this.currentRequestId;
     
             try {
-                const search = await this.scvService.getComponentsReportSearch(body);
+                const search = await this.kreditService.getComponentsReportSearch(body);
                 console.log('hasil search post Neraca', search);
     
                 if (requestId === this.currentRequestId) {
@@ -341,10 +498,10 @@ export class ScvComponent implements OnInit, OnDestroy {
                 }
     
                 this.loading = false;
-                this.getBankDataPeriode(keyword);
                 console.log('hasil search post', search);
             } catch (error) {
                 console.error('Failed to fetch component data:', error);
+                this.loading = false;
             }
         } else {
             this.loading = false;
@@ -355,14 +512,14 @@ export class ScvComponent implements OnInit, OnDestroy {
             });
         }
     }
-
+    
 
     onLazyLoad(event: any) {
         console.log(event);
         this.pages = event.first / 30;
         this.currentPage = this.pages + 1;
         console.log('currentPage', this.currentPage);
-        // this.loadData(this.currentPage, event.rows);
+        this.loadData(this.currentPage, event.rows);
     }
 
     onLazyLoadLaba(event: any) {
@@ -398,23 +555,92 @@ export class ScvComponent implements OnInit, OnDestroy {
     }
 
     async applyPeriodeFilter(keyword: string, event: any) {
+
+        if(this.selectedPeriode){
+
+        console.log('Isi pieCharts:', this.showDataPie);
+
+
         console.log('event', event);
 
-        await this.selectedData(keyword);
+        await this.selectedData(keyword, 1, 30);
+
+        // this.selectedPeriode = this.selectedPeriode.trim().substring(0, 7);
+
+        const resultSummary = this.kreditService.getSummaryKredit({ table: keyword, period: this.selectedPeriode }) as any;
+
+        console.log('resultSummary2: ', resultSummary);
+
+        try {
+            const resultSummary: any = await this.kreditService.getSummaryKredit({ table: keyword, period: this.selectedPeriode });
+    
+            if (resultSummary ) {
+                let data = resultSummary;
+    
+                let pieCharts: Record<string, { labels: string[], datasets: { data: number[], backgroundColor: string[] }[] }> = {};
+                this.totalKualitas1 = 0;
+                this.totalKualitas2 = 0;
+                this.totalKualitas3 = 0;
+                this.totalKualitas4 = 0;
+                this.totalKualitas5 = 0;
+    
+                for (let i = 1; i <= 5; i++) {
+                    let normal = data.find((item: { kualitas: string; kategori: string; }) => item.kualitas === `${i}` && item.kategori === "Normal");
+                    let restru = data.find((item: { kualitas: string; kategori: string; }) => item.kualitas === `${i}` && item.kategori === "Restru");
+    
+                    let totalKredit = (normal ? normal.total_baki_debet : 0) + (restru ? restru.total_baki_debet : 0);
+    
+                    if (i === 1) this.totalKualitas1 = totalKredit;
+                    if (i === 2) this.totalKualitas2 = totalKredit;
+                    if (i === 3) this.totalKualitas3 = totalKredit;
+                    if (i === 4) this.totalKualitas4 = totalKredit;
+                    if (i === 5) this.totalKualitas5 = totalKredit;
+    
+                    pieCharts[`kualitas${i}`] = {
+                        labels: ["Normal", "Restru"],
+                        datasets: [
+                            {
+                                data: [
+                                    normal ? normal.total_baki_debet : 0, 
+                                    restru ? restru.total_baki_debet : 0
+                                ],
+                                backgroundColor: ['#36A2EB', '#FF6384']
+                            }
+                        ]
+                    };
+                }
+    
+                this.pieCharts = pieCharts;
+
+                this.showDataPie = true;
+                this.showDataChart = false;
+    
+                console.log('Updated Pie Charts Data:', this.pieCharts);
+            }
+        } catch (error) {
+            console.error('Error fetching summary kredit:', error);
+        }
 
         this.loading = true;
         if (this.components1.length > 0) {
-            const split = event.value.split('-');
-            const tahun = Number(split[0]); // Convert to number
-            const bulan = Number(split[1]); // Convert to number
+            // const split = event.value.split('-');
+            // const tahun = Number(split[0]); 
+            // const bulan = Number(split[1]);
+
+            console
             this.components1 = this.components1.filter(
-                (item) => item.tahun === tahun && item.bulan === bulan
+                (item) => item.periode_data  === event.value
             );
             this.loading = false;
         }
         // if (this.dt1) {
         //   this.dt1.filter(event.value, 'periode_data', 'contains');  // Correct number of arguments
         // }
+    }
+    else{
+
+        console.log("Error {Periode");
+    }
       }
       
       
@@ -804,8 +1030,8 @@ export class ScvComponent implements OnInit, OnDestroy {
             return;
         }
     
-        if (this.selectedFile.size > 50000000) {
-            this.messageService.add({severity:'error', summary: 'Error', detail: 'Ukuran file melebihi batas maksimal (50MB)'}); 
+        if (this.selectedFile.size > 100000000) {
+            this.messageService.add({severity:'error', summary: 'Error', detail: 'Ukuran file melebihi batas maksimal (100MB)'}); 
             return;
         }
     
@@ -821,7 +1047,7 @@ export class ScvComponent implements OnInit, OnDestroy {
 
         console.log("nama file", file.name);
     
-        this.scvService.importDataCsv(file)
+        this.kreditService.importDataCsv(file)
         .then(response => {
             this.messageService.add({severity:'success', summary: 'Success', detail: 'Data berhasil diimpor'});
             this.importDialog = false;
@@ -851,15 +1077,16 @@ export class ScvComponent implements OnInit, OnDestroy {
 
 
     async getBankDataPeriode(keyword: string) {
+         console.log('keyword periode', keyword);
         try {
-            this.dataBankPeriode = await this.scvService.getBankPeriode({ keyword });
+            this.dataBankPeriode = await this.kreditService.getBankPeriode({ keyword });
             console.log('dataBankPeriode', this.dataBankPeriode);
             this.dataBankPeriode = this.dataBankPeriode
-            .filter((item: any) => item.tahun !== null && item.bulan !== null)
+            .filter((item: any) => item.periode_data !== null)
             .map((item: any) => ({
-                periode: item.tahun + '-' + item.bulan,
+                periode: item.periode_data.slice(0, -9),
             }));
-                        console.log('dataBankPeriode', this.dataBankPeriode);
+            console.log('dataBankPeriode', this.dataBankPeriode);
         } catch (error) {
             console.error('Failed to fetch data.', error);
         }
@@ -881,9 +1108,9 @@ export class ScvComponent implements OnInit, OnDestroy {
         console.log('data1 ', this.editData);
 
         console.log('data2', data);
-        this.scvService
+        this.kreditService
             .createReport(data)
-            .then((responseData) => {
+            .then((responseData: any) => {
                 console.log('Response from backend:', responseData);
                 window.location.reload();
             })

@@ -1,58 +1,91 @@
 <p-tabView styleClass="mb-4 border border-gray-300 rounded-lg shadow-md">
-
     <p-tabPanel header="Dashboard" leftIcon="pi pi-sliders-h">
         <div class="grid">
             <div class="col-12">
                 <div class="flex items-center justify-between mb-4">
-                    <h5>Laporan Single Customer View
+                    <h5>Laporan Kredit Pembiayaan
                         <p-dropdown [options]="dataBank" optionLabel="label" optionValue="value" class="w-60 ml-4"
                             [filter]="true" [(ngModel)]="selectedSearch"
-                            (onChange)="onGlobalChange($event); selectedData(selectedSearch)"
-                            (keydown.enter)="findData(findSearch)" placeholder="Select Bank" [showClear]="true"
+                            (onChange)="onGlobalChange($event); selectedData(selectedSearch, 1, 30)"
+                            (keydown.enter)="findData(findSearch, 1, 30)" placeholder="Select Bank" [showClear]="true"
                             (onClear)="clear2(dt1)">
                         </p-dropdown>
 
                         <p-dropdown [options]="dataBankPeriode" optionLabel="periode" optionValue="periode"
                             class="w-60 ml-4" [filter]="true" [(ngModel)]="selectedPeriode" placeholder="Select Periode"
                             [showClear]="true" (onChange)="applyPeriodeFilter(selectedSearch, $event)"
-                            (onClear)="selectedData(selectedSearch)">
+                            (onClear)="selectedData(selectedSearch, 1, 30)">
                         </p-dropdown>
                     </h5>
                 </div>
+
                 <div class="card" *ngIf="showDataChart">
-                    <p-chart type="bar" [data]="data" [options]="options" />
+                    <p-chart type="line" [data]="dataBar" [options]="optionsBar" />
                 </div>
-            </div>
-            <div>
-                <div class="card" *ngIf="showDataPie">
-                    <p-chart type="bar" [data]="data" [options]="options" />
+
+                <div class="card flex justify-content-center gap-4 flex-wrap" *ngIf="showDataPie">
+                    <div *ngIf="pieCharts?.kualitas1" style="text-align: center;">
+                        <h3>Kredit Kol 1</h3>
+                        <p class="mt-2"><strong>Total: {{ totalKualitas1 | number }}</strong></p>
+                        <p-chart type="pie" [data]="pieCharts.kualitas1" [options]="options"
+                            style="width: 100px; height: 100px;"></p-chart>
+                    </div>
+                    <div *ngIf="pieCharts?.kualitas2" style="text-align: center;">
+                        <h3>Kredit Kol 2</h3>
+                        <p class="mt-2"><strong>Total: {{ totalKualitas2 | number }}</strong></p>
+                        <p-chart type="pie" [data]="pieCharts.kualitas2" [options]="options"
+                            style="width: 100px; height: 100px;"></p-chart>
+                    </div>
+                    <div *ngIf="pieCharts?.kualitas3" style="text-align: center;">
+                        <h3>Kredit Kol 3</h3>
+                        <p class="mt-2"><strong>Total: {{ totalKualitas3 | number }}</strong></p>
+                        <p-chart type="pie" [data]="pieCharts.kualitas3" [options]="options"
+                            style="width: 100px; height: 100px;"></p-chart>
+                    </div>
+                    <div *ngIf="pieCharts?.kualitas4" style="text-align: center;">
+                        <h3>Kredit Kol 4</h3>
+                        <p class="mt-2"><strong>Total: {{ totalKualitas4 | number }}</strong></p>
+                        <p-chart type="pie" [data]="pieCharts.kualitas4" [options]="options"
+                            style="width: 100px; height: 100px;"></p-chart>
+                    </div>
+                    <div *ngIf="pieCharts?.kualitas5" style="text-align: center;">
+                        <h3>Kredit Kol 5</h3>
+                        <p class="mt-2"><strong>Total: {{ totalKualitas5 | number }}</strong></p>
+                        <p-chart type="pie" [data]="pieCharts.kualitas5" [options]="options"
+                            style="width: 100px; height: 100px;"></p-chart>
+                    </div>
                 </div>
+
+
+
+
             </div>
         </div>
     </p-tabPanel>
 
     <p-tabPanel header="Data View" leftIcon="pi pi-sliders-h">
-
         <div class="grid">
             <div class="col-12">
                 <p-toast></p-toast>
                 <div class="card">
                     <div class="flex items-center justify-between mb-4">
-                        <!-- <h5>Laporan Single Customer View
-                            <p-dropdown [options]="dataBank" optionLabel="label" optionValue="value" class="w-60 ml-4"
+                        <h5>Laporan Kredit Pembiayaan
+                            <!-- <p-dropdown [options]="dataBank" optionLabel="label" optionValue="value" class="w-60 ml-4"
                                 [filter]="true" [(ngModel)]="selectedSearch"
-                                (onChange)="onGlobalChange($event); selectedData(selectedSearch)"
-                                (keydown.enter)="findData(findSearch)" placeholder="Select Bank" [showClear]="true"
-                                (onClear)="clear2(dt1)">
+                                (onChange)="onGlobalChange($event); selectedData(selectedSearch, 1, 30)"
+                                (keydown.enter)="findData(findSearch, 1, 30)" placeholder="Select Bank"
+                                [showClear]="true" (onClear)="clear2(dt1)">
                             </p-dropdown>
 
                             <p-dropdown [options]="dataBankPeriode" optionLabel="periode" optionValue="periode"
                                 class="w-60 ml-4" [filter]="true" [(ngModel)]="selectedPeriode"
                                 placeholder="Select Periode" [showClear]="true"
                                 (onChange)="applyPeriodeFilter(selectedSearch, $event)"
-                                (onClear)="selectedData(selectedSearch)">
-                            </p-dropdown>
-                        </h5> -->
+                                (onClear)="selectedData(selectedSearch, 1, 30)">
+                            </p-dropdown> -->
+
+
+                        </h5>
                         <div class="flex items-center space-x-4">
 
                             <button pButton pRipple icon="pi pi-plus" class="p-button-success" [disabled]="!isAdmin"
@@ -69,10 +102,9 @@
                         </div>
                     </div>
                     <p-table #dt1 [value]="components1" [lazy]="true" (onLazyLoad)="onLazyLoad($event)"
-                        [loading]="loading" [paginator]="!(findSearch || selectedSearch)" [rows]="30"
-                        [totalRecords]="totalRecords" dataKey="id" [rowHover]="true"
-                        styleClass="p-datatable-gridlines p-datatable-sm no-padding-table" responsiveLayout="scroll"
-                        rowGroupMode="subheader" groupRowsBy="kategori" [scrollable]="true"
+                        [loading]="loading" [paginator]="true" [rows]="30" [totalRecords]="totalRecords" dataKey="id"
+                        [rowHover]="true" styleClass="p-datatable-gridlines p-datatable-sm no-padding-table"
+                        responsiveLayout="scroll" rowGroupMode="subheader" groupRowsBy="kategori" [scrollable]="true"
                         [tableStyle]="{'min-width': '60rem'}" scrollHeight="700px" sortMode="multiple">
                         <ng-template pTemplate=" caption">
 
@@ -87,106 +119,85 @@
                             <tr class="p-0">
                                 <th *ngIf="!selectedBank">
                                     <div class="flex justify-content-between align-items-center">
-                                        Kode Bank
-                                        <p-sortIcon field="serial_number"></p-sortIcon>
+                                        ID Pelapor
+                                        <p-sortIcon field="id_pelapor"></p-sortIcon>
                                     </div>
                                 </th>
-                                <th *ngIf="!selectedPeriode" style="min-width: 5rem" pSortableColumn="periode_data">
+                                <th *ngIf="!selectedPeriode" style="min-width: 5rem" pSortableColumn="periode_laporan">
                                     <div class="flex justify-content-between align-items-center">
-                                        Periode
-                                        <p-sortIcon field="periode_data"></p-sortIcon>
+                                        Periode Laporan
+                                        <p-sortIcon field="periode_laporan"></p-sortIcon>
                                     </div>
                                 </th>
-                                <th style="min-width: 20rem" pSortableColumn="deskripsi">
+                                <th style="min-width: 12rem" pSortableColumn="nomor_rekening">
                                     <div class="flex justify-content-between align-items-center">
-                                        Deskripsi
-                                        <p-sortIcon field="deskripsi"></p-sortIcon>
+                                        Nomor Rekening
+                                        <p-sortIcon field="nomor_rekening"></p-sortIcon>
+                                    </div>
+                                </th>
+                                <th style="min-width: 12rem" pSortableColumn="jenis_kredit_pembiayaan">
+                                    <div class="flex justify-content-between align-items-center">
+                                        Jenis Kredit Pembiayaan
+                                        <p-sortIcon field="jenis_kredit_pembiayaan"></p-sortIcon>
+                                    </div>
+                                </th>
+                                <th style="min-width: 12rem" pSortableColumn="deskripsi_jenis_kredit_pembiayaan">
+                                    <div class="flex justify-content-between align-items-center">
+                                        Deskripsi Jenis Kredit Pembiayaan
+                                        <p-sortIcon field="deskripsi_jenis_kredit_pembiayaan"></p-sortIcon>
                                     </div>
                                 </th>
                                 <th style="min-width: 12rem" pSortableColumn="jumlah_nasabah_penyimpan">
                                     <div class="flex justify-content-between align-items-center">
-                                        Jumlah Nasabah Penyimpan
+                                        Baki Debet
                                         <p-sortIcon field="jumlah_nasabah_penyimpan"></p-sortIcon>
                                     </div>
                                 </th>
-                                <th style="min-width: 12rem">
+                                <th style="min-width: 12rem" pSortableColumn="deskripsi_kualitas">
                                     <div class="flex justify-content-between align-items-center">
-                                        Jumlah Rekening Simpanan
-                                        <p-sortIcon field="material_description"></p-sortIcon>
+                                        Deskripsi Kualitas
+                                        <p-sortIcon field="deskripsi_kualitas"></p-sortIcon>
                                     </div>
                                 </th>
-                                <th style="min-width: 12rem">
+                                <th style="min-width: 12rem" pSortableColumn="deskripsi_sifat_kredit_pembiayaan">
                                     <div class="flex justify-content-between align-items-center">
-                                        Jumlah Saldo Simpanan
-                                        <p-sortIcon field="material_description"></p-sortIcon>
-                                    </div>
-                                </th>
-                                <th style="min-width: 12rem">
-                                    <div class="flex justify-content-between align-items-center">
-                                        Jumlah Saldo Simpanan Dijamin
-                                        <p-sortIcon field="material_description"></p-sortIcon>
-                                    </div>
-                                </th>
-                                <th style="min-width: 12rem">
-                                    <div class="flex justify-content-between align-items-center">
-                                        Actions
+                                        Deskripsi Sifat Kredit Pembiayaan
+                                        <p-sortIcon field="deskripsi_sifat_kredit_pembiayaan"></p-sortIcon>
                                     </div>
                                 </th>
                             </tr>
                         </ng-template>
-                        <ng-template pTemplate="groupheader" let-component>
-                            <ng-container *ngIf="component?.kategori">
-                                <tr pRowGroupHeader>
-                                    <td colspan="14">
-                                        <span class="font-bold ml-2">{{ component.kategori }}</span>
-                                    </td>
-                                </tr>
-                            </ng-container>
-                        </ng-template>
+
                         <ng-template pTemplate="body" let-component>
                             <tr [ngStyle]="{height: '10px'}">
                                 <td *ngIf="!selectedBank">
-                                    {{component.nama_bank}}
+                                    {{component.id_pelapor}}
                                 </td>
                                 <td *ngIf="!selectedPeriode">
-                                    {{ component.tahun }}-{{ component.bulan }}
+                                    {{ component.periode_laporan }}
                                 </td>
-                                <td [ngClass]="{
-                            'pl-4': (component?.deskripsi?.split('.').length - 1) === 2,
-                            'pl-6': (component?.deskripsi?.split('.').length - 1) === 3,
-                            'font-bold': component?.deskripsi?.toLowerCase().includes('total')
-                          }">
-                                    {{ component.deskripsi }}
+                                <td>
+                                    {{ component.nomor_rekening }}
                                 </td>
-
-
-                                <td class="text-right">
-                                    {{component.jumlah_nasabah_penyimpan | number:'1.0-0':'id'}}
+                                <td>
+                                    {{ component.jenis_kredit_pembiayaan }}
+                                </td>
+                                <td>
+                                    {{ component.deskripsi_jenis_kredit_pembiayaan }}
                                 </td>
                                 <td class="text-right">
-                                    {{ component.jumlah_rekening_simpanan | number:'1.0-0':'id' }}
+                                    {{component.baki_debet | number:'1.0-0':'id'}}
                                 </td>
-                                <td class="text-right">
-                                    {{ component.jumlah_saldo_simpanan | number:'1.0-0':'id' }}
+                                <td>
+                                    {{ component.deskripsi_kualitas }}
                                 </td>
-                                <td class="text-right">
-                                    {{ component.jumlah_saldo_simpanan_dijamin | number:'1.0-0':'id' }}
+                                <td>
+                                    {{ component.deskripsi_sifat_kredit_pembiayaan }}
                                 </td>
-
-                                <td class="text-center">
-                                    <button pButton pRipple icon="pi pi-pencil"
-                                        class="p-button-rounded p-button-success mr-2"
-                                        style="font-size: 12px; width: 24px; height: 24px;"
-                                        (click)="onEditProduct(component)">
-                                    </button>
-                                    <button pButton pRipple icon="pi pi-trash" class="p-button-rounded p-button-warning"
-                                        style="font-size: 12px; width: 24px; height: 24px;"
-                                        (click)="onDeleteProduct(component)">
-                                    </button>
-                                </td>
-
                             </tr>
                         </ng-template>
+
+
                         <ng-template pTemplate="emptymessage">
                             <tr>
                                 <td colspan="8">No components found.</td>
@@ -203,9 +214,6 @@
                 </div>
                 <p-toast></p-toast>
             </div>
-
-
-
             <p-toast></p-toast>
         </div>
     </p-tabPanel>
@@ -384,9 +392,9 @@
     </div>
 </p-dialog>
 
-<p-dialog header="Import Data SCV" [(visible)]="importDialog" [modal]="true" [closable]="true" [responsive]="true"
-    [style]="{width: '800px', marginBottom: '8px'}">
-    <p-fileUpload name="file" accept=".csv" [maxFileSize]="50000000" (onSelect)="onFileSelect($event)"
+<p-dialog header="Import Data Kredit Pembiayaan" [(visible)]="importDialog" [modal]="true" [closable]="true"
+    [responsive]="true" [style]="{width: '800px', marginBottom: '8px'}">
+    <p-fileUpload name="file" accept=".csv" [maxFileSize]="100000000" (onSelect)="onFileSelect($event)"
         (onClear)="onClearFile()" [showUploadButton]="false" cancelStyleClass="bg-red-500"
         removeStyleClass="bg-red-500">
     </p-fileUpload>
