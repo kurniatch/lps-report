@@ -13,12 +13,14 @@ async function bootstrap() {
   app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 
   app.enableCors({
-    origin: 'http://localhost:4000',
+    origin: '*',
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
     allowedHeaders: ['Content-Type', 'Authorization'],
   });
 
-  await app.listen(3012);
+  // await app.listen(3012);
+  await app.listen(3012, '0.0.0.0');
+
 }
 bootstrap();

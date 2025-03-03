@@ -65,6 +65,20 @@ export class ScvController {
     return this.scvService.findDataStatusGeneral();
   }
 
+  @Get('/report-data')
+  findDataReport(@Query('keyword') keyword: string) {
+      return this.scvService.findDataReport(keyword);
+  }
+
+  @Get('/report-data-period')
+  findDataReportPeriode(
+    @Query('keyword') keyword: string,
+    @Query('period') period?: string 
+  ) {
+    return this.scvService.findDataReportPeriode(keyword, period);
+  }
+  
+
   @Post('/search')
   async findKeywordGeneral(@Body('keyword') keyword: string) {
     return await this.scvService.findKeywordGeneral(keyword);

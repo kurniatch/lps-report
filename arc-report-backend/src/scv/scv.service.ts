@@ -2,6 +2,7 @@ import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import * as fs from 'fs';
 import * as path from 'path';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class ScvService {
@@ -309,6 +310,63 @@ export class ScvService {
     }
   }
 
+  async findDataReport(keyword: string) {
+    try {
+      const result = await this.prisma.$queryRaw`
+        SELECT 
+            tahun,
+            bulan,
+            nama_bank,
+            SUM(jumlah_nasabah_penyimpan) AS total_nasabah,
+            SUM(jumlah_rekening_simpanan) AS total_rekening,
+            SUM(jumlah_saldo_simpanan) AS total_saldo,
+            SUM(jumlah_saldo_simpanan_dijamin) AS total_saldo_dijamin
+        FROM data_scv
+        WHERE nama_bank = ${keyword}
+        GROUP BY tahun, bulan, nama_bank
+        ORDER BY tahun DESC, bulan DESC;
+      `;
+      return result;
+    } catch (error) {
+      console.error('Error executing custom query:', error);
+    }
+  }
+
+  async findDataReportPeriode(keyword: string, period?: string) {
+    console.log('Keyword:', keyword, 'Period:', period);
+    try {
+      let year: number | null = null;
+      let month: number | null = null;
+  
+      if (period) {
+        const periodParts = period.split('-');
+        year = parseInt(periodParts[0], 10);
+        if (periodParts.length === 2) {
+          month = parseInt(periodParts[1], 10);
+        }
+      }
+  
+      const result = await this.prisma.$queryRaw`
+        SELECT 
+            nama_bank,
+            SUM(jumlah_nasabah_penyimpan) AS total_nasabah,
+            SUM(jumlah_rekening_simpanan) AS total_rekening,
+            SUM(jumlah_saldo_simpanan) AS total_saldo,
+            SUM(jumlah_saldo_simpanan_dijamin) AS total_saldo_dijamin
+        FROM data_scv
+        WHERE nama_bank = ${keyword}
+          ${year ? Prisma.sql`AND tahun = ${year}` : Prisma.empty}
+          ${month ? Prisma.sql`AND bulan = ${month}` : Prisma.empty}
+        GROUP BY nama_bank
+        ORDER BY nama_bank;
+      `;
+  
+      return result;
+    } catch (error) {
+      console.error('Error executing custom query:', error);
+    }
+  }
+
   async findDataOperator(keyword: any) {
     console.log(keyword);
     try {
@@ -333,7 +391,7 @@ export class ScvService {
       }
   
       const query = `
-        COPY data_scv_edit (
+        COPY data_scv (
           tahun,
           bulan,
           kode_kepesertaan,

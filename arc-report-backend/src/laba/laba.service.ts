@@ -242,7 +242,7 @@ export class ReportService {
       
       // Bangun query COPY sebagai string lengkap
       const query = `
-          COPY laba_rugi_edit  (
+          COPY laba_rugi  (
             id_pelapor,
             periode_laporan,
             periode_data,
