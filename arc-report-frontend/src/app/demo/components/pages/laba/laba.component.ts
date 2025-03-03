@@ -668,10 +668,10 @@ export class LabaComponent implements OnInit, OnDestroy {
         this.messageService.add({severity:'error', summary: 'Error', detail: 'Ukuran file melebihi batas maksimal (50MB)'}); 
         return;
       }
-      this.importDialog = false;
-      this.onClearFile();
-  
+      this.importDialog = false;  
       this.sendFileToBackend(this.selectedFile);  
+      this.onClearFile();
+
     } else {
       this.messageService.add({severity:'error', summary: 'Error', detail: 'Tidak ada file yang dipilih'});
     }

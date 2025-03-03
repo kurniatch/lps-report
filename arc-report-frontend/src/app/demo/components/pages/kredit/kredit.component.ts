@@ -14,6 +14,8 @@ import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import { Papa } from 'ngx-papaparse'; // Untuk parsing CSV
+import ChartDataLabels from 'chartjs-plugin-datalabels';
+
 
 interface expandedRows {
     [key: string]: boolean;
@@ -461,6 +463,18 @@ export class KreditComponent implements OnInit, OnDestroy {
                                 return `${tooltipItem.dataset.label}: ${tooltipItem.raw.toLocaleString()}`;
                             }
                         }
+                    },
+                    datalabels: {
+                        anchor: 'start', // Menempatkan teks di atas batang
+                        align: 'top', // Mengatur agar angka tetap di atas
+                        formatter: function(value: { toLocaleString: () => any; }) {
+                            return value.toLocaleString(); // Format angka dengan pemisah ribuan
+                        },
+                        font: {
+                            size: 12,
+                            weight: 'bold'
+                        },
+                        color: '#000' // Warna teks angka di atas batang
                     }
                 }
             };
@@ -609,7 +623,39 @@ export class KreditComponent implements OnInit, OnDestroy {
                         ]
                     };
                 }
-    
+                this.options.plugins.datalabels = ChartDataLabels;
+
+                this.options = {
+                    responsive: true,
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function (tooltipItem: any) {
+                                    let total = tooltipItem.dataset.data.reduce((a: number, b: number) => a + b, 0);
+                                    let value = tooltipItem.raw;
+                                    let percentage = ((value / total) * 100).toFixed(2) + "%";
+                                    return `${tooltipItem.label}: ${value} (${percentage})`;
+                                }
+                            }
+                        },
+                        datalabels: {
+                            formatter: (value: number, context: any) => {
+                                let total = context.chart.data.datasets[0].data.reduce((a: number, b: number) => a + b, 0);
+                                let percentage = ((value / total) * 100).toFixed(2);
+                                return `${value.toLocaleString()}\n(${percentage}%)`;
+                            },
+                            font: {
+                                size: 15,
+                            },
+                            color: "#000",
+                            anchor: "end",
+                            align: "start",
+                            offset: 10
+                        }
+                        
+                    }
+                };
+                
                 this.pieCharts = pieCharts;
 
                 this.showDataPie = true;
@@ -627,7 +673,6 @@ export class KreditComponent implements OnInit, OnDestroy {
             // const tahun = Number(split[0]); 
             // const bulan = Number(split[1]);
 
-            console
             this.components1 = this.components1.filter(
                 (item) => item.periode_data  === event.value
             );
@@ -1084,7 +1129,7 @@ export class KreditComponent implements OnInit, OnDestroy {
             this.dataBankPeriode = this.dataBankPeriode
             .filter((item: any) => item.periode_data !== null)
             .map((item: any) => ({
-                periode: item.periode_data.slice(0, -9),
+                periode: item.periode_data,
             }));
             console.log('dataBankPeriode', this.dataBankPeriode);
         } catch (error) {

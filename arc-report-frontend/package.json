@@ -22,6 +22,7 @@
     "@angular/platform-browser-dynamic": "^15.1.0",
     "@angular/router": "^15.2.9",
     "chart.js": "^3.3.2",
+    "chartjs-plugin-datalabels": "^2.2.0",
     "dotenv": "^16.3.1",
     "file-saver": "^2.0.5",
     "jspdf": "^2.5.1",

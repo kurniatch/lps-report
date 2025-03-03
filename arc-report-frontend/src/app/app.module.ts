@@ -20,6 +20,12 @@ import { registerLocaleData } from '@angular/common';
 import localeId from '@angular/common/locales/id';
 import { TableModule } from 'primeng/table';
 import { KreditService } from './demo/service/kredit.service';
+import { Chart, registerables } from 'chart.js';
+import ChartDataLabels from 'chartjs-plugin-datalabels';
+import { ChartModule } from 'primeng/chart';
+
+
+Chart.register(...registerables, ChartDataLabels);
 
 // Daftarkan locale Indonesia
 registerLocaleData(localeId);
@@ -32,6 +38,7 @@ registerLocaleData(localeId);
         ButtonModule,
         CalendarModule,
         TableModule,
+        ChartModule,
         RouterModule.forRoot([], { useHash: false }),
     ],
     providers: [

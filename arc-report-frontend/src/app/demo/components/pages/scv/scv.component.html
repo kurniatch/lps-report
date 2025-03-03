@@ -19,13 +19,44 @@
                         </p-dropdown>
                     </h5>
                 </div>
-                <div class="card" *ngIf="showDataChart">
-                    <p-chart type="bar" [data]="data" [options]="options" />
+                <div class="flex flex-wrap gap-4 justify-center" *ngIf="showDataChart">
+                    <!-- Total Nasabah -->
+                    <div class="w-full md:w-1/2 lg:w-1/4 p-2">
+                        <div class="bg-white shadow-md rounded-lg p-4">
+                            <h3 class="text-lg font-semibold text-center mb-2">Total Nasabah</h3>
+                            <p-chart type="line" [data]="dataNasabah" [options]="optionsLine"></p-chart>
+                        </div>
+                    </div>
+
+                    <!-- Total Rekening -->
+                    <div class="w-full md:w-1/2 lg:w-1/4 p-2">
+                        <div class="bg-white shadow-md rounded-lg p-4">
+                            <h3 class="text-lg font-semibold text-center mb-2">Total Rekening</h3>
+                            <p-chart type="line" [data]="dataRekening" [options]="optionsLine"></p-chart>
+                        </div>
+                    </div>
+
+                    <!-- Total Saldo -->
+                    <div class="w-full md:w-1/2 lg:w-1/4 p-2">
+                        <div class="bg-white shadow-md rounded-lg p-4">
+                            <h3 class="text-lg font-semibold text-center mb-2">Total Saldo</h3>
+                            <p-chart type="line" [data]="dataSaldo" [options]="optionsLine"></p-chart>
+                        </div>
+                    </div>
+
+                    <!-- Total Saldo Dijamin -->
+                    <div class="w-full md:w-1/2 lg:w-1/4 p-2">
+                        <div class="bg-white shadow-md rounded-lg p-4">
+                            <h3 class="text-lg font-semibold text-center mb-2">Total Saldo Dijamin</h3>
+                            <p-chart type="line" [data]="dataSaldoDijamin" [options]="optionsLine"></p-chart>
+                        </div>
+                    </div>
                 </div>
-            </div>
-            <div>
-                <div class="card" *ngIf="showDataPie">
-                    <p-chart type="bar" [data]="data" [options]="options" />
+
+                <div>
+                    <div class="card" *ngIf="showDataPie">
+                        <p-chart type="bar" [data]="barData" [options]="barOptions" />
+                    </div>
                 </div>
             </div>
         </div>

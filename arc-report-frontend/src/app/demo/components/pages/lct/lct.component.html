@@ -1,6 +1,6 @@
 <p-tabView styleClass="mb-4 border border-gray-300 rounded-lg shadow-md"
-    (onChange)="getTableData(selectedSearch || '000')">
-    <p-tabPanel header="Variabel" leftIcon="pi pi-sliders-h">
+    (onChange)="getTableData(selectedSearch || '000')" [scrollable]="true">
+    <!-- <p-tabPanel header="Variabel" leftIcon="pi pi-sliders-h">
         <div class="grid mb-4">
             <div class="col-12 lg:col-6 xl:col-3" *ngFor="let variable of [1, 2, 3, 4]; let i = index">
                 <div class="card mb-0">
@@ -19,7 +19,7 @@
                 </div>
             </div>
         </div>
-    </p-tabPanel>
+    </p-tabPanel> -->
 
     <p-tabPanel header="Tabel" leftIcon="pi pi-table">
         <div class="card col-12">
@@ -34,15 +34,15 @@
                         [showClear]="true" (onChange)="getTableData(selectedSearch)"
                         (onClear)="selectedData(selectedSearch)">
                     </p-dropdown>
-                    <button pButton pRipple icon="pi pi-plus" class="p-button-success ml-8" (click)="openNew()"
+                    <!-- <button pButton pRipple icon="pi pi-plus" class="p-button-success ml-8" (click)="openNew()"
                         aria-label="Tambah" [disabled]="!selectedSearch">
-                    </button>
+                    </button> -->
                     <button pButton pRipple label="Export" icon="pi pi-download" class="p-button-help ml-6"
                         (click)="openExport()">
                     </button>
                 </span>
             </h5>
-            <p-table [value]="modifiedDataTable" dataKey="id" [tableStyle]="{ 'min-width': '50rem' }">
+            <!-- <p-table [value]="modifiedDataTable" dataKey="id" [tableStyle]="{ 'min-width': '50rem' }">
                 <ng-template pTemplate="header">
                     <tr>
                         <th pSortableColumn="pos" style="width:25%">
@@ -80,17 +80,25 @@
                         </td>
                     </tr>
                 </ng-template>
-            </p-table>
-            <div class="ml-4 mt-6">
-                ATI ke Properti Terbengkalai
-                <input class="ml-4" pInputText type="number" [(ngModel)]="this.ati_ke_properti_terbengkalai"
-                    (ngModelChange)="onVariableChange2()" />
+            </p-table> -->
+            <div class="flex items-center mt-4">
+                <div class="ml-4 mt-6">
+                    ATI ke Properti Terbengkalai:
+                    <input class="ml-4" pInputText type="number" [(ngModel)]="this.ati_ke_properti_terbengkalai"
+                        (ngModelChange)="onVariableChange2()" />
+                    <!-- <output class="ml-4">{{ this.ati_ke_properti_terbengkalai | number:'1.0-0':'id' }}</output> -->
+                </div>
+                <div class="ml-4 mt-6">
+                    Aset Lainnya:
+                    <input class="ml-4" pInputText type="number" [(ngModel)]="this.aset_lainnya"
+                        (ngModelChange)="onVariableChange2()" />
+                    <!-- <output class="ml-4">{{ this.aset_lainnya | number:'1.0-0':'id' }}</output> -->
+                </div>
             </div>
         </div>
     </p-tabPanel>
 
     <p-tabPanel header="Neraca Fix" leftIcon="pi pi-chart-bar">
-
         <div class=" card p-4">
             <h4 class="text-center">
                 Laporan Ringkas Neraca Bank {{ selectedSearch || " - "}}
@@ -112,9 +120,10 @@
                                     [ngClass]="{'bg-yellow-500 text-white': item.isSubheader}">{{item.label}}</td>
                                 <td *ngIf="!item.isSubheader" class="text-right"
                                     [ngClass]="{'text-red-500': item.value < 0 || item.label.includes('(-)')}">
-                                    {{ (item.label.includes('(-)') ? '-' : '') + (item.value === 0 ? '-' : (item.value |
-                                    number:'1.0-0')) }}
-                                </td>
+                                    {{
+                                    (item.value < 0 && !item.label.includes('(-)') ? '-' : '' ) + (item.value===0 ? '0'
+                                        : (item.value < 0 && !item.label.includes('(-)') ? (item.value | number: '1.0-0'
+                                        ) : (item.value | number: '1.0-0' )) ) }} </td>
                                 <td *ngIf="item.isSubheader" colspan="2"
                                     class="bg-yellow-500 text-white text-center font-bold">
                                     {{ item.label }}
@@ -140,10 +149,10 @@
                                 <td *ngIf="!item.isSubheader" class="text-right"
                                     [ngClass]="{'text-red-500': item.value < 0 || item.label.includes('(-)')}">
                                     <span *ngIf="item.value !== null">
-                                        {{ (item.label.includes('(-)') ? '-' : '') + (item.value === 0 ? '-' :
-                                        (item.value |
-                                        number:'1.0-0')) }}
-                                    </span>
+                                        {{
+                                        (item.value < 0 && !item.label.includes('(-)') ? '-' : '' ) + (item.value===0
+                                            ? '0' : (item.value < 0 && !item.label.includes('(-)') ? (item.value |
+                                            number: '1.0-0' ) : (item.value | number: '1.0-0' )) ) }} </span>
                                 </td>
                                 <td *ngIf="item.isSubheader" colspan="2"
                                     class="bg-yellow-500 text-white text-center font-bold">
@@ -160,10 +169,10 @@
     <p-tabPanel header="Summary Kredit" leftIcon="pi pi-wallet">
         <div class="card col-12">
             <h5>
-                Data Bank
+                Data Bank Kredit Pembayaran
             </h5>
-            <button (click)="addRow()" pButton label="Tambah Kolom" icon="pi pi-plus"
-                styleClass="p-button-sm mb-3"></button>
+            <!-- <button (click)="addRow()" pButton label="Tambah Kolom" icon="pi pi-plus"
+                styleClass="p-button-sm mb-3"></button> -->
 
             <p-table styleClass="mt-4 mb-8" [value]="modifiedDataTable1" dataKey="id"
                 [tableStyle]="{ 'min-width': '50rem' }" responsiveLayout="scroll" [expandedRowKeys]="expandedRows"
@@ -186,7 +195,7 @@
                                 field="baki_debet_pemeriksa" /></th>
                         <th pSortableColumn="hasil_hitung">Hasil Hitung <p-sortIcon field="hasil_hitung" /></th>
 
-                        <th style="width:5%">Aksi</th>
+                        <!-- <th style="width:5%">Aksi</th> -->
                     </tr>
                 </ng-template>
 
@@ -220,10 +229,10 @@
                         </td>
                         <td>{{ (product.baki_debet_pemeriksa - product.baki_debet) | number:'1.0-0':'id' }}</td>
 
-                        <td>
+                        <!-- <td>
                             <button pButton icon="pi pi-trash" (click)="deleteRow(i)"
                                 styleClass="p-button-danger p-button-sm"></button>
-                        </td>
+                        </td> -->
                     </tr>
                 </ng-template>
 
@@ -487,22 +496,63 @@
                     </tr>
                     <tr>
                         <td>Restru < COF</td>
-                        <td>{{ this.modifiedDataTable3[0].baki_debet_restrukturisasi1 | number:'1.0-0':'id' }}</td>
-                        <td>{{ this.modifiedDataTable3[0].baki_debet_restrukturisasi24 | number:'1.0-0':'id' }}</td>
-                        <td>{{ ( +this.modifiedDataTable3[0].baki_debet_restrukturisasi1 +
-                            +this.modifiedDataTable3[0].baki_debet_restrukturisasi24 ) |
-                            number:'1.0-0':'id' }}</td>
+                        <td pEditableColumn>
+                            <p-cellEditor class="border border-gray-300 p-2 pl-4 pr-4 rounded-md w-64 min-w-[200px]">
+                                <ng-template pTemplate="input">
+                                    <input pInputText [(ngModel)]="modifiedDataTable3[0].baki_debet_restrukturisasi1"
+                                        class="form-control">
+                                </ng-template>
+                                <ng-template pTemplate="output">
+                                    {{ modifiedDataTable3[0].baki_debet_restrukturisasi1 | number:'1.0-0':'id' }}
+                                </ng-template>
+                            </p-cellEditor>
+                        </td>
+                        <td pEditableColumn>
+                            <p-cellEditor class="border border-gray-300 p-2 pl-4 pr-4 rounded-md w-64 min-w-[200px]">
+                                <ng-template pTemplate="input">
+                                    <input pInputText [(ngModel)]="modifiedDataTable3[0].baki_debet_restrukturisasi24"
+                                        class="form-control">
+                                </ng-template>
+                                <ng-template pTemplate="output">
+                                    {{ modifiedDataTable3[0].baki_debet_restrukturisasi24 | number:'1.0-0':'id' }}
+                                </ng-template>
+                            </p-cellEditor>
+                        </td>
+                        <td>{{ ( +modifiedDataTable3[0].baki_debet_restrukturisasi1 +
+                            +modifiedDataTable3[0].baki_debet_restrukturisasi24 ) | number:'1.0-0':'id' }}</td>
                         <td>Penyesuaian -> Macet</td>
                     </tr>
+
                     <tr>
                         <td>Temuan due diligence</td>
-                        <td>{{ this.modifiedDataTable3[0].diligence1 | number:'1.0-0':'id' }}</td>
-                        <td>{{ this.modifiedDataTable3[0].diligence24| number:'1.0-0':'id' }}</td>
-                        <td>{{ ( +this.modifiedDataTable3[0].diligence24 +
-                            +this.modifiedDataTable3[0].diligence1 ) |
-                            number:'1.0-0':'id' }}</td>
+                        <td pEditableColumn>
+                            <p-cellEditor class="border border-gray-300 p-2 pl-4 pr-4 rounded-md w-64 min-w-[200px]">
+                                <ng-template pTemplate="input">
+                                    <input pInputText [(ngModel)]="modifiedDataTable3[0].diligence1"
+                                        class="form-control">
+                                </ng-template>
+                                <ng-template pTemplate="output">
+                                    {{ modifiedDataTable3[0].diligence1 | number:'1.0-0':'id' }}
+                                </ng-template>
+                            </p-cellEditor>
+                        </td>
+                        <td pEditableColumn>
+                            <p-cellEditor class="border border-gray-300 p-2 pl-4 pr-4 rounded-md w-64 min-w-[200px]">
+                                <ng-template pTemplate="input">
+                                    <input pInputText [(ngModel)]="modifiedDataTable3[0].diligence24"
+                                        class="form-control">
+                                </ng-template>
+                                <ng-template pTemplate="output">
+                                    {{ modifiedDataTable3[0].diligence24 | number:'1.0-0':'id' }}
+                                </ng-template>
+                            </p-cellEditor>
+                        </td>
+                        <td>{{ ( +modifiedDataTable3[0].diligence24 +
+                            +modifiedDataTable3[0].diligence1 ) | number:'1.0-0':'id' }}</td>
                         <td>Penyesuaian -> Macet</td>
                     </tr>
+
+
                 </ng-template>
                 <ng-template pTemplate="footer">
                     <tr>
@@ -571,7 +621,8 @@
             <h5>
                 Data Bank
             </h5>
-            <p-table [value]="[gwmData]" dataKey="id" [tableStyle]="{ 'min-width': '50rem' }" responsiveLayout="scroll">
+            <p-table id="tableGwm" [value]="[gwmData]" dataKey="id" [tableStyle]="{ 'min-width': '50rem' }"
+                responsiveLayout="scroll">
                 <ng-template pTemplate="header">
                     <tr>
                         <th style="width:12%">Parameter</th>
@@ -647,7 +698,7 @@
             </h6>
             <div class="mt-4 flex gap-4 justify-between overflow-x-auto">
                 <div class="w-1/2 min-w-[300px]">
-                    <p-table [value]="assetsBankAsal" [resizableColumns]="true"
+                    <p-table id="tableBVFV" [value]="assetsBankAsal" [resizableColumns]="true"
                         styleClass="p-datatable-gridlines p-datatable-sm no-padding-table"
                         [tableStyle]="{'width': '100%'}">
 
@@ -662,9 +713,10 @@
                                     [ngClass]="{'bg-yellow-500 text-white': item.isSubheader}">{{item.label}}</td>
                                 <td *ngIf="!item.isSubheader" class="text-right"
                                     [ngClass]="{'text-red-500': item.value < 0 || item.label.includes('(-)')}">
-                                    {{ (item.label.includes('(-)') ? '-' : '') + (item.value === 0 ? '-' : (item.value |
-                                    number:'1.0-0')) }}
-                                </td>
+                                    {{
+                                    (item.value < 0 && !item.label.includes('(-)') ? '-' : '' ) + (item.value===0 ? '0'
+                                        : (item.value < 0 && !item.label.includes('(-)') ? (item.value | number: '1.0-0'
+                                        ) : (item.value | number: '1.0-0' )) ) }} </td>
                                 <td *ngIf="item.isSubheader" colspan="2"
                                     class="bg-yellow-500 text-white text-center font-bold">
                                     {{ item.label }}
@@ -690,10 +742,10 @@
                                 <td *ngIf="!item.isSubheader" class="text-right"
                                     [ngClass]="{'text-red-500': item.value < 0 || item.label.includes('(-)')}">
                                     <span *ngIf="item.value !== null">
-                                        {{ (item.label.includes('(-)') ? '-' : '') + (item.value === 0 ? '-' :
-                                        (item.value |
-                                        number:'1.0-0')) }}
-                                    </span>
+                                        {{
+                                        (item.value < 0 && !item.label.includes('(-)') ? '-' : '' ) + (item.value===0
+                                            ? '0' : (item.value < 0 && !item.label.includes('(-)') ? (item.value |
+                                            number: '1.0-0' ) : (item.value | number: '1.0-0' )) ) }} </span>
                                 </td>
                                 <td *ngIf="item.isSubheader" colspan="2"
                                     class="bg-yellow-500 text-white text-center font-bold">
@@ -727,9 +779,10 @@
                                     [ngClass]="{'bg-yellow-500 text-white': item.isSubheader}">{{item.label}}</td>
                                 <td *ngIf="!item.isSubheader" class="text-right"
                                     [ngClass]="{'text-red-500': item.value < 0 || item.label.includes('(-)')}">
-                                    {{ (item.label.includes('(-)') ? '-' : '') + (item.value === 0 ? '-' : (item.value |
-                                    number:'1.0-0')) }}
-                                </td>
+                                    {{
+                                    (item.value < 0 && !item.label.includes('(-)') ? '-' : '' ) + (item.value===0 ? '0'
+                                        : (item.value < 0 && !item.label.includes('(-)') ? (item.value | number: '1.0-0'
+                                        ) : (item.value | number: '1.0-0' )) ) }} </td>
                                 <td *ngIf="item.isSubheader" colspan="2"
                                     class="bg-yellow-500 text-white text-center font-bold">
                                     {{ item.label }}
@@ -755,10 +808,10 @@
                                 <td *ngIf="!item.isSubheader" class="text-right"
                                     [ngClass]="{'text-red-500': item.value < 0 || item.label.includes('(-)')}">
                                     <span *ngIf="item.value !== null">
-                                        {{ (item.label.includes('(-)') ? '-' : '') + (item.value === 0 ? '-' :
-                                        (item.value |
-                                        number:'1.0-0')) }}
-                                    </span>
+                                        {{
+                                        (item.value < 0 && !item.label.includes('(-)') ? '-' : '' ) + (item.value===0
+                                            ? '0' : (item.value < 0 && !item.label.includes('(-)') ? (item.value |
+                                            number: '1.0-0' ) : (item.value | number: '1.0-0' )) ) }} </span>
                                 </td>
                                 <td *ngIf="item.isSubheader" colspan="2"
                                     class="bg-yellow-500 text-white text-center font-bold">
@@ -792,9 +845,10 @@
                                     [ngClass]="{'bg-yellow-500 text-white': item.isSubheader}">{{item.label}}</td>
                                 <td *ngIf="!item.isSubheader" class="text-right"
                                     [ngClass]="{'text-red-500': item.value < 0 || item.label.includes('(-)')}">
-                                    {{ (item.label.includes('(-)') ? '-' : '') + (item.value === 0 ? '-' : (item.value |
-                                    number:'1.0-0')) }}
-                                </td>
+                                    {{
+                                    (item.value < 0 && !item.label.includes('(-)') ? '-' : '' ) + (item.value===0 ? '0'
+                                        : (item.value < 0 && !item.label.includes('(-)') ? (item.value | number: '1.0-0'
+                                        ) : (item.value | number: '1.0-0' )) ) }} </td>
                                 <td *ngIf="item.isSubheader" colspan="2"
                                     class="bg-yellow-500 text-white text-center font-bold">
                                     {{ item.label }}
@@ -820,10 +874,10 @@
                                 <td *ngIf="!item.isSubheader" class="text-right"
                                     [ngClass]="{'text-red-500': item.value < 0 || item.label.includes('(-)')}">
                                     <span *ngIf="item.value !== null">
-                                        {{ (item.label.includes('(-)') ? '-' : '') + (item.value === 0 ? '-' :
-                                        (item.value |
-                                        number:'1.0-0')) }}
-                                    </span>
+                                        {{
+                                        (item.value < 0 && !item.label.includes('(-)') ? '-' : '' ) + (item.value===0
+                                            ? '0' : (item.value < 0 && !item.label.includes('(-)') ? (item.value |
+                                            number: '1.0-0' ) : (item.value | number: '1.0-0' )) ) }} </span>
                                 </td>
                                 <td *ngIf="item.isSubheader" colspan="2"
                                     class="bg-yellow-500 text-white text-center font-bold">
@@ -1067,15 +1121,15 @@
                 <ng-template pTemplate="body" let-product>
                     <tr>
                         <td>{{ product.label }}</td>
-                        <td>{{ product.nominal | number:'1.0-0':'id' }}</td>
-                        <td>{{ product.fv | number:'1.0-0':'id' }}</td>
+                        <td class="text-right">{{ product.nominal | number:'1.0-0':'id' }}</td>
+                        <td class="text-right">{{ product.fv | number:'1.0-0':'id' }}</td>
                     </tr>
                 </ng-template>
                 <ng-template pTemplate="footer">
                     <tr>
                         <td>Total</td>
-                        <td>{{ getTotalKewajibanAlih('nominal') | number:'1.0-0':'id' }}</td>
-                        <td>{{ getTotalKewajibanAlih('fv') | number:'1.0-0':'id' }}</td>
+                        <td class="text-right">{{ getTotalKewajibanAlih('nominal') | number:'1.0-0':'id' }}</td>
+                        <td class="text-right">{{ getTotalKewajibanAlih('fv') | number:'1.0-0':'id' }}</td>
                     </tr>
                 </ng-template>
             </p-table>
@@ -1100,13 +1154,13 @@
                         <ng-template pTemplate="body" let-product>
                             <tr>
                                 <td>{{ product.label }}</td>
-                                <td>{{ product.nominal | number:'1.0-0':'id' }}</td>
+                                <td class="text-right">{{ product.nominal | number:'1.0-0':'id' }}</td>
                             </tr>
                         </ng-template>
                         <ng-template pTemplate="footer">
                             <tr>
                                 <td>Total Selisih</td>
-                                <td>{{ getSelisihTotal() | number:'1.0-0':'id' }}</td>
+                                <td class="text-right">{{ getSelisihTotal() | number:'1.0-0':'id' }}</td>
                             </tr>
                         </ng-template>
                     </p-table>
@@ -1145,9 +1199,10 @@
                                     [ngClass]="{'bg-yellow-500 text-white': item.isSubheader}">{{item.label}}</td>
                                 <td *ngIf="!item.isSubheader" class="text-right"
                                     [ngClass]="{'text-red-500': item.value < 0 || item.label.includes('(-)')}">
-                                    {{ (item.label.includes('(-)') ? '-' : '') + (item.value === 0 ? '-' : (item.value |
-                                    number:'1.0-0')) }}
-                                </td>
+                                    {{
+                                    (item.value < 0 && !item.label.includes('(-)') ? '-' : '' ) + (item.value===0 ? '0'
+                                        : (item.value < 0 && !item.label.includes('(-)') ? (item.value | number: '1.0-0'
+                                        ) : (item.value | number: '1.0-0' )) ) }} </td>
                                 <td *ngIf="item.isSubheader" colspan="2"
                                     class="bg-yellow-500 text-white text-center font-bold">
                                     {{ item.label }}
@@ -1173,10 +1228,10 @@
                                 <td *ngIf="!item.isSubheader" class="text-right"
                                     [ngClass]="{'text-red-500': item.value < 0 || item.label.includes('(-)')}">
                                     <span *ngIf="item.value !== null">
-                                        {{ (item.label.includes('(-)') ? '-' : '') + (item.value === 0 ? '-' :
-                                        (item.value |
-                                        number:'1.0-0')) }}
-                                    </span>
+                                        {{
+                                        (item.value < 0 && !item.label.includes('(-)') ? '-' : '' ) + (item.value===0
+                                            ? '0' : (item.value < 0 && !item.label.includes('(-)') ? (item.value |
+                                            number: '1.0-0' ) : (item.value | number: '1.0-0' )) ) }} </span>
                                 </td>
                                 <td *ngIf="item.isSubheader" colspan="2"
                                     class="bg-yellow-500 text-white text-center font-bold">
@@ -1210,9 +1265,10 @@
                                     [ngClass]="{'bg-yellow-500 text-white': item.isSubheader}">{{item.label}}</td>
                                 <td *ngIf="!item.isSubheader" class="text-right"
                                     [ngClass]="{'text-red-500': item.value < 0 || item.label.includes('(-)')}">
-                                    {{ (item.label.includes('(-)') ? '-' : '') + (item.value === 0 ? '-' : (item.value |
-                                    number:'1.0-0')) }}
-                                </td>
+                                    {{
+                                    (item.value < 0 && !item.label.includes('(-)') ? '-' : '' ) + (item.value===0 ? '0'
+                                        : (item.value < 0 && !item.label.includes('(-)') ? (item.value | number: '1.0-0'
+                                        ) : (item.value | number: '1.0-0' )) ) }} </td>
                                 <td *ngIf="item.isSubheader" colspan="2"
                                     class="bg-yellow-500 text-white text-center font-bold">
                                     {{ item.label }}
@@ -1238,10 +1294,10 @@
                                 <td *ngIf="!item.isSubheader" class="text-right"
                                     [ngClass]="{'text-red-500': item.value < 0 || item.label.includes('(-)')}">
                                     <span *ngIf="item.value !== null">
-                                        {{ (item.label.includes('(-)') ? '-' : '') + (item.value === 0 ? '-' :
-                                        (item.value |
-                                        number:'1.0-0')) }}
-                                    </span>
+                                        {{
+                                        (item.value < 0 && !item.label.includes('(-)') ? '-' : '' ) + (item.value===0
+                                            ? '0' : (item.value < 0 && !item.label.includes('(-)') ? (item.value |
+                                            number: '1.0-0' ) : (item.value | number: '1.0-0' )) ) }} </span>
                                 </td>
                                 <td *ngIf="item.isSubheader" colspan="2"
                                     class="bg-yellow-500 text-white text-center font-bold">
@@ -1275,9 +1331,10 @@
                                     [ngClass]="{'bg-yellow-500 text-white': item.isSubheader}">{{item.label}}</td>
                                 <td *ngIf="!item.isSubheader" class="text-right"
                                     [ngClass]="{'text-red-500': item.value < 0 || item.label.includes('(-)')}">
-                                    {{ (item.label.includes('(-)') ? '-' : '') + (item.value === 0 ? '-' : (item.value |
-                                    number:'1.0-0')) }}
-                                </td>
+                                    {{
+                                    (item.value < 0 && !item.label.includes('(-)') ? '-' : '' ) + (item.value===0 ? '0'
+                                        : (item.value < 0 && !item.label.includes('(-)') ? (item.value | number: '1.0-0'
+                                        ) : (item.value | number: '1.0-0' )) ) }} </td>
                                 <td *ngIf="item.isSubheader" colspan="2"
                                     class="bg-yellow-500 text-white text-center font-bold">
                                     {{ item.label }}
@@ -1303,10 +1360,10 @@
                                 <td *ngIf="!item.isSubheader" class="text-right"
                                     [ngClass]="{'text-red-500': item.value < 0 || item.label.includes('(-)')}">
                                     <span *ngIf="item.value !== null">
-                                        {{ (item.label.includes('(-)') ? '-' : '') + (item.value === 0 ? '-' :
-                                        (item.value |
-                                        number:'1.0-0')) }}
-                                    </span>
+                                        {{
+                                        (item.value < 0 && !item.label.includes('(-)') ? '-' : '' ) + (item.value===0
+                                            ? '0' : (item.value < 0 && !item.label.includes('(-)') ? (item.value |
+                                            number: '1.0-0' ) : (item.value | number: '1.0-0' )) ) }} </span>
                                 </td>
                                 <td *ngIf="item.isSubheader" colspan="2"
                                     class="bg-yellow-500 text-white text-center font-bold">
@@ -1340,9 +1397,10 @@
                                     [ngClass]="{'bg-yellow-500 text-white': item.isSubheader}">{{item.label}}</td>
                                 <td *ngIf="!item.isSubheader" class="text-right"
                                     [ngClass]="{'text-red-500': item.value < 0 || item.label.includes('(-)')}">
-                                    {{ (item.label.includes('(-)') ? '-' : '') + (item.value === 0 ? '-' : (item.value |
-                                    number:'1.0-0')) }}
-                                </td>
+                                    {{
+                                    (item.value < 0 && !item.label.includes('(-)') ? '-' : '' ) + (item.value===0 ? '0'
+                                        : (item.value < 0 && !item.label.includes('(-)') ? (item.value | number: '1.0-0'
+                                        ) : (item.value | number: '1.0-0' )) ) }} </td>
                                 <td *ngIf="item.isSubheader" colspan="2"
                                     class="bg-yellow-500 text-white text-center font-bold">
                                     {{ item.label }}
@@ -1368,10 +1426,10 @@
                                 <td *ngIf="!item.isSubheader" class="text-right"
                                     [ngClass]="{'text-red-500': item.value < 0 || item.label.includes('(-)')}">
                                     <span *ngIf="item.value !== null">
-                                        {{ (item.label.includes('(-)') ? '-' : '') + (item.value === 0 ? '-' :
-                                        (item.value |
-                                        number:'1.0-0')) }}
-                                    </span>
+                                        {{
+                                        (item.value < 0 && !item.label.includes('(-)') ? '-' : '' ) + (item.value===0
+                                            ? '0' : (item.value < 0 && !item.label.includes('(-)') ? (item.value |
+                                            number: '1.0-0' ) : (item.value | number: '1.0-0' )) ) }} </span>
                                 </td>
                                 <td *ngIf="item.isSubheader" colspan="2"
                                     class="bg-yellow-500 text-white text-center font-bold">
@@ -1406,9 +1464,10 @@
                                     [ngClass]="{'bg-yellow-500 text-white': item.isSubheader}">{{item.label}}</td>
                                 <td *ngIf="!item.isSubheader" class="text-right"
                                     [ngClass]="{'text-red-500': item.value < 0 || item.label.includes('(-)')}">
-                                    {{ (item.label.includes('(-)') ? '-' : '') + (item.value === 0 ? '-' : (item.value |
-                                    number:'1.0-0')) }}
-                                </td>
+                                    {{
+                                    (item.value < 0 && !item.label.includes('(-)') ? '-' : '' ) + (item.value===0 ? '0'
+                                        : (item.value < 0 && !item.label.includes('(-)') ? (item.value | number: '1.0-0'
+                                        ) : (item.value | number: '1.0-0' )) ) }} </td>
                                 <td *ngIf="item.isSubheader" colspan="2"
                                     class="bg-yellow-500 text-white text-center font-bold">
                                     {{ item.label }}
@@ -1434,10 +1493,10 @@
                                 <td *ngIf="!item.isSubheader" class="text-right"
                                     [ngClass]="{'text-red-500': item.value < 0 || item.label.includes('(-)')}">
                                     <span *ngIf="item.value !== null">
-                                        {{ (item.label.includes('(-)') ? '-' : '') + (item.value === 0 ? '-' :
-                                        (item.value |
-                                        number:'1.0-0')) }}
-                                    </span>
+                                        {{
+                                        (item.value < 0 && !item.label.includes('(-)') ? '-' : '' ) + (item.value===0
+                                            ? '0' : (item.value < 0 && !item.label.includes('(-)') ? (item.value |
+                                            number: '1.0-0' ) : (item.value | number: '1.0-0' )) ) }} </span>
                                 </td>
                                 <td *ngIf="item.isSubheader" colspan="2"
                                     class="bg-yellow-500 text-white text-center font-bold">
@@ -1527,9 +1586,10 @@
                                     [ngClass]="{'bg-yellow-500 text-white': item.isSubheader}">{{item.label}}</td>
                                 <td *ngIf="!item.isSubheader" class="text-right"
                                     [ngClass]="{'text-red-500': item.value < 0 || item.label.includes('(-)')}">
-                                    {{ (item.label.includes('(-)') ? '-' : '') + (item.value === 0 ? '-' : (item.value |
-                                    number:'1.0-0')) }}
-                                </td>
+                                    {{
+                                    (item.value < 0 && !item.label.includes('(-)') ? '-' : '' ) + (item.value===0 ? '0'
+                                        : (item.value < 0 && !item.label.includes('(-)') ? (item.value | number: '1.0-0'
+                                        ) : (item.value | number: '1.0-0' )) ) }} </td>
                                 <td *ngIf="item.isSubheader" colspan="2"
                                     class="bg-yellow-500 text-white text-center font-bold">
                                     {{ item.label }}
@@ -1555,10 +1615,10 @@
                                 <td *ngIf="!item.isSubheader" class="text-right"
                                     [ngClass]="{'text-red-500': item.value < 0 || item.label.includes('(-)')}">
                                     <span *ngIf="item.value !== null">
-                                        {{ (item.label.includes('(-)') ? '-' : '') + (item.value === 0 ? '-' :
-                                        (item.value |
-                                        number:'1.0-0')) }}
-                                    </span>
+                                        {{
+                                        (item.value < 0 && !item.label.includes('(-)') ? '-' : '' ) + (item.value===0
+                                            ? '0' : (item.value < 0 && !item.label.includes('(-)') ? (item.value |
+                                            number: '1.0-0' ) : (item.value | number: '1.0-0' )) ) }} </span>
                                 </td>
                                 <td *ngIf="item.isSubheader" colspan="2"
                                     class="bg-yellow-500 text-white text-center font-bold">
@@ -1592,9 +1652,10 @@
                                     [ngClass]="{'bg-yellow-500 text-white': item.isSubheader}">{{item.label}}</td>
                                 <td *ngIf="!item.isSubheader" class="text-right"
                                     [ngClass]="{'text-red-500': item.value < 0 || item.label.includes('(-)')}">
-                                    {{ (item.label.includes('(-)') ? '-' : '') + (item.value === 0 ? '-' : (item.value |
-                                    number:'1.0-0')) }}
-                                </td>
+                                    {{
+                                    (item.value < 0 && !item.label.includes('(-)') ? '-' : '' ) + (item.value===0 ? '0'
+                                        : (item.value < 0 && !item.label.includes('(-)') ? (item.value | number: '1.0-0'
+                                        ) : (item.value | number: '1.0-0' )) ) }} </td>
                                 <td *ngIf="item.isSubheader" colspan="2"
                                     class="bg-yellow-500 text-white text-center font-bold">
                                     {{ item.label }}
@@ -1620,10 +1681,10 @@
                                 <td *ngIf="!item.isSubheader" class="text-right"
                                     [ngClass]="{'text-red-500': item.value < 0 || item.label.includes('(-)')}">
                                     <span *ngIf="item.value !== null">
-                                        {{ (item.label.includes('(-)') ? '-' : '') + (item.value === 0 ? '-' :
-                                        (item.value |
-                                        number:'1.0-0')) }}
-                                    </span>
+                                        {{
+                                        (item.value < 0 && !item.label.includes('(-)') ? '-' : '' ) + (item.value===0
+                                            ? '0' : (item.value < 0 && !item.label.includes('(-)') ? (item.value |
+                                            number: '1.0-0' ) : (item.value | number: '1.0-0' )) ) }} </span>
                                 </td>
                                 <td *ngIf="item.isSubheader" colspan="2"
                                     class="bg-yellow-500 text-white text-center font-bold">
@@ -1657,9 +1718,10 @@
                                     [ngClass]="{'bg-yellow-500 text-white': item.isSubheader}">{{item.label}}</td>
                                 <td *ngIf="!item.isSubheader" class="text-right"
                                     [ngClass]="{'text-red-500': item.value < 0 || item.label.includes('(-)')}">
-                                    {{ (item.label.includes('(-)') ? '-' : '') + (item.value === 0 ? '-' : (item.value |
-                                    number:'1.0-0')) }}
-                                </td>
+                                    {{
+                                    (item.value < 0 && !item.label.includes('(-)') ? '-' : '' ) + (item.value===0 ? '0'
+                                        : (item.value < 0 && !item.label.includes('(-)') ? (item.value | number: '1.0-0'
+                                        ) : (item.value | number: '1.0-0' )) ) }} </td>
                                 <td *ngIf="item.isSubheader" colspan="2"
                                     class="bg-yellow-500 text-white text-center font-bold">
                                     {{ item.label }}
@@ -1685,10 +1747,10 @@
                                 <td *ngIf="!item.isSubheader" class="text-right"
                                     [ngClass]="{'text-red-500': item.value < 0 || item.label.includes('(-)')}">
                                     <span *ngIf="item.value !== null">
-                                        {{ (item.label.includes('(-)') ? '-' : '') + (item.value === 0 ? '-' :
-                                        (item.value |
-                                        number:'1.0-0')) }}
-                                    </span>
+                                        {{
+                                        (item.value < 0 && !item.label.includes('(-)') ? '-' : '' ) + (item.value===0
+                                            ? '0' : (item.value < 0 && !item.label.includes('(-)') ? (item.value |
+                                            number: '1.0-0' ) : (item.value | number: '1.0-0' )) ) }} </span>
                                 </td>
                                 <td *ngIf="item.isSubheader" colspan="2"
                                     class="bg-yellow-500 text-white text-center font-bold">
@@ -1722,9 +1784,10 @@
                                     [ngClass]="{'bg-yellow-500 text-white': item.isSubheader}">{{item.label}}</td>
                                 <td *ngIf="!item.isSubheader" class="text-right"
                                     [ngClass]="{'text-red-500': item.value < 0 || item.label.includes('(-)')}">
-                                    {{ (item.label.includes('(-)') ? '-' : '') + (item.value === 0 ? '-' : (item.value |
-                                    number:'1.0-0')) }}
-                                </td>
+                                    {{
+                                    (item.value < 0 && !item.label.includes('(-)') ? '-' : '' ) + (item.value===0 ? '0'
+                                        : (item.value < 0 && !item.label.includes('(-)') ? (item.value | number: '1.0-0'
+                                        ) : (item.value | number: '1.0-0' )) ) }} </td>
                                 <td *ngIf="item.isSubheader" colspan="2"
                                     class="bg-yellow-500 text-white text-center font-bold">
                                     {{ item.label }}
@@ -1750,10 +1813,10 @@
                                 <td *ngIf="!item.isSubheader" class="text-right"
                                     [ngClass]="{'text-red-500': item.value < 0 || item.label.includes('(-)')}">
                                     <span *ngIf="item.value !== null">
-                                        {{ (item.label.includes('(-)') ? '-' : '') + (item.value === 0 ? '-' :
-                                        (item.value |
-                                        number:'1.0-0')) }}
-                                    </span>
+                                        {{
+                                        (item.value < 0 && !item.label.includes('(-)') ? '-' : '' ) + (item.value===0
+                                            ? '0' : (item.value < 0 && !item.label.includes('(-)') ? (item.value |
+                                            number: '1.0-0' ) : (item.value | number: '1.0-0' )) ) }} </span>
                                 </td>
                                 <td *ngIf="item.isSubheader" colspan="2"
                                     class="bg-yellow-500 text-white text-center font-bold">
@@ -1788,9 +1851,10 @@
                                     [ngClass]="{'bg-yellow-500 text-white': item.isSubheader}">{{item.label}}</td>
                                 <td *ngIf="!item.isSubheader" class="text-right"
                                     [ngClass]="{'text-red-500': item.value < 0 || item.label.includes('(-)')}">
-                                    {{ (item.label.includes('(-)') ? '-' : '') + (item.value === 0 ? '-' : (item.value |
-                                    number:'1.0-0')) }}
-                                </td>
+                                    {{
+                                    (item.value < 0 && !item.label.includes('(-)') ? '-' : '' ) + (item.value===0 ? '0'
+                                        : (item.value < 0 && !item.label.includes('(-)') ? (item.value | number: '1.0-0'
+                                        ) : (item.value | number: '1.0-0' )) ) }} </td>
                                 <td *ngIf="item.isSubheader" colspan="2"
                                     class="bg-yellow-500 text-white text-center font-bold">
                                     {{ item.label }}
@@ -1816,10 +1880,10 @@
                                 <td *ngIf="!item.isSubheader" class="text-right"
                                     [ngClass]="{'text-red-500': item.value < 0 || item.label.includes('(-)')}">
                                     <span *ngIf="item.value !== null">
-                                        {{ (item.label.includes('(-)') ? '-' : '') + (item.value === 0 ? '-' :
-                                        (item.value |
-                                        number:'1.0-0')) }}
-                                    </span>
+                                        {{
+                                        (item.value < 0 && !item.label.includes('(-)') ? '-' : '' ) + (item.value===0
+                                            ? '0' : (item.value < 0 && !item.label.includes('(-)') ? (item.value |
+                                            number: '1.0-0' ) : (item.value | number: '1.0-0' )) ) }} </span>
                                 </td>
                                 <td *ngIf="item.isSubheader" colspan="2"
                                     class="bg-yellow-500 text-white text-center font-bold">
@@ -1851,6 +1915,7 @@
                                     <td class="px-4 py-2 font-semibold text-left">ATMR</td>
                                     <td class="px-4 py-2 text-right">
                                         <input type="number" [(ngModel)]="this.atmr"
+                                            (onChange)="getTableData(selectedSearch || '000')"
                                             class="border border-gray-300 rounded px-2 py-1 w-full text-right" />
                                     </td>
                                 </tr>
@@ -1914,18 +1979,22 @@
                             <tbody>
                                 <tr class="border-b border-gray-300">
                                     <td class="px-4 py-2 font-semibold text-left">ATMR Proporsional</td>
-                                    <td class="px-4 py-2 text-right">{{ this.calTotalAtmr || 0 |
+                                    <td class="px-4 py-2 text-right">{{ (this.nilai_total_PA / this.nilai_ekuitas_atmr *
+                                        this.modalAtmr) / 14 * 100 || 0 |
                                         number:'1.0-0' }}</td>
                                 </tr>
                                 <tr class="border-b border-gray-300">
                                     <td class="px-4 py-2 font-semibold text-left">Modal</td>
-                                    <td class="px-4 py-2 text-right text-red-500">({{ this.calTotalModal || 0 |
+                                    <td class="px-4 py-2 text-right text-red-500">({{ this.nilai_total_PA /
+                                        this.nilai_ekuitas_atmr * this.modalAtmr || 0 |
                                         number:'1.0-0' }})</td>
                                 </tr>
                                 <tr class="bg-green-100 font-bold">
                                     <td class="px-4 py-2 text-left">Rasio KPMM (Real)</td>
-                                    <td class="px-4 py-2 text-right text-red-500">{{this.calTotalModal /
-                                        this.calTotalAtmr * 100 | number:'1.2-2'}} %</td>
+                                    <td class="px-4 py-2 text-right text-red-500">{{
+                                        ((this.nilai_total_PA / this.nilai_ekuitas_atmr * this.modalAtmr) /
+                                        ((this.nilai_total_PA / this.nilai_ekuitas_atmr * this.modalAtmr)) / 14 * 100) *
+                                        100 | number:'1.0-0'}} %</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -2019,9 +2088,10 @@
                                     [ngClass]="{'bg-yellow-500 text-white': item.isSubheader}">{{item.label}}</td>
                                 <td *ngIf="!item.isSubheader" class="text-right"
                                     [ngClass]="{'text-red-500': item.value < 0 || item.label.includes('(-)')}">
-                                    {{ (item.label.includes('(-)') ? '-' : '') + (item.value === 0 ? '-' : (item.value |
-                                    number:'1.0-0')) }}
-                                </td>
+                                    {{
+                                    (item.value < 0 && !item.label.includes('(-)') ? '-' : '' ) + (item.value===0 ? '0'
+                                        : (item.value < 0 && !item.label.includes('(-)') ? (item.value | number: '1.0-0'
+                                        ) : (item.value | number: '1.0-0' )) ) }} </td>
                                 <td *ngIf="item.isSubheader" colspan="2"
                                     class="bg-yellow-500 text-white text-center font-bold">
                                     {{ item.label }}
@@ -2047,10 +2117,10 @@
                                 <td *ngIf="!item.isSubheader" class="text-right"
                                     [ngClass]="{'text-red-500': item.value < 0 || item.label.includes('(-)')}">
                                     <span *ngIf="item.value !== null">
-                                        {{ (item.label.includes('(-)') ? '-' : '') + (item.value === 0 ? '-' :
-                                        (item.value |
-                                        number:'1.0-0')) }}
-                                    </span>
+                                        {{
+                                        (item.value < 0 && !item.label.includes('(-)') ? '-' : '' ) + (item.value===0
+                                            ? '0' : (item.value < 0 && !item.label.includes('(-)') ? (item.value |
+                                            number: '1.0-0' ) : (item.value | number: '1.0-0' )) ) }} </span>
                                 </td>
                                 <td *ngIf="item.isSubheader" colspan="2"
                                     class="bg-yellow-500 text-white text-center font-bold">
@@ -2084,9 +2154,10 @@
                                     [ngClass]="{'bg-yellow-500 text-white': item.isSubheader}">{{item.label}}</td>
                                 <td *ngIf="!item.isSubheader" class="text-right"
                                     [ngClass]="{'text-red-500': item.value < 0 || item.label.includes('(-)')}">
-                                    {{ (item.label.includes('(-)') ? '-' : '') + (item.value === 0 ? '-' : (item.value |
-                                    number:'1.0-0')) }}
-                                </td>
+                                    {{
+                                    (item.value < 0 && !item.label.includes('(-)') ? '-' : '' ) + (item.value===0 ? '0'
+                                        : (item.value < 0 && !item.label.includes('(-)') ? (item.value | number: '1.0-0'
+                                        ) : (item.value | number: '1.0-0' )) ) }} </td>
                                 <td *ngIf="item.isSubheader" colspan="2"
                                     class="bg-yellow-500 text-white text-center font-bold">
                                     {{ item.label }}
@@ -2112,10 +2183,10 @@
                                 <td *ngIf="!item.isSubheader" class="text-right"
                                     [ngClass]="{'text-red-500': item.value < 0 || item.label.includes('(-)')}">
                                     <span *ngIf="item.value !== null">
-                                        {{ (item.label.includes('(-)') ? '-' : '') + (item.value === 0 ? '-' :
-                                        (item.value |
-                                        number:'1.0-0')) }}
-                                    </span>
+                                        {{
+                                        (item.value < 0 && !item.label.includes('(-)') ? '-' : '' ) + (item.value===0
+                                            ? '0' : (item.value < 0 && !item.label.includes('(-)') ? (item.value |
+                                            number: '1.0-0' ) : (item.value | number: '1.0-0' )) ) }} </span>
                                 </td>
                                 <td *ngIf="item.isSubheader" colspan="2"
                                     class="bg-yellow-500 text-white text-center font-bold">
@@ -2151,9 +2222,10 @@
                                     [ngClass]="{'bg-yellow-500 text-white': item.isSubheader}">{{item.label}}</td>
                                 <td *ngIf="!item.isSubheader" class="text-right"
                                     [ngClass]="{'text-red-500': item.value < 0 || item.label.includes('(-)')}">
-                                    {{ (item.label.includes('(-)') ? '-' : '') + (item.value === 0 ? '-' : (item.value |
-                                    number:'1.0-0')) }}
-                                </td>
+                                    {{
+                                    (item.value < 0 && !item.label.includes('(-)') ? '-' : '' ) + (item.value===0 ? '0'
+                                        : (item.value < 0 && !item.label.includes('(-)') ? (item.value | number: '1.0-0'
+                                        ) : (item.value | number: '1.0-0' )) ) }} </td>
                                 <td *ngIf="item.isSubheader" colspan="2"
                                     class="bg-yellow-500 text-white text-center font-bold">
                                     {{ item.label }}
@@ -2179,10 +2251,10 @@
                                 <td *ngIf="!item.isSubheader" class="text-right"
                                     [ngClass]="{'text-red-500': item.value < 0 || item.label.includes('(-)')}">
                                     <span *ngIf="item.value !== null">
-                                        {{ (item.label.includes('(-)') ? '-' : '') + (item.value === 0 ? '-' :
-                                        (item.value |
-                                        number:'1.0-0')) }}
-                                    </span>
+                                        {{
+                                        (item.value < 0 && !item.label.includes('(-)') ? '-' : '' ) + (item.value===0
+                                            ? '0' : (item.value < 0 && !item.label.includes('(-)') ? (item.value |
+                                            number: '1.0-0' ) : (item.value | number: '1.0-0' )) ) }} </span>
                                 </td>
                                 <td *ngIf="item.isSubheader" colspan="2"
                                     class="bg-yellow-500 text-white text-center font-bold">
@@ -2205,7 +2277,6 @@
                         <th>Biaya Likuidasi</th>
                     </tr>
                 </ng-template>
-
                 <ng-template pTemplate="body" let-row>
                     <tr *ngIf="!row.isSubheader">
                         <td>{{ row.label }}</td>
@@ -2227,41 +2298,55 @@
 
     <p-tabPanel header="Biaya Resolusi" leftIcon="pi pi-money-bill">
         <div class="card p-4">
-            <p-table [value]="dataBiayaResolusi" styleClass="p-datatable-gridlines p-datatable-sm no-padding-table"
-                selectionMode="single">
-                <ng-template pTemplate="header">
-                    <tr>
-                        <th>Keterangan</th>
-                        <th>Bank Perantara</th>
-                        <th>Bank Penerima</th>
-                        <th>PMS</th>
-                        <th>Likuidasi</th>
-                    </tr>
-                </ng-template>
+            <div class="flex items-center">
+                <h5 class="mr-4 mt-2">Download Hasil Perhitungan Biaya Resolusi</h5>
+                <button pButton pRipple label="Export" icon="pi pi-download" class="p-button-help"
+                    (click)="openExport()">
+                </button>
+            </div>
 
-                <ng-template pTemplate="body" let-row>
-                    <!-- Check if the row is a subheader -->
-                    <tr *ngIf="!row.isSubheader">
-                        <td [class.font-bold]="row.label.toLowerCase().includes('total')">{{ row.label }}</td>
-                        <td [ngClass]="{'text-red-500': row.bankPerantara < 0}">{{ row.bankPerantara | number:'1.0-0' }}
-                        </td>
-                        <td [ngClass]="{'text-red-500': row.bankPenerima < 0}">{{ row.bankPenerima | number:'1.0-0' }}
-                        </td>
-                        <td [ngClass]="{'text-red-500': row.pms < 0}">{{ row.pms | number:'1.0-0' }}</td>
-                        <td [ngClass]="{'text-red-500': row.likuidasi < 0}">{{ row.likuidasi | number:'1.0-0' }}</td>
-                    </tr>
-                    <!-- Render the subheader row differently -->
-                    <tr *ngIf="row.isSubheader">
-                        <td colspan="5" class="text-center font-bold text-black subheader bg-yellow-500">{{ row.label }}
-                        </td>
-                    </tr>
-                </ng-template>
-            </p-table>
+            <div class="mt-4">
+                <p-table class="mt-6" [value]="dataBiayaResolusi"
+                    styleClass="p-datatable-gridlines p-datatable-sm no-padding-table" selectionMode="single">
+                    <ng-template pTemplate="header">
+                        <tr>
+                            <th>Keterangan</th>
+                            <th>Bank Perantara</th>
+                            <th>Bank Penerima</th>
+                            <th>PMS</th>
+                            <th>Likuidasi</th>
+                        </tr>
+                    </ng-template>
+
+                    <ng-template pTemplate="body" let-row>
+                        <!-- Check if the row is a subheader -->
+                        <tr *ngIf="!row.isSubheader">
+                            <td [class.font-bold]="row.label.toLowerCase().includes('total')">{{ row.label }}</td>
+                            <td class="text-right" [ngClass]="{'text-red-500': row.bankPerantara < 0}">{{
+                                row.bankPerantara
+                                | number:'1.0-0' }}
+                            </td>
+                            <td class="text-right" [ngClass]="{'text-red-500': row.bankPenerima < 0}">{{
+                                row.bankPenerima |
+                                number:'1.0-0' }}
+                            </td>
+                            <td class="text-right" [ngClass]="{'text-red-500': row.pms < 0}">{{ row.pms | number:'1.0-0'
+                                }}
+                            </td>
+                            <td class="text-right" [ngClass]="{'text-red-500': row.likuidasi < 0}">{{ row.likuidasi |
+                                number:'1.0-0' }}</td>
+                        </tr>
+                        <!-- Render the subheader row differently -->
+                        <tr *ngIf="row.isSubheader">
+                            <td colspan="5" class="text-center font-bold text-black subheader bg-yellow-500">{{
+                                row.label }}
+                            </td>
+                        </tr>
+                    </ng-template>
+                </p-table>
+            </div>
         </div>
     </p-tabPanel>
-
-
-
 </p-tabView>
 
 

@@ -154,6 +154,10 @@ export class ScvComponent implements OnInit, OnDestroy {
 
     chartData: any;
 
+    barData: any;
+    
+    barOptions: any;
+
     chartOptions: any;
 
     subscription!: Subscription;
@@ -174,6 +178,17 @@ export class ScvComponent implements OnInit, OnDestroy {
 
     options: any ;
 
+    optionsLine: any ;
+
+    dataLine: any = [];
+
+    dataNasabah: any = [];
+
+    dataRekening: any = [];
+
+    dataSaldo: any = [];
+
+    dataSaldoDijamin: any = [];
 
     showDataChart: boolean = false;
 
@@ -320,6 +335,143 @@ export class ScvComponent implements OnInit, OnDestroy {
         this.selectedBank = true;
         keyword = keyword.trim();
         console.log('keyword 1', keyword);
+
+        try {
+            const search = await this.scvService.getDataReport({ keyword });
+            console.log('Hasil Report', search);
+        
+            if (!search || search.length === 0) {
+                console.warn("No data available for chart.");
+                this.showDataChart = false;
+                return;
+            }
+        
+            // Urutkan data berdasarkan tahun dan bulan secara ASCENDING
+            search.sort((a, b) => (a.tahun - b.tahun) || (a.bulan - b.bulan));
+        
+            // Ambil daftar periode dalam format "YYYY-MM"
+            const labels = search.map(item => `${item.tahun}-${String(item.bulan).padStart(2, '0')}`);
+        
+            // Ambil nilai untuk setiap kategori
+            const totalNasabah = search.map(item => item.total_nasabah);
+            const totalRekening = search.map(item => item.total_rekening);
+            const totalSaldo = search.map(item => item.total_saldo);
+            const totalSaldoDijamin = search.map(item => item.total_saldo_dijamin);
+        
+            // 🔹 Data untuk 4 Line Chart
+            this.dataNasabah = {
+                labels: labels,
+                datasets: [{
+                    label: 'Total Nasabah',
+                    borderColor: '#42A5F5',
+                    backgroundColor: '#42A5F5',
+                    data: totalNasabah,
+                    fill: false,
+                    tension: 0.3,
+                    pointRadius: 5,
+                    pointHoverRadius: 7
+                }]
+            };
+        
+            this.dataRekening = {
+                labels: labels,
+                datasets: [{
+                    label: 'Total Rekening',
+                    borderColor: '#FFA726',
+                    backgroundColor: '#FFA726',
+                    data: totalRekening,
+                    fill: false,
+                    tension: 0,
+                    pointRadius: 5,
+                    pointHoverRadius: 7
+                }]
+            };
+        
+            this.dataSaldo = {
+                labels: labels,
+                datasets: [{
+                    label: 'Total Saldo',
+                    borderColor: '#66BB6A',
+                    backgroundColor: '#66BB6A',
+                    data: totalSaldo,
+                    fill: false,
+                    tension: 0,
+                    pointRadius: 5,
+                    pointHoverRadius: 7
+                }]
+            };
+        
+            this.dataSaldoDijamin = {
+                labels: labels,
+                datasets: [{
+                    label: 'Total Saldo Dijamin',
+                    borderColor: '#AB47BC',
+                    backgroundColor: '#AB47BC',
+                    data: totalSaldoDijamin,
+                    fill: false,
+                    tension: 0,
+                    pointRadius: 5,
+                    pointHoverRadius: 7
+                }]
+            };
+        
+            // 🔹 Opsi untuk 4 Line Chart
+            this.optionsLine = {
+                responsive: true,
+                maintainAspectRatio: false,
+                aspectRatio: 0.6,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Nilai'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Periode (Tahun-Bulan)'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function (tooltipItem: any) {
+                                return `${tooltipItem.dataset.label}: ${tooltipItem.raw.toLocaleString()}`;
+                            }
+                        }
+                    },
+                    datalabels: {
+                        anchor: 'start', // Menempatkan teks di atas batang
+                        align: 'top', // Mengatur agar angka tetap di atas
+                        formatter: function(value: { toLocaleString: () => any; }) {
+                            return value.toLocaleString(); // Format angka dengan pemisah ribuan
+                        },
+                        font: {
+                            size: 12,
+                            weight: 'bold'
+                        },
+                        color: '#000' // Warna teks angka di atas batang
+                    }
+                }
+            };
+        
+            this.showDataChart = true;
+            this.showDataPie = false;
+        
+        } catch (error) {
+            console.error('Failed to fetch component data:', error);
+            this.showDataChart = false;
+        }
+        
+        
+        
+        
     
         if (keyword.length >= 3) {
             this.loading = true;
@@ -412,6 +564,142 @@ export class ScvComponent implements OnInit, OnDestroy {
             );
             this.loading = false;
         }
+        
+        try {
+            this.loading = true;
+            const search = await this.scvService.getDataReportPeriod({ keyword, period: event.value });
+        
+            if (!search || search.length === 0) {
+                console.warn("Data kosong atau undefined");
+                this.barData = null;
+                this.loading = false;
+                return;
+            }
+        
+            const dataItem = search[0]; 
+        
+            this.barData = {
+                labels: [        `Total Nasabah`,
+                    `Total Rekening`,
+                    `Total Saldo`,
+                    `Total Saldo Dijamin`], // Label di sumbu X untuk setiap batang
+                datasets: [
+                    {
+                        label: "Jumlah",
+                        data: [
+                            dataItem.total_nasabah,
+                            dataItem.total_rekening,
+                            dataItem.total_saldo,
+                            dataItem.total_saldo_dijamin
+                        ],
+                        backgroundColor: [
+                            'rgba(75, 192, 192, 0.5)',
+                            'rgba(255, 99, 132, 0.5)',
+                            'rgba(54, 162, 235, 0.5)',
+                            'rgba(255, 206, 86, 0.5)'
+                        ],
+                        borderColor: [
+                            'rgba(75, 192, 192, 1)',
+                            'rgba(255, 99, 132, 1)',
+                            'rgba(54, 162, 235, 1)',
+                            'rgba(255, 206, 86, 1)'
+                        ],
+                        borderWidth: 1
+                    }
+                ]
+            };
+            
+            this.barOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                aspectRatio: 0.6,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: "Jumlah"
+                        },
+                        ticks: {
+                            callback: function(value: { toLocaleString: () => any; }) {
+                                return value.toLocaleString();
+                            }
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: "Kategori Data Bank", // Caption umum untuk sumbu X
+                            font: {
+                                size: 14,
+                                weight: "bold"
+                            },
+                            padding: { top: 10 }
+                        },
+                        ticks: {
+                            autoSkip: false, // Pastikan semua label terlihat
+                            maxRotation: 0, // Tetap horizontal
+                            minRotation: 0,
+                            font: {
+                                size: 12
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: "top",
+                        labels: {
+                            generateLabels: function(chart: { data: { labels: any[]; datasets: {
+                                backgroundColor: any; borderColor: { [x: string]: any; }; 
+}[]; }; }) {
+                                return chart.data.labels.map((label: any, index: string | number) => ({
+                                    text: label,
+                                    fillStyle: chart.data.datasets[0].backgroundColor[index],
+                                    strokeStyle: chart.data.datasets[0].borderColor[index],
+                                    lineWidth: 1
+                                }));
+                            }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context: { raw: { toLocaleString: () => any; }; }) {
+                                return context.raw.toLocaleString();
+                            }
+                        }
+                    },
+                    datalabels: {
+                        anchor: 'end', // Menempatkan teks di atas batang
+                        align: 'top', // Mengatur agar angka tetap di atas
+                        formatter: function(value: { toLocaleString: () => any; }) {
+                            return value.toLocaleString(); // Format angka dengan pemisah ribuan
+                        },
+                        font: {
+                            size: 12,
+                            weight: 'bold'
+                        },
+                        color: '#000' // Warna teks angka di atas batang
+                    }
+                }
+            };
+            
+            
+            
+            
+            
+            this.showDataPie = true;
+            this.showDataChart = false;
+            this.loading = false;
+        } catch (error) {
+            console.error('Failed to fetch report period:', error);
+            this.loading = false;
+        }
+        
+        
+
+
         // if (this.dt1) {
         //   this.dt1.filter(event.value, 'periode_data', 'contains');  // Correct number of arguments
         // }

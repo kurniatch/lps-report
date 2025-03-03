@@ -61,6 +61,16 @@ export class ScvService {
         return this.http.post(url, body, { headers: this.headers }).toPromise();
     }
 
+    getDataReport(params: { keyword: string;} | undefined) {
+        const url = `${environment.backendUrl}/scv/report-data`;
+        return this.http.get<any[]>(url, {params, headers: this.headers }).toPromise();
+    }
+
+    getDataReportPeriod(params: { keyword: string, period: string} ) {
+        const url = `${environment.backendUrl}/scv/report-data-period`;
+        return this.http.get<any[]>(url, {params, headers: this.headers }).toPromise();
+    }
+
     createReport(data: any) {
         const url = `${environment.backendUrl}/scv/new-scv`;
         return this.http

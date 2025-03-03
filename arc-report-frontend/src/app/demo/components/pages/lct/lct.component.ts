@@ -139,12 +139,18 @@ export class LctComponent implements OnInit, OnDestroy {
 
     gwmDataHasilPdbl: number = 0;
 
+    nilai_ekuitas_atmr: number = 0;
+
+    nilai_total_PA: number = 0;
+
     cekDataBb = [
         {label: 'BB + BDL', aset: 0, kewajiban: 0, modal: 0, kew_modal: 0},
         {label: 'BA', aset: 0, kewajiban: 0, modal: 0, kew_modal: 0},
     ];
 
     ati_ke_properti_terbengkalai: number = 0;
+
+    aset_lainnya: number = 0;
 
     dataTable = [
         { id: 1, deskripsi_pos: 'P1001', nominal_rupiah: 1000000, nominal_valas: 500000, hasil: 'Setuju' },
@@ -722,14 +728,19 @@ export class LctComponent implements OnInit, OnDestroy {
     
     async getTableData(tableName: string): Promise<void> {
         this.selectedData(tableName);
-        let result = await this.crudService.getDataLct(tableName, "neraca_bank") as ReportDataType[] | undefined;
-        if(this.selectedPeriode){
-            result = (await this.crudService.getDataLctPeriode(tableName, "neraca_bank", this.selectedPeriode)) as ReportDataType[] | undefined;
+
+        let result: ReportDataType[] | undefined;  // Mendeklarasikan result sebagai ReportDataType[] | undefined
+        
+        // Jika ada selectedPeriode, ambil data dengan periode yang sesuai
+        if (this.selectedPeriode) {
+            result = await this.crudService.getDataLctPeriode(tableName, "neraca_bank", this.selectedPeriode) as ReportDataType[];
             console.log('result: ', result);
         } else {
-            result = (await this.crudService.getDataLct(tableName, "neraca_bank")) as ReportDataType[] | undefined;
+            // Jika tidak ada selectedPeriode, ambil data tanpa periode
+            result = await this.crudService.getDataLct(tableName, "neraca_bank") as ReportDataType[];
             console.log('result: ', result);
         }
+        
 
         console.log('selectedSearch: ', this.selectedSearch);
 
@@ -771,7 +782,7 @@ export class LctComponent implements OnInit, OnDestroy {
     
             console.log("deskripsi", found.deskripsi);
             const value = found.total_nominal_total ?? 0;
-            return found.deskripsi.includes("-") ? -Math.abs(value) : value;
+            return found.deskripsi.includes("-/-") ? -Math.abs(value) : value;
         };
     
         const getValueFromIdWithRange = (data: ReportDataType[], primaryId: string, rangeStart: number, rangeEnd: number): number => {
@@ -802,7 +813,7 @@ export class LctComponent implements OnInit, OnDestroy {
             suratBerhargaRepo: getValueFromId(result, "18.0"),
             reverseRepo: getValueFromId(result, "19.0"),
             tagihanAkseptasi: getValueFromId(result, "20.0"),
-            kredit: getValueFromIdWithRange(result, "21.0", 22, 23),
+            kredit: getValueFromIdWithRange(result, "21.0", 22, 46),
             ckpnKredit: -Math.abs(getValueFromIdWithRange(result, "51.0", 52, 61)),
             asetKeuanganLain: getValueFromId(result, "48.0"),
             ckpnAsetKeuanganLain: -Math.abs(getValueFromId(result, "62.0")),
@@ -1115,7 +1126,7 @@ export class LctComponent implements OnInit, OnDestroy {
             // Menyisipkan Estimasi Kerugian sebelum Total Ekuitas
 
             const ckpnAyda = 0;
-            const asetLainnyaBv = 1708396000000;
+            const asetLainnyaBv = this.aset_lainnya;
 
         
             //change mapping
@@ -1386,6 +1397,13 @@ export class LctComponent implements OnInit, OnDestroy {
               this.liabilitiesEquityBankAsalPemburukanPA.filter(item => item.label === 'TOTAL KEWAJIBAN DAN EKUITAS')[0].value = total || 0;
               
               let nilai_ekuitas = this.liabilitiesEquityBankAsal.find(item => item.label === 'Total Ekuitas')?.value || 0;
+
+
+              this.nilai_ekuitas_atmr
+
+              this.nilai_ekuitas_atmr = nilai_ekuitas;
+              this.nilai_total_PA = totalEkuitasPA;
+
               this.calTotalModal = totalEkuitasPA / nilai_ekuitas * this.modalAtmr;
 
               console.log("calTotalModal", this.calTotalModal);
@@ -1445,7 +1463,8 @@ export class LctComponent implements OnInit, OnDestroy {
               this.dataBiayaResolusi[12].likuidasi = -(this.dataBiayaResolusi[9].likuidasi) - this.dataBiayaResolusi[11].likuidasi;
               this.dataBiayaResolusi[12].bankPenerima = -(this.dataBiayaResolusi[9].bankPenerima) - this.dataBiayaResolusi[11].bankPenerima;
         }
-        
+    
+    
     
     async getGwmData(){
         this.gwmData.giroBi = this.dataTableNeracaBank.penempatanPadaBI;
@@ -1921,36 +1940,722 @@ export class LctComponent implements OnInit, OnDestroy {
     exportAsXLSX() {
         const workbook = XLSX.utils.book_new();
         const timestamp = new Date().toLocaleString();
-        const worksheetData = [
-            ['','LPS'],
-            ['','Dokumen ini di-download pada waktu:'],
-            ['',timestamp],
+    
+        // Sheet 1: Hasil Analisis LCT
+        const worksheetData1 = [
+            ['', 'LPS'],
+            ['', 'Dokumen ini di-download pada waktu:'],
+            ['', timestamp],
             [],
-            ['','Hasil Analisis LCT'],
+            ['', 'Hasil Analisis LCT'],
             [],
-            ['','Deskripsi', 'Nominal Rupiah', 'Nominal Valas', 'Nominal Total', 'Hasil'],
+            ['', 'Deskripsi', 'Nominal Rupiah', 'Nominal Valas', 'Nominal Total', 'Hasil'],
         ];
-
-        this.modifiedDataTable.forEach((report, index) => {
+    
+        this.modifiedDataTable.forEach((report) => {
             const rowData: string[] = [
                 '',
-                report?.pos|| '-',
+                report?.pos || '-',
                 report?.nominal_rupiah || '0',
                 report?.nominal_valas || '0',
                 report?.nominal_total || '0',
                 report?.hasil || '-',
             ];
-            worksheetData.push(rowData);
+            worksheetData1.push(rowData);
+        });
+    
+        const worksheet1 = XLSX.utils.aoa_to_sheet(worksheetData1);
+        XLSX.utils.book_append_sheet(workbook, worksheet1, 'Hasil Analisis LCT');
+    
+        // Sheet 2: Summary Kredit
+        const worksheetData2 = [
+            ['', 'Data Bank Kredit Pembayaran'],
+            [],
+            ['', 'Kredit', 'CKPN Aset Baik', 'CKPN Aset Kurang Baik', 'CKPN Aset Tidak Baik', 'CKPN', 'Jumlah Rekening', 'Baki Debet', 'Baki Debet Pemeriksa', 'Hasil Hitung'],
+        ];
+    
+        this.modifiedDataTable1.forEach((report) => {
+            const rowData: string[] = [
+                '',
+                report?.pos || '-',
+                report?.ckpn_aset_baik || '0',
+                report?.ckpn_aset_kurang_baik || '0',
+                report?.ckpn_aset_tidak_baik || '0',
+                report?.ckpn || '0',
+                report?.jumlah_rekening || '0',
+                report?.baki_debet || '0',
+                report?.baki_debet_pemeriksa || '0',
+                report?.baki_debet_pemeriksa - report?.baki_debet|| '0',
+            ];
+            worksheetData2.push(rowData);
+        });
+    
+        const worksheetData21 = [
+            ['', 'Parameter Data'],
+            [],
+            ['', 'Skenario Pemburukan', 'Kol 1', 'Kol 2-4', 'Total', 'Keterangan'],
+        ];
+
+        if (this.modifiedDataTable3 && this.modifiedDataTable3.length > 0) {
+            const data = this.modifiedDataTable3[0];
+
+            worksheetData21.push(
+                ['', 'Kredit FFS', String(data.kredit_ffs1 || 0), String(data.kredit_ffs2 || 0), 
+                    String((+data.kredit_ffs1 || 0) + (+data.kredit_ffs2 || 0)), 'Penyesuaian -> Macet'],
+                ['', 'Restru < COF', String(data.baki_debet_restrukturisasi1 || 0), String(data.baki_debet_restrukturisasi24 || 0), 
+                    String((+data.baki_debet_restrukturisasi1 || 0) + (+data.baki_debet_restrukturisasi24 || 0)), 'Penyesuaian -> Macet'],
+                ['', 'Temuan due diligence', String(data.diligence1 || 0), String(data.diligence24 || 0), 
+                    String((+data.diligence1 || 0) + (+data.diligence24 || 0)), 'Penyesuaian -> Macet'],
+                [],
+                ['', 'Grand Total', '', '', 
+                    String(
+                        (+data.kredit_ffs1 || 0) + (+data.kredit_ffs2 || 0) +
+                        (+data.baki_debet_restrukturisasi1 || 0) + (+data.baki_debet_restrukturisasi24 || 0) +
+                        (+data.diligence1 || 0) + (+data.diligence24 || 0)
+                    ), '']
+            );
+        }
+
+        const worksheetDataSkenario = [
+            ['', 'Skenario Pemburukan'],
+            [],
+            ['', 'Kualitas Kredit', 'Jumlah Rekening', 'Baki Debet'],
+        ];
+
+        this.modifiedDataTable1.forEach((report) => {
+            const rowData = [
+                '',
+                report?.pos || '-',
+                report?.jumlah_rekening || '0',
+                report?.baki_debet_res || '0',
+            ];
+            worksheetDataSkenario.push(rowData);
         });
 
-        const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
-        XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
+        worksheetDataSkenario.push(
+            ['', 'Grand Total', 
+            String(this.getTotal('modifiedDataTable1', 'jumlah_rekening') || 0),
+            String(this.getTotal('modifiedDataTable1', 'baki_debet_res') || 0)]
+        );
 
+        const worksheetDataFinal = [...worksheetData2, [], ...worksheetData21, [], ...worksheetDataSkenario];
+
+        const worksheetFinal = XLSX.utils.aoa_to_sheet(worksheetDataFinal);
+        XLSX.utils.book_append_sheet(workbook, worksheetFinal, 'Summary Kredit');
+        
+    
+        // // Sheet 3: GWM (Giro Wajib Minimum)
+        // const worksheetData3 = [
+        //     ['', 'Data Bank GWM'],
+        //     [],
+        //     ['', 'Parameter', 'Nilai Asal', 'Operasi', 'Hasil', 'Keterangan'],
+        // ];
+    
+        // if (this.gwmData) {
+        //     worksheetData3.push(
+        //         ['', 'Giro BI', String(this.gwmData.giroBi || 0), String(this.gwmData.parameter1 || 0) + '%', String(this.calculateGwmResult(1) || 0), ''],
+        //         ['', 'DPK+PDBL', String(this.gwmData.dpkPdbl || 0), String(this.gwmData.parameter2 || 0) + '%', String(this.calculateGwmResult(2) || 0), ''],
+        //         ['', 'Total', String(this.gwmData.total || 0), String((+this.gwmData.parameter1 + +this.gwmData.parameter2)) + '%', String(this.calculateGwmTotal() || 0), '']
+        //     );
+        // }
+        
+        // const worksheet3 = XLSX.utils.aoa_to_sheet(worksheetData3);
+
+        const table = document.getElementById('tableGwm');
+
+        if (!table) {
+            console.error("Tabel GWM tidak ditemukan!");
+            return;
+        }
+  
+        // Konversi tabel ke worksheet Excel
+        const worksheet3 = XLSX.utils.table_to_sheet(table);
+  
+        XLSX.utils.book_append_sheet(workbook, worksheet3, 'GWM');
+
+
+        // sheet 4:neraca BV & FV
+        const worksheetData4 = [
+            ['', 'Neraca BV & FV'],
+            [],
+            ['', 'Kategori', 'Label', 'Nilai'],
+        ];
+        
+        this.assetsBankAsal.forEach((item) => {
+            worksheetData4.push(['', 'ASET', item.label, String(item.value ?? '0')]);
+        });
+        
+        this.liabilitiesEquityBankAsal.forEach((item) => {
+            worksheetData4.push(['', 'LIABILITAS & EKUITAS', item.label, String(item.value ?? '0')]);
+        });
+        
+        worksheetData4.push([], ['', 'BANK ASAL MENGGUNAKAN HASIL PEMBURUKAN'], [], ['', 'Kategori', 'Label', 'Nilai']);
+        
+        this.assetsBankAsalPemburukan.forEach((item) => {
+            worksheetData4.push(['', 'ASET', item.label, String(item.value ?? '0')]);
+        });
+        
+        this.liabilitiesEquityBankAsalPemburukan.forEach((item) => {
+            worksheetData4.push(['', 'LIABILITAS & EKUITAS', item.label, String(item.value ?? '0')]);
+        });
+        
+        worksheetData4.push([], ['', 'BANK ASAL MENGGUNAKAN HASIL PEMBURUKAN - FAIR VALUE'], [], ['', 'Kategori', 'Label', 'Nilai']);
+        
+        this.assetsBankAsalPemburukanC.forEach((item) => {
+            worksheetData4.push(['', 'ASET', item.label, String(item.value ?? '0')]);
+        });
+        
+        this.liabilitiesEquityBankAsalPemburukanC.forEach((item) => {
+            worksheetData4.push(['', 'LIABILITAS & EKUITAS', item.label, String(item.value ?? '0')]);
+        });
+        
+        this.assetsBankAsal.forEach((item) => {
+            worksheetData4.push(['', 'ASET', item.label, String(item.value ?? '0')]);
+        });
+        
+        this.liabilitiesEquityBankAsal.forEach((item) => {
+            worksheetData4.push(['', 'LIABILITAS & EKUITAS', item.label, String(item.value ?? '0')]);
+        });
+        
+        this.assetsBankAsalPemburukan.forEach((item) => {
+            worksheetData4.push(['', 'ASET (Pemburukan)', item.label, String(item.value ?? '0')]);
+        });
+        
+        this.liabilitiesEquityBankAsalPemburukan.forEach((item) => {
+            worksheetData4.push(['', 'LIABILITAS & EKUITAS (Pemburukan)', item.label, String(item.value ?? '0')]);
+        });
+        
+        this.assetsBankAsalPemburukanC.forEach((item) => {
+            worksheetData4.push(['', 'ASET (Fair Value)', item.label, String(item.value ?? '0')]);
+        });
+        
+        this.liabilitiesEquityBankAsalPemburukanC.forEach((item) => {
+            worksheetData4.push(['', 'LIABILITAS & EKUITAS (Fair Value)', item.label, String(item.value ?? '0')]);
+        });
+        
+        this.assetsBankAsal.forEach((item) => {
+            worksheetData4.push(['', 'ASET', item.label, String(item.value ?? '0')]);
+        });
+        
+        this.liabilitiesEquityBankAsal.forEach((item) => {
+            worksheetData4.push(['', 'LIABILITAS & EKUITAS', item.label, String(item.value ?? '0')]);
+        });
+        
+        const worksheetDataBVFV = [
+            ['', 'Neraca BV & FV'],
+            [],
+            ['', 'Kategori', 'Label', 'Nilai'],
+        ];
+        
+        this.assetsBankAsal.forEach((item) => {
+            worksheetDataBVFV.push(['', 'ASET', item.label, String(item.value ?? '0')]);
+        });
+        
+        this.liabilitiesEquityBankAsal.forEach((item) => {
+            worksheetDataBVFV.push(['', 'LIABILITAS & EKUITAS', item.label, String(item.value ?? '0')]);
+        });
+        
+        worksheetDataBVFV.push([], ['', 'BANK ASAL MENGGUNAKAN HASIL PEMBURUKAN'], [], ['', 'Kategori', 'Label', 'Nilai']);
+        
+        this.assetsBankAsalPemburukan.forEach((item) => {
+            worksheetDataBVFV.push(['', 'ASET', item.label, String(item.value ?? '0')]);
+        });
+        
+        this.liabilitiesEquityBankAsalPemburukan.forEach((item) => {
+            worksheetDataBVFV.push(['', 'LIABILITAS & EKUITAS', item.label, String(item.value ?? '0')]);
+        });
+        
+        worksheetDataBVFV.push([], ['', 'BANK ASAL MENGGUNAKAN HASIL PEMBURUKAN - FAIR VALUE'], [], ['', 'Kategori', 'Label', 'Nilai']);
+        
+        this.assetsBankAsalPemburukanC.forEach((item) => {
+            worksheetDataBVFV.push(['', 'ASET', item.label, String(item.value ?? '0')]);
+        });
+        
+        this.liabilitiesEquityBankAsalPemburukanC.forEach((item) => {
+            worksheetDataBVFV.push(['', 'LIABILITAS & EKUITAS', item.label, String(item.value ?? '0')]);
+        });
+        const worksheetBVFV = XLSX.utils.aoa_to_sheet(worksheetDataBVFV);
+        XLSX.utils.book_append_sheet(workbook, worksheetBVFV, 'Neraca BV & FV');
+
+                // Sheet 1: SCV Data
+                const worksheetDataSCV = [
+                    ['', 'Single Customer View'],
+                    [],
+                    ['', 'Kode Bank', 'Periode', 'Deskripsi', 'Jumlah Nasabah Penyimpan', 'Jumlah Rekening Simpanan', 'Jumlah Saldo Simpanan', 'Jumlah Saldo Simpanan Dijamin'],
+                ];
+        
+                this.components1.forEach(item => {
+                    worksheetDataSCV.push([
+                        '',
+                        item.nama_bank || '-',
+                        `${item.tahun}-${item.bulan}`,
+                        item.deskripsi,
+                        item.jumlah_nasabah_penyimpan,
+                        item.jumlah_rekening_simpanan,
+                        item.jumlah_saldo_simpanan,
+                        item.jumlah_saldo_simpanan_dijamin
+                    ]);
+                });
+        
+                const worksheetSCV = XLSX.utils.aoa_to_sheet(worksheetDataSCV);
+                XLSX.utils.book_append_sheet(workbook, worksheetSCV, 'SCV');
+
+                        // Sheet 3: Rincian Pengalihan
+        const worksheetDataRincianPengalihan = [
+            ['', 'Rincian Pengalihan'],
+            [],
+            ['', 'Aset yang Akan Dialihkan', 'Nominal', 'FV', 'Selisih'],
+        ];
+
+        this.financialTerms.forEach(item => {
+            worksheetDataRincianPengalihan.push([
+                '',
+                item.label,
+                String(item.nominal),
+                String(item.fv),
+                String(item.nominal - item.fv) // Selisih
+            ]);
+        });
+
+        worksheetDataRincianPengalihan.push([], ['', 'Kewajiban yang Akan Dialihkan', 'Nominal', 'FV']);
+
+        this.kewajibanAlih.forEach(item => {
+            worksheetDataRincianPengalihan.push([
+                '',
+                item.label,
+                String(item.nominal),
+                String(item.fv)
+            ]);
+        });
+
+        worksheetDataRincianPengalihan.push([], ['', 'P&A dan BB']);
+
+        this.posPengalihan.forEach(item => {
+            worksheetDataRincianPengalihan.push([
+                '',
+                item.label,
+                String(item.nominal)
+            ]);
+        });
+
+        worksheetDataRincianPengalihan.push(['', 'Total Selisih', String(this.getSelisihTotal())]);
+
+        const worksheetRincianPengalihan = XLSX.utils.aoa_to_sheet(worksheetDataRincianPengalihan);
+        XLSX.utils.book_append_sheet(workbook, worksheetRincianPengalihan, 'Rincian Pengalihan');
+    
+        // Get tables from the DOM by their IDs
+        // const tableBB_Aset = document.getElementById('tableBB_Aset');
+        // const tableBB_Liabilities = document.getElementById('tableBB_Liabilities');
+        // const tableBB_Pemburukan_Aset = document.getElementById('tableBB_Pemburukan_Aset');
+        // const tableBB_Pemburukan_Liabilities = document.getElementById('tableBB_Pemburukan_Liabilities');
+        // const tableBB_FairValue_Aset = document.getElementById('tableBB_FairValue_Aset');
+        // const tableBB_FairValue_Liabilities = document.getElementById('tableBB_FairValue_Liabilities');
+        // const tableBB_CekSelisih = document.getElementById('tableBB_CekSelisih');
+
+        const worksheetDataBB = [];
+
+        // Append BB Report Title
+        worksheetDataBB.push(['', `Laporan Keuangan Bank ${this.selectedSearch || " - "}`], []);
+        
+        // Section: Bank Asal
+        worksheetDataBB.push(['', 'A. BANK ASAL'], []);
+        worksheetDataBB.push(['ASET', '', '', 'LIABILITAS & EKUITAS']);
+
+        // Add ASET & LIABILITIES side-by-side
+        const maxLength = Math.max(this.assetsBankAsal.length, this.liabilitiesEquityBankAsal.length);
+
+        for (let i = 0; i < maxLength; i++) {
+            worksheetDataBB.push([
+                this.assetsBankAsal[i]?.label || '',
+                this.assetsBankAsal[i]?.value || '',
+                '',
+                this.liabilitiesEquityBankAsal[i]?.label || '',
+                this.liabilitiesEquityBankAsal[i]?.value || ''
+            ]);
+        }
+
+        worksheetDataBB.push([], ['', 'A. BANK ASAL - MENYESUAIKAN HASIL PENDALAMAN LPS'], []);
+
+        // Section: Bank Asal - Menyesuaikan Hasil Pendalaman LPS
+        worksheetDataBB.push(['ASET (Pemburukan)', '', '', 'LIABILITAS & EKUITAS (Pemburukan)']);
+
+        const maxLengthPemburukan = Math.max(this.assetsBankAsalPemburukan.length, this.liabilitiesEquityBankAsalPemburukan.length);
+
+        for (let i = 0; i < maxLengthPemburukan; i++) {
+            worksheetDataBB.push([
+                this.assetsBankAsalPemburukan[i]?.label || '',
+                this.assetsBankAsalPemburukan[i]?.value || '',
+                '',
+                this.liabilitiesEquityBankAsalPemburukan[i]?.label || '',
+                this.liabilitiesEquityBankAsalPemburukan[i]?.value || ''
+            ]);
+        }
+
+        worksheetDataBB.push([], ['', 'A. BANK ASAL (FAIR VALUE)'], []);
+
+        // Section: Bank Asal (Fair Value)
+        worksheetDataBB.push(['ASET (Fair Value)', '', '', 'LIABILITAS & EKUITAS (Fair Value)']);
+
+        const maxLengthFairValue = Math.max(this.assetsBankAsalPemburukanC.length, this.liabilitiesEquityBankAsalPemburukanC.length);
+
+        for (let i = 0; i < maxLengthFairValue; i++) {
+            worksheetDataBB.push([
+                this.assetsBankAsalPemburukanC[i]?.label || '',
+                this.assetsBankAsalPemburukanC[i]?.value || '',
+                '',
+                this.liabilitiesEquityBankAsalPemburukanC[i]?.label || '',
+                this.liabilitiesEquityBankAsalPemburukanC[i]?.value || ''
+            ]);
+        }
+
+        worksheetDataBB.push([], ['', 'B. BANK PERANTARA'], []);
+
+        // Section: Bank Perantara
+        worksheetDataBB.push(['ASET (Bank Perantara)', '', '', 'LIABILITAS & EKUITAS (Bank Perantara)']);
+
+        const maxLengthBP = Math.max(this.asetBp.length, this.kewajibanBp.length);
+
+        for (let i = 0; i < maxLengthBP; i++) {
+            worksheetDataBB.push([
+                this.asetBp[i]?.label || '',
+                this.asetBp[i]?.value || '',
+                '',
+                this.kewajibanBp[i]?.label || '',
+                this.kewajibanBp[i]?.value || ''
+            ]);
+        }
+
+        worksheetDataBB.push([], ['', 'C. BANK DALAM LIKUIDASI'], []);
+
+        // Section: Bank Dalam Likuidasi
+        worksheetDataBB.push(['ASET (BDL)', '', '', 'LIABILITAS & EKUITAS (BDL)']);
+
+        const maxLengthBDL = Math.max(this.asetBdl.length, this.kewajibanBdl.length);
+
+        for (let i = 0; i < maxLengthBDL; i++) {
+            worksheetDataBB.push([
+                this.asetBdl[i]?.label || '',
+                this.asetBdl[i]?.value || '',
+                '',
+                this.kewajibanBdl[i]?.label || '',
+                this.kewajibanBdl[i]?.value || ''
+            ]);
+        }
+
+        // Section: Cek Selisih
+        worksheetDataBB.push([], ['', 'CEK SELISIH'], []);
+
+        worksheetDataBB.push(['Kategori', 'ASET', 'Kewajiban', 'Modal', 'Kew + Modal']);
+
+        this.cekDataBb.forEach(item => {
+            worksheetDataBB.push([
+                item.label,
+                item.aset,
+                item.kewajiban,
+                item.modal,
+                item.kew_modal
+            ]);
+        });
+
+        // Convert Data to Excel Sheet
+        const worksheetBB = XLSX.utils.aoa_to_sheet(worksheetDataBB);
+        XLSX.utils.book_append_sheet(workbook, worksheetBB, 'BB');
+
+        const worksheetDataPA = [];
+
+        // Append P&A Report Title
+        worksheetDataPA.push(['', `Laporan Keuangan Bank ${this.selectedSearch || " - "}`], []);
+        
+        // Section: Bank Asal
+        worksheetDataPA.push(['', 'A. BANK ASAL'], []);
+        worksheetDataPA.push(['ASET', '', '', 'LIABILITAS & EKUITAS']);
+
+        // Add ASET & LIABILITIES side-by-side
+        const maxLength1 = Math.max(this.assetsBankAsal.length, this.liabilitiesEquityBankAsal.length);
+
+        for (let i = 0; i < maxLength1; i++) {
+            worksheetDataPA.push([
+                this.assetsBankAsal[i]?.label || '',
+                this.assetsBankAsal[i]?.value || '',
+                '',
+                this.liabilitiesEquityBankAsal[i]?.label || '',
+                this.liabilitiesEquityBankAsal[i]?.value || ''
+            ]);
+        }
+
+        worksheetDataPA.push([], ['', 'A. BANK ASAL - MENYESUAIKAN HASIL PENDALAMAN LPS'], []);
+
+        // Section: Bank Asal - Menyesuaikan Hasil Pendalaman LPS
+        worksheetDataPA.push(['ASET (Pemburukan)', '', '', 'LIABILITAS & EKUITAS (Pemburukan)']);
+
+        const maxLengthPemburukan1 = Math.max(this.assetsBankAsalPemburukan.length, this.liabilitiesEquityBankAsalPemburukan.length);
+
+        for (let i = 0; i < maxLengthPemburukan1; i++) {
+            worksheetDataPA.push([
+                this.assetsBankAsalPemburukan[i]?.label || '',
+                this.assetsBankAsalPemburukan[i]?.value || '',
+                '',
+                this.liabilitiesEquityBankAsalPemburukan[i]?.label || '',
+                this.liabilitiesEquityBankAsalPemburukan[i]?.value || ''
+            ]);
+        }
+
+        worksheetDataPA.push([], ['', 'A. BANK ASAL (FAIR VALUE)'], []);
+
+        // Section: Bank Asal (Fair Value)
+        worksheetDataPA.push(['ASET (Fair Value)', '', '', 'LIABILITAS & EKUITAS (Fair Value)']);
+
+        const maxLengthFairValue1 = Math.max(this.assetsBankAsalPemburukanC.length, this.liabilitiesEquityBankAsalPemburukanC.length);
+
+        for (let i = 0; i < maxLengthFairValue1; i++) {
+            worksheetDataPA.push([
+                this.assetsBankAsalPemburukanC[i]?.label || '',
+                this.assetsBankAsalPemburukanC[i]?.value || '',
+                '',
+                this.liabilitiesEquityBankAsalPemburukanC[i]?.label || '',
+                this.liabilitiesEquityBankAsalPemburukanC[i]?.value || ''
+            ]);
+        }
+
+        worksheetDataPA.push([], ['', 'B. BANK PENERIMA'], []);
+
+        // Section: Bank Penerima
+        worksheetDataPA.push(['ASET (Bank Penerima)', '', '', 'LIABILITAS & EKUITAS (Bank Penerima)']);
+
+        const maxLengthBP1 = Math.max(this.asetBp.length, this.kewajibanBp.length);
+
+        for (let i = 0; i < maxLengthBP1; i++) {
+            worksheetDataPA.push([
+                this.asetBp[i]?.label || '',
+                this.asetBp[i]?.value || '',
+                '',
+                this.kewajibanBp[i]?.label || '',
+                this.kewajibanBp[i]?.value || ''
+            ]);
+        }
+
+        worksheetDataPA.push([], ['', 'C. BANK DALAM LIKUIDASI'], []);
+
+        // Section: Bank Dalam Likuidasi
+        worksheetDataPA.push(['ASET (BDL)', '', '', 'LIABILITAS & EKUITAS (BDL)']);
+
+        const maxLengthBDL1 = Math.max(this.asetBdl.length, this.kewajibanBdl.length);
+
+        for (let i = 0; i < maxLengthBDL1; i++) {
+            worksheetDataPA.push([
+                this.asetBdl[i]?.label || '',
+                this.asetBdl[i]?.value || '',
+                '',
+                this.kewajibanBdl[i]?.label || '',
+                this.kewajibanBdl[i]?.value || ''
+            ]);
+        }
+
+        // Convert Data to Excel Sheet
+        const worksheetPA = XLSX.utils.aoa_to_sheet(worksheetDataPA);
+        XLSX.utils.book_append_sheet(workbook, worksheetPA, 'P&A');
+
+        const worksheetDataPMS = [];
+
+        // Title
+        worksheetDataPMS.push(['', `Laporan Keuangan Bank ${this.selectedSearch || " - "}`], []);
+        worksheetDataPMS.push(['', 'Perhitungan Rasio KPMM'], []);
+        
+        // Section 1: KPMM Ratios
+        worksheetDataPMS.push(['Kategori', 'ATMR', 'Modal', 'Rasio KPMM (%)']);
+
+        worksheetDataPMS.push([
+            'Bank Asal',
+            this.atmr,
+            this.modalAtmr,
+            ((this.modalAtmr / this.atmr) * 100 || 0).toFixed(2) + '%'
+        ]);
+
+        worksheetDataPMS.push([
+            'Bank Asal Pemburukan',
+            (this.atmr * (this.totalAsetP / this.totalAsetB) || 0).toFixed(0),
+            `(${(this.modalAtmr + this.estimasiKerugian) || 0})`,
+            (((this.modalAtmr + this.estimasiKerugian) / (this.atmr * (this.totalAsetP / this.totalAsetB))) * 100 || 0).toFixed(2) + '%'
+        ]);
+
+        worksheetDataPMS.push([
+            'Bank Setelah PMS',
+            this.calTotalAtmr,
+            `(${this.calTotalModal})`,
+            ((this.calTotalModal / this.calTotalAtmr) * 100).toFixed(2) + '%'
+        ]);
+
+        worksheetDataPMS.push([], ['', 'KEBUTUHAN PMS (14% KPMM)'], []);
+
+        // Section 2: PMS Calculation Table
+        worksheetDataPMS.push(['Kategori', 'Nilai']);
+
+        worksheetDataPMS.push(['Jumlah Modal', this.modalAtmr]);
+        worksheetDataPMS.push(['Koreksi Neraca', `(${this.estimasiKerugian})`]);
+
+        worksheetDataPMS.push([
+            'Jumlah Modal sebagai KPMM setelah Koreksi',
+            this.modalAtmr + this.estimasiKerugian
+        ]);
+
+        worksheetDataPMS.push(['ATMR (Awal)', this.atmr]);
+        worksheetDataPMS.push(['ATMR (Pemburukan)', (this.atmr * (this.totalAsetP / this.totalAsetB) || 0).toFixed(0)]);
+
+        worksheetDataPMS.push([
+            'Modal untuk memenuhi KPMM 14%',
+            ((this.atmr * (this.totalAsetP / this.totalAsetB)) * 14 / 100).toFixed(0)
+        ]);
+
+        worksheetDataPMS.push([
+            'Jumlah PMS LPS',
+            (((this.atmr * (this.totalAsetP / this.totalAsetB)) * 14 / 100) - (this.modalAtmr + this.estimasiKerugian)).toFixed(0)
+        ]);
+
+        worksheetDataPMS.push([], ['', 'A. BANK ASAL'], []);
+
+        // Section 3: Bank Asal - ASET vs LIABILITAS & EKUITAS
+        worksheetDataPMS.push(['ASET', '', '', 'LIABILITAS & EKUITAS']);
+
+        const maxLengthAssets = Math.max(this.assetsBankAsalPemburukanP.length, this.liabilitiesEquityBankAsal.length);
+
+        for (let i = 0; i < maxLengthAssets; i++) {
+            worksheetDataPMS.push([
+                this.assetsBankAsalPemburukanP[i]?.label || '',
+                this.assetsBankAsalPemburukanP[i]?.value || '',
+                '',
+                this.liabilitiesEquityBankAsal[i]?.label || '',
+                this.liabilitiesEquityBankAsal[i]?.value || ''
+            ]);
+        }
+
+        worksheetDataPMS.push([], ['', 'A. BANK ASAL - PEMBURUKAN'], []);
+
+        // Section 4: Bank Asal Pemburukan - ASET vs LIABILITAS
+        worksheetDataPMS.push(['ASET (Pemburukan)', '', '', 'LIABILITAS & EKUITAS (Pemburukan)']);
+
+        const maxLengthPemburukan2 = Math.max(this.assetsBankAsalPemburukan.length, this.liabilitiesEquityBankAsalPemburukan.length);
+
+        for (let i = 0; i < maxLengthPemburukan2; i++) {
+            worksheetDataPMS.push([
+                this.assetsBankAsalPemburukan[i]?.label || '',
+                this.assetsBankAsalPemburukan[i]?.value || '',
+                '',
+                this.liabilitiesEquityBankAsalPemburukan[i]?.label || '',
+                this.liabilitiesEquityBankAsalPemburukan[i]?.value || ''
+            ]);
+        }
+
+        worksheetDataPMS.push([], ['', 'B. BANK ASAL SETELAH PMS OLEH LPS'], []);
+
+        // Section 5: Bank Asal Setelah PMS - ASET vs LIABILITAS
+        worksheetDataPMS.push(['ASET (Setelah PMS)', '', '', 'LIABILITAS & EKUITAS (Setelah PMS)']);
+
+        const maxLengthAfterPMS = Math.max(this.assetsBankAsalPemburukanPA.length, this.liabilitiesEquityBankAsalPemburukanPA.length);
+
+        for (let i = 0; i < maxLengthAfterPMS; i++) {
+            worksheetDataPMS.push([
+                this.assetsBankAsalPemburukanPA[i]?.label || '',
+                this.assetsBankAsalPemburukanPA[i]?.value || '',
+                '',
+                this.liabilitiesEquityBankAsalPemburukanPA[i]?.label || '',
+                this.liabilitiesEquityBankAsalPemburukanPA[i]?.value || ''
+            ]);
+        }
+
+        // Convert Data to Excel Sheet
+        const worksheetPMS = XLSX.utils.aoa_to_sheet(worksheetDataPMS);
+        XLSX.utils.book_append_sheet(workbook, worksheetPMS, 'PMS');
+
+        const worksheetDataLIK = [];
+
+        // Title
+        worksheetDataLIK.push(['', `Laporan Biaya Likuidasi (LIK) Bank ${this.selectedSearch || " - "}`], []);
+        
+        // Table Headers
+        worksheetDataLIK.push(['Keterangan', 'Biaya Likuidasi']);
+
+        // Add Data Rows
+        this.datalik.forEach(row => {
+            if (row.isSubheader) {
+                // Subheader row (bold & centered)
+                worksheetDataLIK.push([row.label, '']);
+            } else {
+                // Data row
+                worksheetDataLIK.push([
+                    row.label,
+                    row.noInput ? row.value : row.value.toLocaleString('id-ID') // Format for read-only fields
+                ]);
+            }
+        });
+
+        // Convert Data to Excel Sheet
+        const worksheetLIK = XLSX.utils.aoa_to_sheet(worksheetDataLIK);
+        XLSX.utils.book_append_sheet(workbook, worksheetLIK, 'LIK');
+
+        const worksheetDataBiayaResolusi = [];
+
+        // Title
+        worksheetDataBiayaResolusi.push(['', `Laporan Biaya Resolusi Bank ${this.selectedSearch || " - "}`], []);
+        
+        // Table Headers
+        worksheetDataBiayaResolusi.push(['Keterangan', 'Bank Perantara', 'Bank Penerima', 'PMS', 'Likuidasi']);
+
+        // Add Data Rows
+        this.dataBiayaResolusi.forEach(row => {
+            if (row.isSubheader) {
+                // Subheader row (bold & centered)
+                worksheetDataBiayaResolusi.push([row.label, '', '', '', '']);
+            } else {
+                // Data row with formatted numbers
+                worksheetDataBiayaResolusi.push([
+                    row.label,
+                    row.bankPerantara?.toLocaleString('id-ID') || '',
+                    row.bankPenerima?.toLocaleString('id-ID') || '',
+                    row.pms?.toLocaleString('id-ID') || '',
+                    row.likuidasi?.toLocaleString('id-ID') || ''
+                ]);
+            }
+        });
+
+        // Convert Data to Excel Sheet
+        const worksheetBiayaResolusi = XLSX.utils.aoa_to_sheet(worksheetDataBiayaResolusi);
+        XLSX.utils.book_append_sheet(workbook, worksheetBiayaResolusi, 'Biaya Resolusi');
+
+        // Generate Excel file
         const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+        
+        // Simpan file
         saveAs(
             new Blob([wbout], { type: 'application/octet-stream' }),
             'lct_report.xlsx'
         );
+    }
+
+
+    calculateGwmResult(type: number): number {
+        if (!this.gwmData) return 0;
+    
+        const total = this.gwmData.total || 0;
+        const param1 = this.gwmData.parameter1 || 0;
+        const param2 = this.gwmData.parameter2 || 0;
+    
+        if (param1 + param2 === 0) return 0; // Mencegah pembagian oleh nol
+    
+        let result = 0;
+    
+        if (type === 1) {
+            result = Math.round((total * param1) / (param1 + param2));
+        } else {
+            result = Math.round((total * param2) / (param1 + param2));
+        }
+    
+        return result;
+    }
+    
+    
+
+    calculateGwmTotal(): number {
+        return this.calculateGwmResult(1) + this.calculateGwmResult(2);
     }
 
     cancelDialog() {

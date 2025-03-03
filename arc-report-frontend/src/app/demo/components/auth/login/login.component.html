@@ -1,26 +1,30 @@
-<div class="surface-ground flex align-items-center justify-content-center min-h-screen min-w-screen overflow-hidden">
-    <div class="flex flex-column align-items-center justify-content-center">
+<div class="surface-ground flex align-items-center justify-content-center min-h-screen min-w-screen overflow-hidden bg-cover bg-center"
+    style="background: url('assets/layout/images/13622.jpg') no-repeat center center; background-size: cover;">
+
+    <div class="absolute inset-0 bg-black opacity-40"></div>
+
+    <div
+        class="relative flex flex-col items-center justify-center p-6 bg-white/40 backdrop-blur-md rounded-lg shadow-lg">
         <img src="assets/layout/images/logo-white.png" alt="LPS logo" class="mb-5 w-10rem flex-shrink-0" />
+
+        <!-- Mengubah div ini agar tidak transparan -->
         <div style="
                 border-radius: 56px;
                 padding: 0.3rem;
-                background: linear-gradient(
-                    180deg,
-                    var(--primary-color) 10%,
-                    rgba(33, 150, 243, 0) 30%
-                );
+                background: var(--primary-color); /* Warna utama, tidak transparan */
             ">
-            <div class="w-full surface-card py-4 px-5 sm:px-8" style="border-radius: 53px">
+            <div class="w-full surface-card py-4 px-5 sm:px-8" style="border-radius: 53px; background-color: white;">
+
                 <div class="text-center mb-5">
                     <div class="text-900 text-3xl font-medium mb-3">
-                        LPS Data Modelling
+                        LPS Data Reporting
                     </div>
                     <span class="font-medium text-2xl">Sign in to continue</span>
                 </div>
 
                 <div>
-                    <label for="email1" class="block text-900 text-xl font-medium mb-2">Email</label>
-                    <input id="email1" type="text" placeholder="Email address" pInputText
+                    <label for="email1" class="block text-900 text-xl font-medium mb-2">Username</label>
+                    <input id="email1" type="text" placeholder="Username" pInputText
                         class="w-full md:w-30rem sm:w-25rem xs:w-25rem mb-5" style="padding: 1rem"
                         [(ngModel)]="email" />
 
@@ -41,6 +45,7 @@
                 </div>
             </div>
         </div>
+
         <p-toast></p-toast>
     </div>
 </div>
