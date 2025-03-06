@@ -1,11 +1,9 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { DecimalPipe } from '@angular/common';
 import { MenuItem } from 'primeng/api';
 import { Product } from '../../../api/product';
-import { map, Subscription } from 'rxjs';
+import { Subscription } from 'rxjs';
 import { LayoutService } from 'src/app/layout/service/app.layout.service';
 import { ViewChild, ElementRef } from '@angular/core';
-import { Representative, Data } from 'src/app/demo/api/customer';
 import { LocationService } from 'src/app/demo/service/location.service';
 import { ScvService } from 'src/app/demo/service/scv.service';
 import { CrudService } from 'src/app/demo/service/crud.service';
@@ -16,7 +14,6 @@ import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
-import { ConstantPool } from '@angular/compiler';
 
 
 
@@ -121,7 +118,7 @@ interface AsetBP {
 export class LctComponent implements OnInit, OnDestroy {
     editData: any = [];
 
-    reportDataLct: DropdownOption[] = []; // Perubahan tipe data untuk dropdown
+    reportDataLct: DropdownOption[] = []; 
     
     [key: string]: any;
 
@@ -926,6 +923,67 @@ export class LctComponent implements OnInit, OnDestroy {
             this.dataTableNeracaBank.totalKewajiban +
             this.dataTableNeracaBank.totalEkuitas;
 
+        if(this.dataTableNeracaBank.totalAset < this.dataTableNeracaBank.totalKewajibanDanEkuitas){
+            this.dataTableNeracaBank.asetLainnya += this.dataTableNeracaBank.totalKewajibanDanEkuitas - this.dataTableNeracaBank.totalAset;
+        }
+
+        if(this.dataTableNeracaBank.totalAset > this.dataTableNeracaBank.totalKewajibanDanEkuitas){
+            this.dataTableNeracaBank.kewajibanLainnya += this.dataTableNeracaBank.totalAset - this.dataTableNeracaBank.totalKewajibanDanEkuitas;
+        }
+
+        this.dataTableNeracaBank.totalAset =
+        Number(this.dataTableNeracaBank.kas) +
+        Number(this.dataTableNeracaBank.penempatanPadaBI) +
+        Number(this.dataTableNeracaBank.penempatanPadaBankLain) +
+        Number(this.dataTableNeracaBank.tagihanSpotDanDerivatif) +
+        Number(this.dataTableNeracaBank.suratBerharga) +
+        Number(this.dataTableNeracaBank.ckpnSuratBerharga) +
+        Number(this.dataTableNeracaBank.suratBerhargaRepo) +
+        Number(this.dataTableNeracaBank.reverseRepo) +
+        Number(this.dataTableNeracaBank.tagihanAkseptasi) +
+        Number(this.dataTableNeracaBank.kredit) +
+        Number(this.dataTableNeracaBank.ckpnKredit) +
+        Number(this.dataTableNeracaBank.asetKeuanganLain) +
+        Number(this.dataTableNeracaBank.ckpnAsetKeuanganLain) +
+        Number(this.dataTableNeracaBank.asetTetapDanInventaris) +
+        Number(this.dataTableNeracaBank.akumulasiPenyusutan) +
+        Number(this.dataTableNeracaBank.asetTidakBerwujud) +
+        Number(this.dataTableNeracaBank.akumulasiAmortisasi) +
+        Number(this.dataTableNeracaBank.propertiTerbengkalai) +
+        Number(this.dataTableNeracaBank.ayda) +
+        Number(this.dataTableNeracaBank.asetLainnya) +
+        Number(this.dataTableNeracaBank.penyertaanModal) +
+        Number(this.dataTableNeracaBank.rekeningTunda);
+
+        this.dataTableNeracaBank.totalKewajiban =
+        this.dataTableNeracaBank.giro +
+        this.dataTableNeracaBank.tabungan +
+        this.dataTableNeracaBank.simpananBerjangka +
+        this.dataTableNeracaBank.uangElektronik +
+        this.dataTableNeracaBank.kewajibanPadaBankIndonesia +
+        this.dataTableNeracaBank.kewajibanPadaBankLain +
+        this.dataTableNeracaBank.kewajibanSpotDanDerivatif +
+        this.dataTableNeracaBank.kewajibanRepo +
+        this.dataTableNeracaBank.kewajibanAkseptasi +
+        this.dataTableNeracaBank.suratBerhargaYangDiterbitkan +
+        this.dataTableNeracaBank.pinjaman +
+        this.dataTableNeracaBank.setoranJaminan +
+        this.dataTableNeracaBank.kewajibanLainnya;
+
+    this.dataTableNeracaBank.totalEkuitas =
+        this.dataTableNeracaBank.modalDasar +
+        this.dataTableNeracaBank.modalYangBelumDisetor +
+        this.dataTableNeracaBank.agio +
+        this.dataTableNeracaBank.penghasilanKomprehensifLain +
+        this.dataTableNeracaBank.danaSetoranModal +
+        this.dataTableNeracaBank.cadanganUmum +
+        this.dataTableNeracaBank.labaTahunLalu +
+        this.dataTableNeracaBank.labaTahunBerjalan +
+        this.dataTableNeracaBank.dividenYangDiBayarkan;
+
+    this.dataTableNeracaBank.totalKewajibanDanEkuitas =
+        this.dataTableNeracaBank.totalKewajiban +
+        this.dataTableNeracaBank.totalEkuitas;
         
             this.assets = [
                 { label: 'ASET', value: null, isSubheader: true },
@@ -1012,7 +1070,7 @@ export class LctComponent implements OnInit, OnDestroy {
 
                 console.log("Item value before addition:", item2.value);
 
-                if (typeof item2.value === 'number' && !isNaN(item2.value)) {
+                if (typeof item2.value !== null ) {
                     item2.value = (item2.value || 0) - (this.ati_ke_properti_terbengkalai || 0);
                     console.log("Item value after addition:", item2.value);  
                 } else {
@@ -1025,8 +1083,7 @@ export class LctComponent implements OnInit, OnDestroy {
             const item = this.assetsBankAsalPemburukan.find(item => item.label === 'Properti Terbengkalai');
 
             if (item) {
-
-                if (typeof item.value === 'number' && !isNaN(item.value)) {
+                if (typeof item.value !== null ) {
                     item.value = (item.value || 0) + (this.ati_ke_properti_terbengkalai || 0);
                     console.log("Item value after addition:", item.value);  
                 } else {
@@ -1049,15 +1106,15 @@ export class LctComponent implements OnInit, OnDestroy {
                 { label: 'CKPN AYDA (-)', value: 0 }
             );
 
-            this.assetsBankAsalPemburukan[21].value = null;
-            this.assetsBankAsalPemburukan[22].value = null;
-            this.assetsBankAsalPemburukan[23].value = null;
+            this.assetsBankAsalPemburukan[21].value = 0;
+            this.assetsBankAsalPemburukan[22].value = 0;
+            this.assetsBankAsalPemburukan[23].value = 0;
 
             this.assetsBankAsalPemburukan[35].value = 1708396000000;
 
             let totalAsset = this.assetsBankAsalPemburukan
             .reduce((sum, item) => 
-              (item.label !== "Kredit-Net" && item.label !== "TOTAL ASET") ? sum + (item.value ?? 0) : sum
+              (item.label !== "Kredit-Net" && item.label !== "TOTAL ASET" && item.label !== "Properti Terbengkalai" && item.label !== "CKPN Prop Terbengkalai (-)") ? sum + (item.value ?? 0) : sum
             , 0);
 
             this.assetsBankAsalPemburukan.filter(item => item.label === 'TOTAL ASET')[0].value = totalAsset;
@@ -1085,7 +1142,7 @@ export class LctComponent implements OnInit, OnDestroy {
 
             const totalAssetC = this.assetsBankAsalPemburukanC
             .reduce((sum, item) => 
-              (item.label !== "Kredit-Net" && item.label !== "TOTAL ASET") ? sum + (item.value ?? 0) : sum
+              (item.label !== "Kredit-Net" && item.label !== "TOTAL ASET" && item.label !== "Properti Terbengkalai" && item.label !== "CKPN Prop Terbengkalai (-)") ? sum + (item.value ?? 0) : sum
             , 0);
 
             this.assetsBankAsalPemburukanC.filter(item => item.label === 'TOTAL ASET')[0].value = totalAssetC;
@@ -1154,8 +1211,43 @@ export class LctComponent implements OnInit, OnDestroy {
 
             this.liabilitiesEquityBankAsalPemburukan.filter(item => item.label === 'Simpanan Berjangka')[0].value = simpananBerjangkaA + (suratBerharga - suratBerhargaA) + (penempatanBI - penempatanBIA) - (kewBankLain - kewBankLainA);
 
-            const estimasiKerugian = (-(this.modifiedDataTable1[0]?.baki_debet_res ?? 0) * 1/100) + (-(this.modifiedDataTable1[1]?.baki_debet_res ?? 0) * 5/100) + (-(this.modifiedDataTable1[2]?.baki_debet_res ?? 0) * 15/100) + (-(this.modifiedDataTable1[3]?.baki_debet_res ?? 0) * 50/100) + 
-                (-(this.modifiedDataTable1[4]?.baki_debet_res ?? 0) * 100/100) - this.dataTableNeracaBank.ckpnKredit + ckpnAyda + asetLainnyaBv - this.dataTableNeracaBank.asetLainnya - this.dataTableNeracaBank.propertiTerbengkalai;
+            console.log("modifiedDataTable1 Rest", this.modifiedDataTable1[0]?.baki_debet_res);
+            console.log("modifiedDataTable1 Rest1", this.modifiedDataTable1[1]?.baki_debet_res);
+            console.log("modifiedDataTable1 Rest2", this.modifiedDataTable1[2]?.baki_debet_res);
+            console.log("modifiedDataTable1 Rest3", this.modifiedDataTable1[3]?.baki_debet_res);
+            console.log("modifiedDataTable1 Rest4", this.modifiedDataTable1[4]?.baki_debet_res);
+
+            console.log("CKPN Kredit", this.dataTableNeracaBank.ckpnKredit);
+            console.log("CKPN Ayda", ckpnAyda);
+             console.log("Aset Lainnya BV", asetLainnyaBv);
+                console.log("Aset Lainnya", this.dataTableNeracaBank.asetLainnya);
+                console.log("Properti Terbengkalai", this.dataTableNeracaBank.propertiTerbengkalai);
+
+                let testEstimate =                     (-1 * (this.modifiedDataTable1[0]?.baki_debet_res || 0) * 0.01) + 
+                (-1 * (this.modifiedDataTable1[1]?.baki_debet_res || 0) * 0.05) + 
+                (-1 * (this.modifiedDataTable1[2]?.baki_debet_res || 0) * 0.15) + 
+                (-1 * (this.modifiedDataTable1[3]?.baki_debet_res || 0) * 0.50) + 
+                (-1 * (this.modifiedDataTable1[4]?.baki_debet_res || 0) * 1.0)
+                console.log("testEstimate", testEstimate);
+
+                let testEstimate1 = (this.dataTableNeracaBank.ckpnKredit) + 
+                ckpnAyda + asetLainnyaBv - 
+                this.dataTableNeracaBank.asetLainnya - 
+                (this.assetsBankAsalPemburukan.find(item => item.label === 'Properti Terbengkalai')?.value || 0);
+                
+                console.log("testEstimate1", testEstimate1);
+
+                const estimasiKerugian = (
+                    (-1 * (this.modifiedDataTable1[0]?.baki_debet_res || 0) * 0.01) + 
+                    (-1 * (this.modifiedDataTable1[1]?.baki_debet_res || 0) * 0.05) + 
+                    (-1 * (this.modifiedDataTable1[2]?.baki_debet_res || 0) * 0.15) + 
+                    (-1 * (this.modifiedDataTable1[3]?.baki_debet_res || 0) * 0.50) + 
+                    (-1 * (this.modifiedDataTable1[4]?.baki_debet_res || 0) * 1.0) - 
+                    (this.dataTableNeracaBank.ckpnKredit) + 
+                    ckpnAyda + asetLainnyaBv - 
+                    this.dataTableNeracaBank.asetLainnya - 
+                    (this.assetsBankAsalPemburukan.find(item => item.label === 'Properti Terbengkalai')?.value || 0)
+                );
                 this.liabilitiesEquityBankAsalPemburukan.splice(                                                
                 this.liabilitiesEquityBankAsalPemburukan.findIndex(item => item.label === 'Total Ekuitas'), // Temukan indeks 'Total Ekuitas'
                 0, // 0 berarti tidak ada elemen yang dihapus
@@ -1221,14 +1313,29 @@ export class LctComponent implements OnInit, OnDestroy {
             const estimasiKerugianC = asalPemburukanC.find(item => item.label === 'Estimasi Kerugian');
             
             if (estimasiKerugianC) {
-                estimasiKerugianC.value =
-                    (asalPemburukan.find(item => item.label === 'Estimasi Kerugian')?.value ?? 0) -
-                    (asalPemburukan.find(item => item.label === 'Kewajiban Akseptasi')?.value ?? 0) -
-                    (asalPemburukan.find(item => item.label === 'Kewajiban Spot dan Derivatif')?.value ?? 0) -
-                    (asetPemburukan.find(item => item.label === 'Tagihan Akseptasi')?.value ?? 0) -
-                    (asetPemburukan.find(item => item.label === 'Tagihan Spot dan Derivatif')?.value ?? 0) -
-                    (asetPemburukan.find(item => item.label === 'Aset Lainnya')?.value ?? 0);
+                const estimasiKerugianValue = asalPemburukan.find(item => item.label === 'Estimasi Kerugian')?.value ?? 0;
+                const kewajibanAkseptasiValue = asalPemburukan.find(item => item.label === 'Kewajiban Akseptasi')?.value ?? 0;
+                const kewajibanSpotDerivatifValue = asalPemburukan.find(item => item.label === 'Kewajiban Spot dan Derivatif')?.value ?? 0;
+                const tagihanAkseptasiValue = asetPemburukan.find(item => item.label === 'Tagihan Akseptasi')?.value ?? 0;
+                const tagihanSpotDerivatifValue = asetPemburukan.find(item => item.label === 'Tagihan Spot dan Derivatif')?.value ?? 0;
+                const asetLainnyaValue = asetPemburukan.find(item => item.label === 'Aset Lainnya')?.value ?? 0;
+            
+                console.log("Estimasi Kerugian:", estimasiKerugianValue);
+                console.log("Kewajiban Akseptasi:", kewajibanAkseptasiValue);
+                console.log("Kewajiban Spot dan Derivatif:", kewajibanSpotDerivatifValue);
+                console.log("Tagihan Akseptasi:", tagihanAkseptasiValue);
+                console.log("Tagihan Spot dan Derivatif:", tagihanSpotDerivatifValue);
+                console.log("Aset Lainnya:", asetLainnyaValue);
+            
+                estimasiKerugianC.value = 
+                    estimasiKerugianValue -
+                    (tagihanSpotDerivatifValue - kewajibanSpotDerivatifValue) -
+                    (tagihanAkseptasiValue -  kewajibanAkseptasiValue) -
+                    asetLainnyaValue;
+            
+                console.log("Hasil Estimasi KerugianC:", estimasiKerugianC.value);
             }
+            
             
             const totalEquityC = this.liabilitiesEquityBankAsalPemburukanC.reduce((sum, item) =>
                 equityCategories.includes(item.label) ? sum + (item.value ?? 0) : sum
@@ -1293,7 +1400,7 @@ export class LctComponent implements OnInit, OnDestroy {
             this.cekDataBb.filter(item => item.label === 'BB + BDL')[0].aset = (this.asetBdl.find(item => item.label === 'Total Aset')?.value || 0) + (this.asetBp.find(item => item.label === 'Total Aset')?.value || 0) - ((this.kewajibanBp.find(item => item.label === 'Modal KPMM')?.value || 0) + (this.kewajibanBp.find(item => item.label === 'Kewajiban kepada BDL')?.value || 0)) + ((this.assetsBankAsal.find(item => item.label === 'Penempatan pada Bank Lain')?.value || 0) - (this.asetBp.find(item => item.label === 'Penempatan pada Bank Lain')?.value || 0) + (this.kewajibanBp.find(item => item.label === 'Modal KPMM')?.value || 0));
             this.cekDataBb.filter(item => item.label === 'BA')[0].aset = this.assetsBankAsalPemburukanC.find(item => item.label === 'TOTAL ASET')?.value || 0;
 
-            this.cekDataBb.filter(item => item.label === 'BB + BDL')[0].kewajiban = (this.kewajibanBdl.find(item => item.label === 'Total Kewajiban')?.value || 0) + (this.kewajibanBp.find(item => item.label === 'Total Kewajiban')?.value || 0) - (this.kewajibanBp.find(item => item.label === 'Kewajiban pada BDL')?.value || 0) - (this.kewajibanBp.find(item => item.label === 'Kewajiban kepada BDL')?.value || 0);
+            this.cekDataBb.filter(item => item.label === 'BB + BDL')[0].kewajiban = (this.kewajibanBdl.find(item => item.label === 'Total Kewajiban')?.value || 0) + (this.kewajibanBp.find(item => item.label === 'Total Kewajiban')?.value || 0) - (this.kewajibanBp.find(item => item.label === 'Kewajiban kepada BDL')?.value || 0);
             this.cekDataBb.filter(item => item.label === 'BA')[0].kewajiban = this.liabilitiesEquityBankAsalPemburukanC.find(item => item.label === 'Total Kewajiban')?.value || 0;
 
             this.cekDataBb.filter(item => item.label === 'BB + BDL')[0].modal = (this.kewajibanBdl.find(item => item.label === 'Total Ekuitas')?.value || 0) + (this.kewajibanBp.find(item => item.label === 'Total Ekuitas')?.value || 0) + ((this.assetsBankAsal.find(item => item.label === 'Penempatan pada Bank Lain')?.value || 0) - (this.asetBp.find(item => item.label === 'Penempatan pada Bank Lain')?.value || 0) );
@@ -1476,9 +1583,7 @@ export class LctComponent implements OnInit, OnDestroy {
                 (liabilitasBank.find(item => item.label === 'Giro')?.value ?? 0) +
                 (liabilitasBank.find(item => item.label === 'Tabungan')?.value ?? 0) +
                 (liabilitasBank.find(item => item.label === 'Simpanan Berjangka')?.value ?? 0) +
-                (liabilitasBank.find(item => item.label === 'Kewajiban pada Bank Lain')?.value ?? 0) +
-                (liabilitasBank.find(item => item.label === 'Kewajiban Spot dan Derivatif')?.value ?? 0);
-        }
+                (liabilitasBank.find(item => item.label === 'Kewajiban pada Bank Lain')?.value ?? 0)         }
 
         this.gwmDataHasilBi = (this.gwmData.total * +this.gwmData.parameter1 / 100) / ((+this.gwmData.parameter1 + +this.gwmData.parameter2) / 100)
 
@@ -2725,17 +2830,36 @@ export class LctComponent implements OnInit, OnDestroy {
                             { label: 'Kas', value: this.dataTableNeracaBank.kas },
                             { label: 'Penempatan pada BI', value: this.assetsBankAsalPemburukan[2].value || 0 },
                             { label: 'Penempatan pada Bank Lain', value: this.dataTableNeracaBank.penempatanPadaBankLain },
-                            { label: 'Surat Berharga', value: this.assetsBankAsalPemburukan[4].value || 0},
+                            { label: 'Surat Berharga', value: this.assetsBankAsalPemburukanC[4].value || 0},
                             { label: 'Surat Berharga (REPO)', value: this.dataTableNeracaBank.suratBerhargaRepo },
                             { label: 'Reverse Repo', value: this.dataTableNeracaBank.reverseRepo },
-                            { label: 'Kredit (Net)', value: (this.assetsBankAsalPemburukanC[11].value || 0 + (this.assetsBankAsalPemburukanC[13].value || 0))},
-                            { label: 'Lancar', value: this.assetsBankAsalPemburukanC[11].value || 0},
-                            { label: 'Dalam Perhatian Khusus', value: this.assetsBankAsalPemburukanC[13].value || 0},
+                            { label: 'Kredit (Net)', value: ((this.assetsBankAsalPemburukanC[11].value || 0) + (this.assetsBankAsalPemburukanC[13].value || 0))},
+                            { label: 'Lancar', value: ((this.assetsBankAsalPemburukan[11].value || 0) + (this.assetsBankAsalPemburukan[12].value || 0))},
+                            { label: 'Dalam Perhatian Khusus', value: ((this.assetsBankAsalPemburukan[13].value || 0) + (this.assetsBankAsalPemburukan[14].value || 0))},
                             { label: 'Aset tetap dan inventaris - Net', value: ((this.assetsBankAsalPemburukanC.filter(item => item.label === 'Aset Tetap dan Inventaris')[0]?.value || 0) + (this.assetsBankAsalPemburukanC.filter(item => item.label === 'Akumulasi Penyusutan (-)')[0]?.value || 0)) || 0},
                             { label: 'Aset tak berwujud - Net', value: ((this.assetsBankAsalPemburukanC.filter(item => item.label === 'Aset Tidak Berwujud')[0]?.value || 0) + (this.assetsBankAsalPemburukanC.filter(item => item.label === 'Akumulasi Amortisasi')[0]?.value || 0)) || 0 },
-                            { label: 'Total Aset', value: (this.asetBp.slice(1).reduce((sum, item) => sum + (item.value || 0), 0)) - (this.assetsBankAsalPemburukanC[11].value || 0 + (this.assetsBankAsalPemburukanC[13].value || 0))
+                            { label: 'Total Aset', value: 0
                             }
                         ];
+
+                        let kreditNet = this.asetBp.find(item => item.label === 'Kredit (Net)');
+                        let lancar = this.asetBp.find(item => item.label === 'Lancar');
+                        let dalamPerhatianKhusus = this.asetBp.find(item => item.label === 'Dalam Perhatian Khusus');
+                        
+                        if (kreditNet && lancar && dalamPerhatianKhusus) {
+                            kreditNet.value = lancar.value + dalamPerhatianKhusus.value;
+                        } else {
+                            console.log('Data tidak lengkap atau salah');
+                        }
+
+                        let totalAset = this.asetBp.find(item => item.label === 'Total Aset');
+                        if (totalAset) {
+                            totalAset.value = this.asetBp.slice(1).reduce((sum, item) => sum + (item.value || 0), 0) - (this.asetBp.find(item => item.label === 'Kredit (Net)')?.value || 0);
+                        } else {
+                            console.log('Total Aset tidak ditemukan');
+                        }
+                        
+                        console.log('selisih BDL', this.selisishBp);
 
                         this.kewajibanBp = [
                             { label: 'LIABILITAS', value: 0, isSubheader: true },
@@ -2748,6 +2872,16 @@ export class LctComponent implements OnInit, OnDestroy {
                             { label: 'Total Ekuitas', value: 0 },
                             { label: 'Total Kewajiban dan Ekuitas', value: 0 }
                         ];
+                        const asetDialihkan = this.posPengalihan.find(item => item.label === "Aset yang dialihkan")?.nominal ?? 0;
+                        const kewajibanDialihkan = this.posPengalihan.find(item => item.label === "Kewajiban yang dialihkan")?.nominal ?? 0;
+
+                        const kewajibanBdL = this.kewajibanBp.find(item => item.label === 'Kewajiban kepada BDL');
+                        if (kewajibanBdL) {
+                            kewajibanBdL.value = asetDialihkan - kewajibanDialihkan;
+                        } else {
+                            console.error("Kewajiban kepada BDL not found");
+                        }
+
                         this.kewajibanBp[4].value = this.kewajibanBp[1].value + this.kewajibanBp[2].value + this.kewajibanBp[3].value;  
                         this.kewajibanBp[7].value = this.kewajibanBp[6].value;  
                         this.kewajibanBp[8].value = this.kewajibanBp[4].value + this.kewajibanBp[7].value;  
@@ -2771,17 +2905,45 @@ export class LctComponent implements OnInit, OnDestroy {
                                 { label: 'Kredit Kurang Lancar', value: (this.assetsBankAsalPemburukanC.find(item => item.label === 'Kredit Kol 3')?.value || 0 ) + (this.assetsBankAsalPemburukan.find(item => item.label === 'CKPN Kredit Kol 3 (-)')?.value || 0)},
                                 { label: 'Kredit Diragukan', value: (this.assetsBankAsalPemburukanC.find(item => item.label === 'Kredit Kol 4')?.value || 0) + (this.assetsBankAsalPemburukan.find(item => item.label === 'CKPN Kredit Kol 4 (-)')?.value || 0) },
                                 { label: 'Kredit Macet', value: (this.assetsBankAsalPemburukanC.find(item => item.label === 'Kredit Kol 5')?.value || 0) + (this.assetsBankAsalPemburukan.find(item => item.label === 'CKPN Kredit Kol 5 (-)')?.value || 0) },
-                                { label: 'Aset Keuangan Lain', value: this.assetsBankAsalPemburukanC.find(item => item.label === 'Aset Keuangan Lain')?.value || 0 },
-                                { label: 'CKPN Aset Keuangan Lainnya', value: this.assetsBankAsalPemburukanC.find(item => item.label === 'CKPN Aset Keuangan Lain (-)')?.value || 0 },
+                                { label: 'Aset Keuangan Lain', value: (this.assetsBankAsalPemburukanC.find(item => item.label === 'Aset Keuangan Lain')?.value || 0) + (this.assetsBankAsalPemburukanC.find(item => item.label === 'CKPN Aset Keuangan Lain (-)')?.value || 0) },
+                                { label: 'CKPN Aset Keuangan Lainnya', value: 0 },
                                 { label: 'Aset Tetap dan Inventaris-Net', value: 0 },
                                 { label: 'Aset Tidak Berwujud-Net', value: (this.assetsBankAsalPemburukan.find(item => item.label === "Aset Tidak Berwujud")?.value || 0) + (this.assetsBankAsalPemburukan.find(item => item.label === "Akumulasi Amortisasi")?.value || 0) - (this.assetsBankAsalPemburukanC.find(item => item.label === 'Aset Tetap dan Inventaris-Net')?.value || 0)},
                                 { label: 'Properti Terbengkalai-Net', value: this.assetsBankAsalPemburukanC.find(item => item.label === 'Properti Terbengkalai-Net')?.value || 0 },
                                 { label: 'AYDA-Net', value: this.assetsBankAsalPemburukanC.find(item => item.label === 'AYDA')?.value || 0 },
                                 { label: 'Aset Lainnya', value: this.assetsBankAsalPemburukanC.find(item => item.label === 'Aset Lainnya')?.value || 0 },
-                                { label: 'Total Aset', value: this.asetBdl.slice(1).reduce((sum, item) => sum + (item.value || 0), 0)
+                                { label: 'Total Aset', value: 0
                                 }
                               ];
-                        
+
+                              let kreditLancar = this.asetBdl.find(item => item.label === 'Kredit Lancar');
+                              let kreditDalamPerhatianKhusus = this.asetBdl.find(item => item.label === 'Kredit Dalam Perhatian Khusus');
+                              let kreditKurangLancar = this.asetBdl.find(item => item.label === 'Kredit Kurang Lancar');
+                              let kreditDiragukan = this.asetBdl.find(item => item.label === 'Kredit Diragukan');
+                              let kreditMacet = this.asetBdl.find(item => item.label === 'Kredit Macet');
+                              
+                              // Memastikan elemen ditemukan, meskipun nilai bisa 0
+                              if (kreditLancar !== undefined && kreditDalamPerhatianKhusus !== undefined && kreditKurangLancar !== undefined && kreditDiragukan !== undefined && kreditMacet !== undefined) {
+                                  let totalKreditNet = kreditLancar.value + kreditDalamPerhatianKhusus.value + kreditKurangLancar.value + kreditDiragukan.value + kreditMacet.value;
+                                
+                                    console.log('Total Kredit (Net)', totalKreditNet);
+                                    
+                                  let totalKreditNetItem = this.asetBdl.find(item => item.label === 'Total Kredit (Net)');
+                                  if (totalKreditNetItem) {
+                                      totalKreditNetItem.value = totalKreditNet;
+                                  }
+                                
+                                let totalAsetItem = this.asetBdl.find(item => item.label === 'Total Aset');
+                                if (totalAsetItem) {
+                                    totalAsetItem.value = this.asetBdl.slice(1).reduce((sum, item) => sum + (item.value || 0), 0) - totalKreditNet;
+                                }
+                            
+                            } else {
+                                console.log('Salah satu elemen tidak ditemukan');
+                            }
+                            
+
+                                                      
                         this.kewajibanBdl = [
                                 { label: 'LIABILITAS', value: 0, isSubheader: true },
                                 { label: 'Uninsured Deposits', value: (this.liabilitiesEquityBankBp.find(item => item.label === 'Total Simpanan')?.value || 0) - (this.kewajibanBp.find(item => item.label === 'Insured Deposits')?.value || 0) },   
@@ -2797,7 +2959,7 @@ export class LctComponent implements OnInit, OnDestroy {
                                 { label: 'EKUITAS', value: 0, isSubheader: true },
                                 { label: 'Modal Disetor', value: 0 },
                                 { label: 'Modal Dasar', value: this.liabilitiesEquityBankAsal.find(item => item.label === 'Modal Dasar')?.value || 0 },
-                                { label: 'Modal yg Belum Disetor', value: this.liabilitiesEquityBankAsal.find(item => item.label === 'Modal yg Belum Disetor')?.value || 0 },
+                                { label: 'Modal yg Belum Disetor (-)', value: this.liabilitiesEquityBankAsal.find(item => item.label === 'Modal yg Belum Disetor (-)')?.value || 0 },
                                 { label: 'Tambahan Modal Disetor', value: 0 },
                                 { label: 'Agio', value: this.liabilitiesEquityBankAsal.find(item => item.label === 'Agio')?.value || 0 },
                                 { label: 'Penghasilan Komprehensif Lain', value: this.liabilitiesEquityBankAsal.find(item => item.label === 'Penghasilan Komprehensif Lain')?.value || 0 },
@@ -2847,8 +3009,9 @@ export class LctComponent implements OnInit, OnDestroy {
         const selisihItem = this.posPengalihan.find(item => item.label === "Selisih");
         if (selisihItem) {
             selisihItem.nominal = selisih;
-            this.selisishBp = selisih;
         }
+
+        this.selisishBp = selisih;
         
         return selisih;
     }

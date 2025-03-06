@@ -119,4 +119,14 @@ export class KreditService {
             throw error;
           });
       }
+
+      deleteDuplicateData() {
+        const url = `${environment.backendUrl}/kredit/remove-duplicate`;
+        return this.http.delete(url, { headers: this.headers }).toPromise();
+      }
+
+      deleteData(nama_bank: string) {
+        const url = `${environment.backendUrl}/kredit/remove-all?nama_bank=${encodeURIComponent(nama_bank)}`;
+        return this.http.delete(url, { headers: this.headers }).toPromise();
+      }
 }

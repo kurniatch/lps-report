@@ -66,7 +66,7 @@ export class ComponentService {
     getNeracaBank() {
         const url = `${environment.backendUrl}/report/result-total`;
         return this.http
-            .get<ReportStatus[]>(url, { headers: this.headers })
+            .get<any>(url, { headers: this.headers })
             .toPromise()
             .then((data) => {
                 if (data) {
@@ -92,6 +92,16 @@ export class ComponentService {
         const url = `${environment.backendUrl}/report/total-status-null`;
         return this.http.get(url, { headers: this.headers }).toPromise();
     }
+
+    getComponentsCheckBank() {
+        const url = `${environment.backendUrl}/report/check-bank`;
+        return this.http.get(url, { headers: this.headers }).toPromise();
+    }
+
+    getComponentsCheckPeriode(period: string) {
+        const url = `${environment.backendUrl}/report/check-bank-period?period=${period}`;
+        return this.http.get(url, { headers: this.headers }).toPromise();
+    }    
 
     getLabaRugiTotal() {
         const url = `${environment.backendUrl}/report/result-total-laba`;

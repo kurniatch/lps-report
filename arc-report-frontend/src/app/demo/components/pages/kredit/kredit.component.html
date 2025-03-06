@@ -100,6 +100,15 @@
                                 (click)="openExport()">
                             </button>
                         </div>
+                        <div class="flex items-center space-x-4">
+                            <button pButton pRipple label="Delete Duplicate" icon="pi pi-trash" class="p-button-info"
+                                [disabled]="!isAdmin" (click)="deleteDuplicate()">
+                            </button>
+
+                            <button pButton pRipple label="Reset" icon="pi pi-refresh" class="p-button-danger"
+                                [disabled]="!isAdmin" (click)="resetData()">
+                            </button>
+                        </div>
                     </div>
                     <p-table #dt1 [value]="components1" [lazy]="true" (onLazyLoad)="onLazyLoad($event)"
                         [loading]="loading" [paginator]="true" [rows]="30" [totalRecords]="totalRecords" dataKey="id"

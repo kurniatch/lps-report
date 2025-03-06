@@ -85,7 +85,6 @@
                             </p-dropdown>
                         </h5> -->
                         <div class="flex items-center space-x-4">
-
                             <button pButton pRipple icon="pi pi-plus" class="p-button-success" [disabled]="!isAdmin"
                                 (click)="openNew()" aria-label="Tambah">
                             </button>
@@ -96,6 +95,17 @@
 
                             <button pButton pRipple label="Export" icon="pi pi-download" class="p-button-help"
                                 (click)="openExport()">
+                            </button>
+                        </div>
+
+                        <!-- Right-aligned buttons -->
+                        <div class="flex items-center space-x-4">
+                            <button pButton pRipple label="Delete Duplicate" icon="pi pi-trash" class="p-button-info"
+                                [disabled]="!isAdmin" (click)="deleteDuplicate()">
+                            </button>
+
+                            <button pButton pRipple label="Reset" icon="pi pi-refresh" class="p-button-danger"
+                                [disabled]="!isAdmin" (click)="resetData()">
                             </button>
                         </div>
                     </div>

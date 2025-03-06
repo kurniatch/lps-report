@@ -15,56 +15,84 @@
             </div>
         </div>
     </div>
+
     <div class="col-12 lg:col-6 xl:col-3">
         <div class="card mb-0">
             <div class="flex justify-content-between mb-3">
                 <div>
-                    <span class="block text-500 font-medium mb-3 text-xl">Laporan Neraca
-                    </span>
+                    <span class="text-500 font-medium mb-3 text-xl">Laporan Neraca</span>
                     <div class="text-900 font-medium text-xl">
-                        {{
-                        formatNumberWithDots(totalNeracaBank || 0)
-                        }}
+                        {{ formatNumberWithDots(totalNeracaBank || 0) }}
                     </div>
                 </div>
                 <div class="flex align-items-center justify-content-center bg-orange-100 border-round"
                     [ngStyle]="{ width: '2.5rem', height: '2.5rem' }">
-                    <i class="pi pi-info-circle text-orange-500 text-xl"></i>
+                    <i class="pi pi-briefcase text-orange-500 text-xl"></i>
+                    <!-- Changed icon to suit financial reports -->
                 </div>
             </div>
         </div>
     </div>
+
     <div class="col-12 lg:col-6 xl:col-3">
         <div class="card mb-0">
             <div class="flex justify-content-between mb-3">
                 <div>
-                    <span class="block text-500 font-medium mb-3 text-xl">Laporan Laba Rugi</span>
+                    <span class="text-500 font-medium mb-3 text-xl">Laporan Laba Rugi</span>
                     <div class="text-900 font-medium text-xl">
-                        {{
-                        formatNumberWithDots(
-                        totalLabaRugi || 0
-                        )
-                        }}
+                        {{ formatNumberWithDots(totalLabaRugi || 0) }}
                     </div>
                 </div>
                 <div class="flex align-items-center justify-content-center bg-green-100 border-round"
                     [ngStyle]="{ width: '2.5rem', height: '2.5rem' }">
-                    <i class="pi pi-check-circle text-green-500 text-xl"></i>
+                    <i class="pi pi-wallet text-green-500 text-xl"></i>
+                    <!-- Changed to wallet icon, indicating financials -->
                 </div>
             </div>
         </div>
     </div>
+
     <div class="col-12 lg:col-6 xl:col-3">
         <div class="card mb-0">
             <div class="flex justify-content-between mb-3">
                 <div>
-                    <span class="block text-500 font-medium mb-3 text-xl">Laporan Error</span>
+                    <span class="text-500 font-medium mb-3 text-xl">Laporan SCV</span>
                     <div class="text-900 font-medium text-xl">
-                        {{
-                        formatNumberWithDots(
-                        totalMissing || 0
-                        )
-                        }}
+                        {{ formatNumberWithDots(totalScv || 0) }}
+                    </div>
+                </div>
+                <div class="flex align-items-center justify-content-center bg-blue-100 border-round"
+                    [ngStyle]="{ width: '2.5rem', height: '2.5rem' }">
+                    <i class="pi pi-cog text-blue-500 text-xl"></i> <!-- Changed to a settings icon to represent SCV -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 lg:col-6 xl:col-3">
+        <div class="card mb-0">
+            <div class="flex justify-content-between mb-3">
+                <div>
+                    <span class="text-500 font-medium mb-3 text-xl">Laporan Kredit Pembiayaan</span>
+                    <div class="text-900 font-medium text-xl">
+                        {{ formatNumberWithDots(totalKredit || 0) }}
+                    </div>
+                </div>
+                <div class="flex align-items-center justify-content-center bg-green-100 border-round"
+                    [ngStyle]="{ width: '2.5rem', height: '2.5rem' }">
+                    <i class="pi pi-credit-card text-green-500 text-xl"></i> <!-- Changed to a credit card icon -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 lg:col-6 xl:col-3">
+        <div class="card mb-0">
+            <div class="flex justify-content-between mb-3">
+                <div>
+                    <span class="text-500 font-medium mb-3 text-xl">Laporan Error</span>
+                    <div class="text-900 font-medium text-xl">
+                        {{ formatNumberWithDots(totalMissing || 0) }}
                     </div>
                 </div>
                 <div class="flex align-items-center justify-content-center bg-red-100 border-round"
@@ -74,6 +102,89 @@
             </div>
         </div>
     </div>
+
+    <div class="col-12 lg:col-6 xl:col-3">
+        <div class="card mb-0">
+            <div class="flex justify-content-between mb-3">
+                <div>
+                    <span class="text-500 font-medium mb-3 text-xl">Total Bank Terdaftar</span>
+                    <div class="text-900 font-medium text-xl">
+                        {{ formatNumberWithDots(totalBank || 0) }}
+                    </div>
+                </div>
+                <div class="flex align-items-center justify-content-center bg-green-100 border-round"
+                    [ngStyle]="{ width: '2.5rem', height: '2.5rem' }">
+                    <i class="pi pi-building text-green-500 text-xl"></i>
+                    <!-- Changed to a building icon to represent banks -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 xl:col-6">
+        <div class="card">
+            <p-table #dt1 dataKey="id" [value]="checkBank" [paginator]="true" [responsive]="true" [sortMode]="'single'"
+                [rows]="5" [rowsPerPageOptions]="[5, 10, 25, 50]" [globalFilterFields]="['id_pelapor', 'nama_bank']"
+                styleClass="p-datatable-gridlines">
+                <ng-template pTemplate="caption">
+                    <div class="flex">
+                        <h6 class="mt-2 text-2xl font-bold">Bank Overview</h6>
+                        <span class="ml-4">
+                            <p-dropdown [options]="dataBankPeriode" optionLabel="periode" optionValue="periode"
+                                class="text-2xl" [filter]="true" placeholder="Select Periode" [showClear]="true"
+                                (onChange)="fecthDataTable2($event.value)" (onClear)="clearBank()">
+                            </p-dropdown>
+                        </span>
+                    </div>
+                </ng-template>
+
+
+                <!-- Header Section -->
+                <ng-template pTemplate="header">
+                    <tr>
+                        <th>ID - Bank</th>
+                        <th class="text-center">Neraca Bank</th>
+                        <th class="text-center">SCV</th>
+                        <th class="text-center">Kredit</th>
+                        <th class="text-center">Laba Rugi</th>
+                    </tr>
+                </ng-template>
+
+                <!-- Body Section -->
+                <ng-template pTemplate="body" let-rowData>
+                    <tr>
+                        <td>{{ rowData.id_pelapor }} - {{ rowData.nama_bank }}</td>
+                        <td class="text-center">
+                            <i *ngIf="rowData.found_in_neraca_bank === 'Yes'" class="pi pi-check"
+                                style="color: #4caf50;"></i>
+                            <i *ngIf="rowData.found_in_neraca_bank === 'No'" class="pi pi-times"
+                                style="color: #f44336;"></i>
+                        </td>
+                        <td class="text-center">
+                            <i *ngIf="rowData.found_in_data_scv === 'Yes'" class="pi pi-check"
+                                style="color: #4caf50;"></i>
+                            <i *ngIf="rowData.found_in_data_scv === 'No'" class="pi pi-times"
+                                style="color: #f44336;"></i>
+                        </td>
+                        <td class="text-center">
+                            <i *ngIf="rowData.found_in_kredit_pembiayaan === 'Yes'" class="pi pi-check"
+                                style="color: #4caf50;"></i>
+                            <i *ngIf="rowData.found_in_kredit_pembiayaan === 'No'" class="pi pi-times"
+                                style="color: #f44336;"></i>
+                        </td>
+                        <td class="text-center">
+                            <i *ngIf="rowData.found_in_laba_rugi === 'Yes'" class="pi pi-check"
+                                style="color: #4caf50;"></i>
+                            <i *ngIf="rowData.found_in_laba_rugi === 'No'" class="pi pi-times"
+                                style="color: #f44336;"></i>
+                        </td>
+                    </tr>
+                </ng-template>
+            </p-table>
+        </div>
+    </div>
+
+
 
     <div class="col-12 xl:col-6">
         <div class="card">
@@ -116,7 +227,8 @@
                         </div>
                         <div>
                             <span [ngClass]="cpuUsage > 80 ? 'text-red-500' : 'text-orange-500'"
-                                class="ml-3 font-medium">{{ cpuUsage }}%</span>
+                                class="ml-3 font-medium">{{
+                                cpuUsage }}%</span>
                         </div>
                     </div>
                 </li>
@@ -132,14 +244,15 @@
                             <div class="bg-green-500 h-full" [ngStyle]="{ width: memoryUsage + '%' }"></div>
                         </div>
                         <span [ngClass]="memoryUsage > 70 ? 'text-red-500' : 'text-green-500'"
-                            class="ml-3 font-medium">{{ memoryUsage }}%</span>
+                            class="ml-3 font-medium">{{
+                            memoryUsage }}%</span>
                     </div>
                 </li>
             </ul>
         </div>
     </div>
 
-    <div class="col-12 xl:col-6">
+    <!-- <div class="col-12 xl:col-6">
         <div class="card">
             <h5>Note</h5>
             <p-panel header="Informations" [toggleable]="true" class="line-height-3 m-0 text-2xl">
@@ -160,7 +273,7 @@
                 </div>
             </p-panel>
         </div>
-    </div>
+    </div> -->
 
     <div class="col-12 xl:col-12">
         <div class="card">

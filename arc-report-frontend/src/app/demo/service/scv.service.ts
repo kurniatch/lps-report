@@ -107,4 +107,14 @@ export class ScvService {
             throw error;
           });
       }
+    
+      deleteDuplicateData() {
+        const url = `${environment.backendUrl}/scv/remove-duplicate`;
+        return this.http.delete(url, { headers: this.headers }).toPromise();
+      }
+
+      deleteData(nama_bank: string) {
+        const url = `${environment.backendUrl}/scv/remove-all?nama_bank=${encodeURIComponent(nama_bank)}`;
+        return this.http.delete(url, { headers: this.headers }).toPromise();
+      }
 }

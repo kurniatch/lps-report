@@ -925,4 +925,31 @@ export class LabaComponent implements OnInit, OnDestroy {
     async onBankSelect(event: any) {
         console.log(event);
     }
+
+    async deleteDuplicate() {
+        try {
+            const responseData = await this.crudService.deleteDuplicateDataLaba();
+            console.log('Response from backend:', responseData);
+            window.location.reload();
+        } catch (error) {
+            console.error('Error sending data to backend:', error);
+        }
+    }
+
+    async resetData() {
+        let nama_bank: string = ""
+        if (this.selectedSearch){
+            nama_bank = this.selectedSearch;
+        }
+        else{
+            nama_bank = "all"
+        }
+        try {
+            const responseData = await this.crudService.deleteDataLaba(nama_bank);
+            console.log('Response from backend:', responseData);
+            window.location.reload();
+        } catch (error) {
+            console.error('Error sending data to backend:', error);
+        }
+    }
 }

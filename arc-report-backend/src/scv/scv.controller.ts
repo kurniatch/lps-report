@@ -155,6 +155,16 @@ export class ScvController {
   @Delete('/remove')
   async deleteData(@Body() data: any): Promise<any> {
     return await this.scvService.deleteData(data);
-  } 
+  }
+
+  @Delete('/remove-duplicate')
+  async deleteDuplicateData(): Promise<any> {
+    return await this.scvService.deleteDuplicateData();
+  }
+
+  @Delete('/remove-all') 
+  async deleteTruncateData(@Query('nama_bank') nama_bank: string): Promise<any> {
+    return await this.scvService.deleteTruncateData(nama_bank);
+  }
   
 }

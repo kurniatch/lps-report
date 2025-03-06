@@ -25,6 +25,9 @@ import { DialogModule } from 'primeng/dialog';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { NgxPrintModule } from 'ngx-print';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { Component, OnInit } from '@angular/core';
+import { MessageService } from 'primeng/api';
+
 
 @NgModule({
     imports: [

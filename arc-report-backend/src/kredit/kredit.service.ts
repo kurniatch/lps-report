@@ -644,4 +644,50 @@ export class KreditService {
     }
   }
 
+  async deleteDuplicateData() {
+    try {
+      const result = await this.prisma.$queryRaw`
+        WITH CTE AS (
+            SELECT 
+                ROW_NUMBER() OVER (PARTITION BY id_pelapor, periode_data, nomor_rekening ORDER BY (SELECT NULL)) AS row_num,
+                ctid,
+                id_pelapor,
+                periode_data,
+                nomor_rekening,
+            FROM kredit_pembiayaan
+        )
+        DELETE FROM kredit_pembiayaan
+        WHERE ctid IN (
+            SELECT ctid
+            FROM CTE
+            WHERE row_num > 1
+        );
+      `;
+      return result;
+    } catch (error) {
+      console.error('Error executing custom query:', error);
+      throw new Error('Error executing custom query');
+    }
+  }
+
+
+  async deleteTruncateData(nama_bank: string): Promise<any> {
+    try {
+      if (nama_bank !== "all") {
+        const result = await this.prisma.$queryRaw`
+          DELETE FROM kredit_pembiayaan WHERE LEFT("id_pelapor", 3) = ${nama_bank};
+        `;
+        return result;
+      } else {
+        const result = await this.prisma.$queryRaw`
+          TRUNCATE TABLE kredit_pembiayaan;
+        `;
+        return result;
+      }
+    } catch (error) {
+      console.error('Error executing custom query:', error);
+      throw new Error('Error executing custom query');
+    }
+  }
+
 }

@@ -142,5 +142,16 @@ export class KreditController {
   async deleteData(@Body() data: any): Promise<any> {
     return await this.kreditService.deleteData(data);
   } 
+
+
+  @Delete('/remove-duplicate')
+  async deleteDuplicateData(): Promise<any> {
+    return await this.kreditService.deleteDuplicateData();
+  }
+
+  @Delete('/remove-all') 
+  async deleteTruncateData(@Query('nama_bank') nama_bank: string): Promise<any> {
+    return await this.kreditService.deleteTruncateData(nama_bank);
+  }
   
 }

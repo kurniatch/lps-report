@@ -31,6 +31,16 @@
                         (click)="openExport()">
                     </button>
                 </div>
+                <!-- Right-aligned buttons -->
+                <div class="flex items-center space-x-4">
+                    <button pButton pRipple label="Delete Duplicate" icon="pi pi-trash" class="p-button-info"
+                        [disabled]="!isAdmin" (click)="deleteDuplicate()">
+                    </button>
+
+                    <button pButton pRipple label="Reset" icon="pi pi-refresh" class="p-button-danger"
+                        [disabled]="!isAdmin" (click)="resetData()">
+                    </button>
+                </div>
             </div>
             <p-table #dt1 [columns]="components1" [value]="components1" [lazy]="true" (onLazyLoad)="onLazyLoad($event)"
                 [loading]="loading" [paginator]="!(findSearch || selectedSearch)" [rows]="30"

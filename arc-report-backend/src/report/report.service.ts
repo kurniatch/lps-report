@@ -145,7 +145,13 @@ export class ReportService {
   async findAllReportTotal() {
     try {
       const result = await this.prisma.$queryRaw`
-      SELECT COUNT(*) AS total FROM neraca_bank;
+        SELECT 
+          (SELECT COUNT(*) FROM neraca_bank) AS total_neraca_bank,
+          (SELECT COUNT(*) FROM laba_rugi) AS total_laba_rugi,
+          (SELECT COUNT(*) FROM data_scv) AS total_scv,
+          (SELECT COUNT(*) FROM kredit_pembiayaan) AS total_kredit,
+          (SELECT COUNT(*) FROM nama_bank) AS total_bank;
+
       `;
       return result;
     } catch (error) {
@@ -154,10 +160,38 @@ export class ReportService {
     }
   }
 
-  async findAllReportTotalLaba() {
+  findCheckData(){
     try {
-      const result = await this.prisma.$queryRaw`
-      SELECT COUNT(*) AS total FROM laba_rugi;
+      const result = this.prisma.$queryRaw`
+        SELECT
+            kode AS id_pelapor,
+            nama AS nama_bank,
+            MAX(CASE WHEN source_table = 'neraca_bank' THEN 'Yes' ELSE 'No' END) AS found_in_neraca_bank,
+            MAX(CASE WHEN source_table = 'data_scv' THEN 'Yes' ELSE 'No' END) AS found_in_data_scv,
+            MAX(CASE WHEN source_table = 'kredit_pembiayaan' THEN 'Yes' ELSE 'No' END) AS found_in_kredit_pembiayaan,
+            MAX(CASE WHEN source_table = 'laba_rugi' THEN 'Yes' ELSE 'No' END) AS found_in_laba_rugi,
+            (
+                CASE WHEN MAX(CASE WHEN source_table = 'neraca_bank' THEN 'Yes' ELSE 'No' END) = 'Yes' THEN 1 ELSE 0 END
+                + CASE WHEN MAX(CASE WHEN source_table = 'data_scv' THEN 'Yes' ELSE 'No' END) = 'Yes' THEN 1 ELSE 0 END
+                + CASE WHEN MAX(CASE WHEN source_table = 'kredit_pembiayaan' THEN 'Yes' ELSE 'No' END) = 'Yes' THEN 1 ELSE 0 END
+                + CASE WHEN MAX(CASE WHEN source_table = 'laba_rugi' THEN 'Yes' ELSE 'No' END) = 'Yes' THEN 1 ELSE 0 END
+            ) AS completeness_score
+        FROM (
+            SELECT DISTINCT LEFT(id_pelapor, 3) AS id_pelapor, 'neraca_bank' AS source_table
+            FROM neraca_bank
+            UNION
+            SELECT DISTINCT LEFT(nama_bank, 3) AS id_pelapor, 'data_scv' AS source_table
+            FROM data_scv
+            UNION
+            SELECT DISTINCT LEFT(id_pelapor, 3) AS id_pelapor, 'kredit_pembiayaan' AS source_table
+            FROM kredit_pembiayaan
+            UNION
+            SELECT DISTINCT LEFT(id_pelapor, 3) AS id_pelapor, 'laba_rugi' AS source_table
+            FROM laba_rugi
+        ) AS combined
+        RIGHT JOIN nama_bank nb ON nb.kode = combined.id_pelapor
+        GROUP BY kode
+        ORDER BY completeness_score DESC, kode;
       `;
       return result;
     } catch (error) {
@@ -165,6 +199,52 @@ export class ReportService {
       throw new Error('Error executing custom query');
     }
   }
+
+  findCheckDataPeriod(period: string) {
+    try {
+        const result = this.prisma.$queryRaw`
+            SELECT
+                kode AS id_pelapor,
+                nama AS nama_bank,
+                MAX(CASE WHEN source_table = 'neraca_bank' THEN 'Yes' ELSE 'No' END) AS found_in_neraca_bank,
+                MAX(CASE WHEN source_table = 'data_scv' THEN 'Yes' ELSE 'No' END) AS found_in_data_scv,
+                MAX(CASE WHEN source_table = 'kredit_pembiayaan' THEN 'Yes' ELSE 'No' END) AS found_in_kredit_pembiayaan,
+                MAX(CASE WHEN source_table = 'laba_rugi' THEN 'Yes' ELSE 'No' END) AS found_in_laba_rugi,
+                (
+                    CASE WHEN MAX(CASE WHEN source_table = 'neraca_bank' THEN 'Yes' ELSE 'No' END) = 'Yes' THEN 1 ELSE 0 END
+                    + CASE WHEN MAX(CASE WHEN source_table = 'data_scv' THEN 'Yes' ELSE 'No' END) = 'Yes' THEN 1 ELSE 0 END
+                    + CASE WHEN MAX(CASE WHEN source_table = 'kredit_pembiayaan' THEN 'Yes' ELSE 'No' END) = 'Yes' THEN 1 ELSE 0 END
+                    + CASE WHEN MAX(CASE WHEN source_table = 'laba_rugi' THEN 'Yes' ELSE 'No' END) = 'Yes' THEN 1 ELSE 0 END
+                ) AS completeness_score
+            FROM (
+                SELECT DISTINCT LEFT(id_pelapor, 3) AS id_pelapor, 'neraca_bank' AS source_table
+                FROM neraca_bank
+                WHERE LEFT ("periode_data", 7) = ${period}
+                UNION
+                SELECT DISTINCT LEFT(nama_bank, 3) AS id_pelapor, 'data_scv' AS source_table
+                FROM data_scv
+                WHERE CONCAT(tahun, '-', LPAD(bulan::TEXT, 2, '0')) = ${period}
+                UNION
+                SELECT DISTINCT LEFT(id_pelapor, 3) AS id_pelapor, 'kredit_pembiayaan' AS source_table
+                FROM kredit_pembiayaan
+                WHERE LEFT ("periode_data", 7) = ${period}
+                UNION
+                SELECT DISTINCT LEFT(id_pelapor, 3) AS id_pelapor, 'laba_rugi' AS source_table
+                FROM laba_rugi
+                WHERE LEFT ("periode_data", 7) = ${period}
+            ) AS combined
+            RIGHT JOIN nama_bank nb ON nb.kode = combined.id_pelapor
+            GROUP BY kode
+            ORDER BY completeness_score DESC, kode;
+        `;
+
+        return result;
+    } catch (error) {
+        console.error("Error fetching check data:", error);
+        throw error;
+    }
+}
+
 
   async findAllReportDataTotal() {
     try {
@@ -954,6 +1034,97 @@ export class ReportService {
       throw new Error('Error executing custom query');
     }
   }
-    
+  
+  async deleteDuplicateDataNeraca() {
+    try {
+      const result = await this.prisma.$queryRaw`
+        WITH CTE AS (
+            SELECT 
+                ROW_NUMBER() OVER (PARTITION BY id_pelapor, periode_data, deskripsi_pos_laporan_keuangan ORDER BY (SELECT NULL)) AS row_num,
+                ctid,
+                id_pelapor,
+                periode_data,
+                deskripsi_pos_laporan_keuangan,
+            FROM neraca_bank
+        )
+        DELETE FROM neraca_bank
+        WHERE ctid IN (
+            SELECT ctid
+            FROM CTE
+            WHERE row_num > 1
+        );
+      `;
+      return result;
+    } catch (error) {
+      console.error('Error executing custom query:', error);
+      throw new Error('Error executing custom query');
+    }
+  }
+
+
+  async deleteTruncateDataNeraca(nama_bank: string): Promise<any> {
+    try {
+      if (nama_bank !== "all") {
+        const result = await this.prisma.$queryRaw`
+          DELETE FROM neraca_bank WHERE LEFT("id_pelapor", 3) = ${nama_bank};
+        `;
+        return result;
+      } else {
+        const result = await this.prisma.$queryRaw`
+          TRUNCATE TABLE neraca_bank;
+        `;
+        return result;
+      }
+    } catch (error) {
+      console.error('Error executing custom query:', error);
+      throw new Error('Error executing custom query');
+    }
+  }
+  
+  async deleteDuplicateDataLaba() {
+    try {
+      const result = await this.prisma.$queryRaw`
+        WITH CTE AS (
+            SELECT 
+                ROW_NUMBER() OVER (PARTITION BY id_pelapor, periode_data, deskripsi_pos_laba_rugi ORDER BY (SELECT NULL)) AS row_num,
+                ctid,
+                id_pelapor,
+                periode_data,
+                deskripsi_pos_laba_rugi,
+            FROM laba_rugi
+        )
+        DELETE FROM laba_rugi
+        WHERE ctid IN (
+            SELECT ctid
+            FROM CTE
+            WHERE row_num > 1
+        );
+      `;
+      return result;
+    } catch (error) {
+      console.error('Error executing custom query:', error);
+      throw new Error('Error executing custom query');
+    }
+  }
+
+
+  async deleteTruncateDataLaba(nama_bank: string): Promise<any> {
+    try {
+      if (nama_bank !== "all") {
+        const result = await this.prisma.$queryRaw`
+          DELETE FROM laba_rugi WHERE LEFT("id_pelapor", 3) = ${nama_bank};
+        `;
+        return result;
+      } else {
+        const result = await this.prisma.$queryRaw`
+          TRUNCATE TABLE laba_rugi;
+        `;
+        return result;
+      }
+    } catch (error) {
+      console.error('Error executing custom query:', error);
+      throw new Error('Error executing custom query');
+    }
+  }
 
 }

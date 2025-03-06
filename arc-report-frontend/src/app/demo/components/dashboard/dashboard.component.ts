@@ -10,14 +10,13 @@ import {
     ReportStatus,
 } from 'src/app/demo/api/customer';
 import { ComponentService, ServerStatus } from 'src/app/demo/service/component.service';
-import { Table } from 'primeng/table';
+import { Table, TableModule } from 'primeng/table';
 import { MessageService, ConfirmationService } from 'primeng/api';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 import { HttpClient } from '@angular/common/http';
 import { forkJoin } from 'rxjs';
-
-
+import { ScvService } from 'src/app/demo/service/scv.service';
 
 interface expandedRows {
     [key: string]: boolean;
@@ -65,6 +64,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     summaryTotal: number = 0;
 
+    globalFilter: string = ''; // Declare globalFilter property
 
     storageUsage: number = 60; // Contoh nilai, bisa diambil dari API
     cpuUsage: number = 45;     // Contoh nilai, bisa diambil dari API
@@ -86,6 +86,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     exportDialog2: boolean = false;
 
+    checkBank: any = [];
+
     totalAvailable: number = 0;
 
     totalUnavailable: number = 0;
@@ -98,9 +100,15 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     totalMissing: any = '0';
 
-    totalNeracaBank: any = '0';
+    totalNeracaBank: number = 0;
 
-    totalLabaRugi: any  = '0';
+    totalLabaRugi: number  = 0;
+
+    totalScv: number  = 0;
+
+    totalKredit: number  = 0;
+
+    totalBank: number  = 0;
 
     products!: Product[];
 
@@ -142,14 +150,17 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     totalDataLaporan: number = 0;
 
+    dataBankPeriode: any = [];
+
+    selectedPeriode: any = [];
+
     @ViewChild('filter') filter!: ElementRef;
 
 
     constructor(
         public layoutService: LayoutService,
         private componentService: ComponentService,
-        private confirmationService: ConfirmationService,
-        private http: HttpClient
+        private scvService: ScvService,
     ) {
         this.subscription = this.layoutService.configUpdate$.subscribe(() => {
             this.initChart();
@@ -174,6 +185,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
             { name: 'Citilink', code: 'CITI' },
             { name: 'Other', code: '' },
         ];
+        this.getBankDataPeriode();
     }
 
     startAutoRefresh(): void {
@@ -202,26 +214,24 @@ export class DashboardComponent implements OnInit, OnDestroy {
       }
 
     fetchData() {
+        
         forkJoin({
-          reportNeraca: this.componentService.getNeracaBank(),
-          reportLabaRugi: this.componentService.getLabaRugiTotal(),
+          resultTotal: this.componentService.getNeracaBank(),
           reportMissingData: this.componentService.getMissingData(),
         }).subscribe({
-          next: ({ reportNeraca, reportLabaRugi, reportMissingData }) => {
-            console.log('reportNeraca:', reportNeraca);
-            console.log('reportLabaRugi:', reportLabaRugi);
+          next: ({ resultTotal, reportMissingData }) => {
+            console.log('reportNeraca:', resultTotal);
     
             // Pastikan array tidak kosong sebelum mengakses elemen
-            if (reportNeraca && reportNeraca.length > 0) {
-              this.totalNeracaBank = reportNeraca[0].total;
+            if (resultTotal && resultTotal.length > 0) {
+              this.totalNeracaBank = resultTotal[0].total_neraca_bank;
+              this.totalLabaRugi = resultTotal[0].total_laba_rugi;
+              this.totalKredit = resultTotal[0].total_kredit;
+              this.totalScv = resultTotal[0].total_scv;
+              this.totalBank = resultTotal[0].total_bank;
+              
             } else {
               console.warn('Data reportNeraca kosong.');
-            }
-    
-            if (reportLabaRugi && reportLabaRugi.length > 0) {
-              this.totalLabaRugi = reportLabaRugi[0].total;
-            } else {
-              console.warn('Data reportLabaRugi kosong.');
             }
 
             if (reportMissingData && reportMissingData.length > 0) {
@@ -230,13 +240,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
                 console.warn('Data reportMissingData kosong.');
             }
 
-            this.totalDataLaporan = reportNeraca[0].total + reportLabaRugi[0].total;
+            this.totalDataLaporan = this.totalNeracaBank + this.totalLabaRugi + this.totalKredit + this.totalScv;
           },
           error: (error) => {
             console.error('Error fetching data:', error);
           },
         });
-
+        this.fetchCheckData();
       }
 
     async fecthDataTable1(keyword: string) {
@@ -253,6 +263,16 @@ export class DashboardComponent implements OnInit, OnDestroy {
             this.loadingGraph = false;
         } catch (error) {
             console.error('Error fetching data:', error);
+        }
+    }
+
+    async fetchCheckData(){
+        try {
+            const data = await this.componentService.getComponentsCheckBank();
+            this.checkBank = data;
+            console.log('Summary Check : ', this.checkBank);
+        } catch (error) {
+            console.error('Failed to fetch data.', error);
         }
     }
 
@@ -419,6 +439,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
         }, 500);
     }
 
+    cleardt(table: Table) {
+        table.clear();
+        this.globalFilter = ''
+    }
+
     async onGlobalPlane(table: Table, event: any, key: string) {
         if (event.value.operator === 'Others') {
             event.value.operator = null;
@@ -470,5 +495,61 @@ export class DashboardComponent implements OnInit, OnDestroy {
             console.error('Failed to fetch component data.', error);
         }
     }
+
+    async getBankDataPeriode() {
+        try {
+            // this.dataBankPeriode = await this.scvService.getBankPeriode({ keyword }) || [];
+            // console.log('dataBankPeriode', this.dataBankPeriode);
+            // this.dataBankPeriode.filter((item: any) => item.tahun !== null && item.bulan !== null)
+            // .map((item: any) => ({
+            //     periode: item.tahun + '-' + item.bulan,
+            // }));
+            // generate periode from 2024-01 to 2025-12
+            let start = 2024;
+            let end = 2025;
+            let years: number[] = [];
+            let months: number[] = [];
+            let periode: { periode: string }[] = []; 
+            
+            for (let i = start; i <= end; i++) {
+                years.push(i);
+            }
+            for (let i = 1; i <= 12; i++) {
+                months.push(i);
+            }
+            
+            years.forEach((year) => {
+                months.forEach((month) => {
+                    periode.push({ periode: `${year}-${month}` }); 
+                });
+            });
+            
+            this.dataBankPeriode = periode;
+            
+            console.log('Data Bank Periode:', this.dataBankPeriode);
+        } catch (error) {
+            console.error('Failed to fetch data.', error);
+        }
+    }
+
+    async fecthDataTable2(period: string) {
+        this.loading = true;
+        console.log('Period:', period);
+        try {
+            const reportStatus = await this.componentService.getComponentsCheckPeriode(period);
+            
+            this.checkBank = reportStatus;
+            this.loading = false;
+        } catch (error) {
+            console.error('Error fetching data:', error);
+            this.loading = false;
+        }
+    }
+    
+    clearBank(){
+        this.selectedPeriode = [];
+        this.fetchCheckData();
+    }
+
 
 }

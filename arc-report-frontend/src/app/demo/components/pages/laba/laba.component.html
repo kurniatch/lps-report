@@ -31,6 +31,15 @@
                         (click)="openExport2()">
                     </button>
                 </div>
+                <div class="flex items-center space-x-4">
+                    <button pButton pRipple label="Delete Duplicate" icon="pi pi-trash" class="p-button-info"
+                        [disabled]="!isAdmin" (click)="deleteDuplicate()">
+                    </button>
+
+                    <button pButton pRipple label="Reset" icon="pi pi-refresh" class="p-button-danger"
+                        [disabled]="!isAdmin" (click)="resetData()">
+                    </button>
+                </div>
             </div>
 
             <p-table #dt2 [columns]="components2" [value]="components2" [lazy]="true"

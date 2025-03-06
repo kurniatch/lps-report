@@ -50,15 +50,20 @@ export class ReportController {
     return this.reportService.findAllReportTotal();
   }
 
-  @Get('/result-total-laba')
-  findAllReportTotalLaba() {
-    return this.reportService.findAllReportTotalLaba();
-  }
-
 
   @Get('/bank')
   getBankData() {
     return this.reportService.getBank();
+  }
+
+  @Get('/check-bank')
+  checkBankData() {
+    return this.reportService.findCheckData();
+  }
+
+  @Get('/check-bank-period')
+  checkBankPeriode( @Query('period') period: string) {
+    return this.reportService.findCheckDataPeriod(period);
   }
 
   @Get('/laba-rugi')
@@ -244,5 +249,24 @@ export class ReportController {
   
     return this.reportService.getDataLctPeriode(tableName, keyword, tanggal);
   }
-  
+
+  @Delete('/neraca-remove-duplicate')
+  async deleteDuplicateDataNeraca(): Promise<any> {
+    return await this.reportService.deleteDuplicateDataNeraca();
+  }
+
+  @Delete('/neraca-remove-all') 
+  async deleteTruncateDataNeraca(@Query('nama_bank') nama_bank: string): Promise<any> {
+    return await this.reportService.deleteTruncateDataNeraca(nama_bank);
+  }
+
+  @Delete('/laba-remove-duplicate')
+  async deleteDuplicateDataLaba(): Promise<any> {
+    return await this.reportService.deleteDuplicateDataLaba();
+  }
+
+  @Delete('/laba-remove-all') 
+  async deleteTruncateDataLaba(@Query('nama_bank') nama_bank: string): Promise<any> {
+    return await this.reportService.deleteTruncateDataLaba(nama_bank);
+  }
 }

@@ -544,4 +544,51 @@ export class ScvService {
     }
   }
 
+  async deleteDuplicateData() {
+    try {
+      const result = await this.prisma.$queryRaw`
+        WITH CTE AS (
+            SELECT 
+                ROW_NUMBER() OVER (PARTITION BY nama_bank, bulan, tahun, deskripsi ORDER BY (SELECT NULL)) AS row_num,
+                ctid,
+                nama_bank,
+                bulan,
+                tahun,
+                deskripsi
+            FROM data_scv
+        )
+        DELETE FROM data_scv
+        WHERE ctid IN (
+            SELECT ctid
+            FROM CTE
+            WHERE row_num > 1
+        );
+      `;
+      return result;
+    } catch (error) {
+      console.error('Error executing custom query:', error);
+      throw new Error('Error executing custom query');
+    }
+  }
+
+
+  async deleteTruncateData(nama_bank: string): Promise<any> {
+    try {
+      if (nama_bank !== "all") {
+        const result = await this.prisma.$queryRaw`
+          DELETE FROM data_scv WHERE nama_bank = ${nama_bank};
+        `;
+        return result;
+      } else {
+        const result = await this.prisma.$queryRaw`
+          TRUNCATE TABLE data_scv;
+        `;
+        return result;
+      }
+    } catch (error) {
+      console.error('Error executing custom query:', error);
+      throw new Error('Error executing custom query');
+    }
+  }
+  
 }

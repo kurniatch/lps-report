@@ -194,5 +194,24 @@ export class CrudService {
         const params = { tableName, keyword, tanggal };
         return this.http.get(url, { headers: this.headers, params }).toPromise();
     }
+
+    deleteDuplicateDataNeraca() {
+        const url = `${environment.backendUrl}/report/neraca-remove-duplicate`;
+        return this.http.delete(url, { headers: this.headers }).toPromise();
+      }
+
+    deleteDataNeraca(nama_bank: string) {
+        const url = `${environment.backendUrl}/report/neraca-remove-all?nama_bank=${encodeURIComponent(nama_bank)}`;
+        return this.http.delete(url, { headers: this.headers }).toPromise();
+      }
     
+    deleteDuplicateDataLaba() {
+        const url = `${environment.backendUrl}/report/laba-remove-duplicate`;
+        return this.http.delete(url, { headers: this.headers }).toPromise();
+      }
+
+    deleteDataLaba(nama_bank: string) {
+        const url = `${environment.backendUrl}/report/laba-remove-all?nama_bank=${encodeURIComponent(nama_bank)}`;
+        return this.http.delete(url, { headers: this.headers }).toPromise();
+      }
 }
